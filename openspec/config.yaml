@@ -1,0 +1,41 @@
+schema: spec-driven
+
+context: |
+  Tech stack: Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS 4
+  Database: PostgreSQL via Supabase (schema defined; in-memory repo for local TDD)
+  Architecture: Domain services + repository pattern, REST API routes
+  Testing: Vitest + React Testing Library in test/ folder, strict TDD enabled
+  Style: Spanish UI copy, English code and SDD artifacts
+
+rules:
+  proposal:
+    - Include rollback plan for risky changes
+  specs:
+    - Use Given/When/Then for scenarios
+    - Use RFC 2119 keywords (MUST, SHALL, SHOULD, MAY)
+  design:
+    - Include sequence diagrams for complex flows
+    - Document architecture decisions with rationale
+  tasks:
+    - Group by phase, use hierarchical numbering
+    - Keep tasks completable in one session
+  apply:
+    guidelines:
+      - Follow existing code patterns
+      - RED-GREEN-REFACTOR for every behavior change
+    tdd: true
+    test_command: "npm test"
+  verify:
+    test_command: "npm test"
+    build_command: "npm run build"
+    coverage_threshold: 0
+  archive:
+    - Warn before merging destructive deltas
+
+testing:
+  runner: vitest
+  layers:
+    - unit
+    - integration
+  strict_tdd: true
+  test_dir: test/

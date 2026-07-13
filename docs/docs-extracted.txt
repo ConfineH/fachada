@@ -1,0 +1,681 @@
+﻿=== Documento de Arquitectura.docx ===
+Documento de Arquitectura - Fachada
+1. Resumen Ejecutivo
+Fachada es una plataforma web que permite a inquilinos y propietarios buscar, consultar y valorar inmobiliarias en España. El objetivo es proporcionar transparencia sobre la gestión de las agencias inmobiliarias, mostrando reseñas verificadas de usuarios reales y datos de contacto actualizados.
+Propuesta de valor única: Ninguna plataforma actual (Idealista, Fotocasa, Google Reviews) ofrece reseñas específicas de inquilinos y propietarios sobre la experiencia de gestión inmobiliaria. Fachada cubre ese hueco.
+Modelo de negocio: Perfiles verificados para inmobiliarias (?15-30/mes), publicidad contextual (mudanzas, seguros, suministros) y leads cualificados.
+2. Business Model Canvas
+Bloque
+Descripción
+Propuesta de valor
+Transparencia sobre inmobiliarias: reseñas reales de inquilinos y propietarios, datos de contacto verificados, ranking por reputación
+Segmentos de clientes
+Inquilinos (buscan piso o tienen problemas), Propietarios (buscan agencia para gestionar su piso), Inmobiliarias (quieren gestionar su reputación)
+Canales
+Web responsive (fachada.app), SEO orgánico, redes sociales, partnerships con asociaciones de inquilinos
+Relación con clientes
+Self-service para usuarios, email/soporte básico para agencias, comunidad orgánica
+Fuentes de ingresos
+Perfiles verificados (?15-30/mes por agencia), publicidad contextual (AdSense o redes especializadas), leads premium (?50-100/mes por inmobiliaria)
+Recursos clave
+Plataforma web, base de datos de reseñas, sistema de verificación telefónica, dominio y marca
+Actividades clave
+Desarrollo y mantenimiento de plataforma, moderación de reseñas, captación de primeras agencias, marketing de contenidos
+Socios clave
+Asociaciones de inquilinos (Sindicato de Inquilinas), plataformas de publicidad contextual, servicios de verificación SMS
+Estructura de costes
+Hosting e infraestructura (?20-50/mes), verificación SMS (?0.03-0.05 por SMS), publicidad (variable), legal/asesoría (ocasional)
+3. Arquitectura Técnica
+3.1. Principios de diseño
+Bootstrapping: coste infraestructura &lt;?50/mes los primeros 6 meses
+Mantenibilidad: un solo desarrollador debe poder mantenerlo
+Escalabilidad: capacidad de crecer horizontalmente si hay tracción
+Seguridad: verificación de usuarios, protección de datos personales, compliance LSSI
+3.2. Componentes principales
+text
+┌─────────────────────────────────────────────────────────┐
+│                    FRONTEND (Web App)                    │
+│  - Next.js / React (SSR para SEO)                       │
+│  - Tailwind CSS (estilos rápidos)                        │
+│  - Responsive mobile-first                               │
+└─────────────────────────────────────────────────────────┘
+│
+
+┌─────────────────────────────────────────────────────────┐
+│                    BACKEND (API)                         │
+│  - Node.js (Express/Fastify) o Python (FastAPI)         │
+│  - REST API o GraphQL                                    │
+│  - Autenticación JWT                                     │
+│  - Rate limiting y protección anti-abuso                 │
+└─────────────────────────────────────────────────────────┘
+│
+
+┌─────────────────────────────────────────────────────────┐
+│                    BASE DE DATOS                         │
+│  - PostgreSQL (supabase.io o Railway.app)               │
+│  - Tablas: usuarios, agencias, reseñas, claims, logs    │
+└─────────────────────────────────────────────────────────┘
+│
+
+┌─────────────────────────────────────────────────────────┐
+│                    SERVICIOS EXTERNOS                    │
+│  - Twilio / MessageBird (verificación SMS)              │
+│  - Google Maps API (geolocalización de agencias)        │
+│  - AdSense / redes de publicidad contextual             │
+│  - Email (SendGrid / Resend)                            │
+└─────────────────────────────────────────────────────────┘
+3.3. Infraestructura recomendada (evaluar con desarrollador)
+Servicio
+Opción gratuita/barata
+Coste estimado
+Hosting frontend
+Vercel / Netlify / Cloudflare Pages
+?0 (hasta cierto tráfico)
+Backend + DB
+Railway.app / Supabase / Render
+?0-25/mes (tier gratuito + básico)
+Dominio
+.app o .es
+?10-15/año
+SMS verification
+Twilio (pay-as-you-go)
+?0.03-0.05 por SMS
+Email transaccional
+Resend / SendGrid
+?0-15/mes
+Analytics
+Plausible / Google Analytics
+?0-9/mes
+Total estimado inicial: ?20-50/mes para los primeros 1.000-5.000 usuarios mensuales.
+4. Schema de Datos (Entidades Principales)
+4.1. Entidades core
+Usuario
+id (UUID)
+telefono (string, único, +34)
+telefono_verificado (boolean)
+fecha_registro (timestamp)
+ultima_actividad (timestamp)
+Agencia
+id (UUID)
+nombre (string)
+cif (string, opcional)
+direccion (string)
+ciudad (string)
+codigo_postal (string)
+telefono (string)
+email (string)
+website (string, opcional)
+google_maps_url (string, opcional)
+reclamado (boolean) - si alguien ha reclamado el perfil
+verificado (boolean) - si se ha validado documentación
+premium (boolean) - si paga por perfil destacado
+fecha_creacion (timestamp)
+Reseña
+id (UUID)
+usuario_id (FK  Usuario)
+agencia_id (FK  Agencia)
+rol (enum: 'inquilino', 'propietario')
+puntuacion (integer 1-5)
+titulo (string, max 100 chars)
+cuerpo (text, max 1000 chars)
+fecha (timestamp)
+moderado (boolean) - si ha pasado moderación
+flaggeado (boolean) - si ha sido reportado
+Claim (Reclamación de perfil)
+id (UUID)
+agencia_id (FK  Agencia)
+usuario_id (FK  Usuario) - quien reclama
+documentacion (array de URLs) - fotos de CIF, escritura, etc.
+estado (enum: 'pendiente', 'aprobado', 'rechazado')
+fecha_solicitud (timestamp)
+fecha_resolucion (timestamp, opcional)
+Respuesta de Agencia
+id (UUID)
+reseña_id (FK  Reseña)
+agencia_id (FK  Agencia)
+cuerpo (text, max 500 chars)
+fecha (timestamp)
+4.2. Relaciones
+text
+Usuario (1) ──&lt; Reseña (&gt;1)
+Agencia (1) ──&lt; Reseña (&gt;1)
+Agencia (1) ──&lt; Claim (&gt;1)
+Reseña (1) ──&lt; Respuesta (1)
+5. Flujos Críticos
+5.1. Registro y verificación de usuario
+Usuario introduce teléfono (+34)
+Sistema envía SMS con código de 6 dígitos
+Usuario introduce código
+Sistema marca telefono_verificado = true
+Usuario puede escribir reseñas
+5.2. Escribir una reseña
+Usuario busca agencia por nombre o ciudad
+Usuario hace clic en "Escribir reseña"
+Sistema verifica que telefono_verificado = true
+Usuario elige rol (inquilino/propietario), puntuación (1-5), título y cuerpo
+Sistema guarda reseña con moderado = false
+(Opcional) Moderación manual o automática si hay palabras clave sensibles
+Reseña se publica
+5.3. Reclamar perfil de agencia
+Representante de agencia busca su agencia
+Hace clic en "Reclamar este perfil"
+Sistema pide: nombre, email, teléfono, documentación (CIF, escritura)
+Sistema crea claim con estado = pendiente
+Admin revisa documentación (manual, al inicio)
+Si aprobado: agencia.reclamado = true, agencia.verificado = true
+Usuario recibe acceso al panel de agencia
+5.4. Responder a una reseña (agencia verificada)
+Agencia accede a su panel
+Ve listado de reseñas con estado "sin respuesta"
+Escribe respuesta (max 500 chars)
+Sistema guarda respuesta vinculada a la reseña
+Respuesta se muestra públicamente bajo la reseña
+6. Seguridad y Compliance
+6.1. Protección de datos
+GDPR: todos los datos personales encriptados en reposo y tránsito
+Derecho al olvido: endpoint para que usuarios soliciten borrado de sus reseñas
+Política de privacidad: visible y clara, redactada con asesoría legal
+6.2. Moderación de contenido
+Sistema de flagging (usuarios pueden reportar reseñas ofensivas/falsas)
+Threshold automático: si una agencia recibe &gt;10 reseñas en 48h, se marcan para revisión manual
+Proceso de reclamación: formulario visible para agencias que quieran reportar reseñas falsas
+6.3. Prevención de abuso
+Rate limiting: máximo 1 reseña por usuario cada 7 días hacia la misma agencia
+Detección de patrones: alertas si un mismo teléfono escribe muchas reseñas en poco tiempo
+Bloqueo de IPs: si se detectan múltiples registros desde la misma IP
+6.4. LSSI (Ley de Servicios de la Sociedad de la Información)
+Términos y condiciones: redactados por abogado, con cláusula de limitación de responsabilidad
+Notice &amp; takedown: proceso documentado para retirar contenido tras reclamación
+Contacto legal visible: email y dirección física del responsable
+7. APIs y Integraciones Externas
+Servicio
+Propósito
+Alternativa barata
+Twilio
+Verificación SMS
+MessageBird, Vonage
+Google Maps API
+Geolocalización de agencias
+OpenStreetMap + Nominatim (gratis)
+AdSense
+Publicidad contextual
+Ezoic, Mediavine (más adelante)
+SendGrid / Resend
+Email transaccional
+Mailgun, Amazon SES
+Plausible
+Analytics
+Google Analytics (gratis, pero menos privacy-friendly)
+8. Métricas y KPIs (a nivel de producto)
+8.1. Métricas de tracción
+Usuarios registrados (con teléfono verificado)
+Reseñas publicadas (total y por mes)
+Agencias indexadas (total y por ciudad)
+Agencias verificadas (que han reclamado su perfil)
+Agencias premium (que pagan)
+8.2. Métricas de calidad
+Puntuación media de reseñas (por agencia y global)
+Ratio de reseñas flaggeadas (debe ser &lt;5%)
+Tiempo medio de respuesta de agencias (si responden)
+8.3. Métricas de negocio
+MRR (Monthly Recurring Revenue) - ingresos mensuales recurrentes
+CAC (Coste de Adquisición de Cliente) - cuánto cuesta conseguir una agencia premium
+LTV (Lifetime Value) - cuánto ingresos genera una agencia premium en promedio
+9. Próximos Pasos Inmediatos
+Validar stack técnico con tu desarrollador (confirmar que las opciones propuestas son viables)
+Redactar términos y condiciones con asesoría legal (?300-500, una sola vez)
+Diseñar wireframes de las pantallas principales (home, búsqueda, ficha de agencia, formulario de reseña, panel de agencia)
+Configurar infraestructura base (dominio, hosting, DB, SMS)
+Construir MVP (solo lo esencial: buscar, leer, escribir, reclamar)
+Cargar manualmente las primeras 50-100 agencias de Madrid
+Contactar Sindicato de Inquilinas para beta testing
+Lanzar versión beta cerrada (solo Madrid, invites)
+Iterar según feedback y preparar lanzamiento público
+
+=== Roadmap Detallado - Fachada.docx ===
+Roadmap Detallado - Fachada
+Visión General
+Objetivo: Lanzar un MVP funcional en 8-12 semanas, validar el producto en Madrid durante 3-6 meses, y escalar a nivel nacional si las métricas lo justifican.
+Filosofía: Lanzar rápido, aprender de usuarios reales, iterar. No construir funcionalidades "por si acaso".
+Fase 0 - Preparación (Semana 0)
+Duración: 1 semanaObjetivo: Tener todo listo antes de escribir código
+Tareas
+Tarea
+Responsable
+Deliverable
+Definir stack tecnológico concreto
+Desarrollador
+Documento con tecnologías elegidas y justificación
+Registrar dominio (fachada.app o similar)
+Tú
+Dominio activo
+Abrir cuentas en servicios externos (Vercel, Supabase, Twilio, etc.)
+Desarrollador
+Credentials y acceso configurado
+Redactar primeros términos y condiciones (borrador)
+Tú (con plantilla)
+Documento base para revisión legal
+Diseñar wireframes en papel o Figma
+Tú + Desarrollador
+5-7 pantallas principales boceteadas
+Revisión legal de términos (presupuesto)
+Abogado externo
+T&amp;C finales listos
+Criterio de éxito
+? Dominio registrado
+? Stack tecnológico decidido
+? Wireframes aprobados
+? T&amp;C revisados por abogado
+Fase 1 - MVP Técnico (Semanas 1-8)
+Duración: 8 semanasObjetivo: Tener una plataforma funcional con las features esenciales
+Semana 1-2: Setup y arquitectura base
+Tarea
+Responsable
+Deliverable
+Configurar repositorio Git (GitHub/GitLab)
+Desarrollador
+Repo con README y estructura de carpetas
+Configurar entorno de desarrollo local
+Desarrollador
+Docker o scripts de setup
+Configurar CI/CD básico (deploy automático)
+Desarrollador
+Pipeline en Vercel/Railway
+Configurar base de datos (schema inicial)
+Desarrollador
+Tablas: usuarios, agencias, reseñas
+Implementar autenticación por SMS
+Desarrollador
+Flujo completo: pedir teléfono  enviar SMS  verificar código
+Semana 3-4: Funcionalidades core (lector)
+Tarea
+Responsable
+Deliverable
+Página de inicio (home) con buscador
+Desarrollador
+Home funcional con barra de búsqueda
+Página de resultados de búsqueda
+Desarrollador
+Listado de agencias filtrable por ciudad
+Ficha de agencia (pública)
+Desarrollador
+Página con datos de agencia + listado de reseñas
+Sistema de paginación y ordenación
+Desarrollador
+Reseñas ordenadas por fecha/puntuación
+SEO básico (meta tags, sitemap)
+Desarrollador
+Google puede indexar las páginas
+Semana 5-6: Funcionalidades core (escritor)
+Tarea
+Responsable
+Deliverable
+Formulario de escribir reseña
+Desarrollador
+Formulario con validación (rol, puntuación, título, cuerpo)
+Lógica de guardar reseña
+Desarrollador
+Reseña se guarda en DB y se muestra en ficha de agencia
+Sistema de moderación básico
+Desarrollador
+Flag de moderado y panel simple para admin
+Página de perfil de usuario
+Desarrollador
+Usuario puede ver sus reseñas escritas
+Sistema de logout y gestión de sesión
+Desarrollador
+JWT funcionando correctamente
+Semana 7-8: Panel de agencia y claims
+Tarea
+Responsable
+Deliverable
+Formulario de reclamación de perfil
+Desarrollador
+Agencia puede solicitar claim con documentación
+Panel de admin para revisar claims
+Desarrollador
+Admin puede aprobar/rechazar claims
+Panel de agencia (básico)
+Desarrollador
+Agencia ve sus reseñas y puede responder
+Sistema de respuestas a reseñas
+Desarrollador
+Agencia escribe respuesta vinculada a reseña
+Testing integral (QA)
+Desarrollador + Tú
+Lista de bugs y mejoras priorizada
+Criterio de éxito de Fase 1
+? Usuario puede registrarse con teléfono
+? Usuario puede buscar agencias y leer reseñas
+? Usuario puede escribir reseñas (con verificación)
+? Agencia puede reclamar su perfil y responder reseñas
+? Admin puede moderar reseñas y aprobar claims
+? Deploy automático funcionando
+? 0 bugs críticos en flujo principal
+Fase 2 - Beta Cerrada (Semanas 9-14)
+Duración: 6 semanasObjetivo: Validar el producto con usuarios reales antes de abrir al público
+Semana 9: Carga manual de datos
+Tarea
+Responsable
+Deliverable
+Investigar 100 agencias de Madrid (nombre, dirección, teléfono, web)
+Tú
+Spreadsheet con 100 filas
+Cargar agencias en la plataforma (manual o script)
+Desarrollador
+100 agencias en la DB
+Escribir 30-40 reseñas seed (tú + amigos)
+Tú + 3-5 amigos
+30-40 reseñas reales distribuidas en 20-30 agencias
+Revisar que todo se ve bien en móvil
+Tú
+Feedback de UX móvil
+Semana 10-11: Beta testing interno
+Tarea
+Responsable
+Deliverable
+Invitar a 10-15 personas de confianza a probar
+Tú
+Lista de 10-15 betatesters
+Recoger feedback de usabilidad
+Tú
+Documento con 10-15 puntos de mejora
+Iterar sobre bugs y mejoras críticas
+Desarrollador
+2-3 iteraciones de deploy
+Mejorar textos y onboarding
+Tú
+Copy más claro en formularios y home
+Semana 12-13: Partnership inicial
+Tarea
+Responsable
+Deliverable
+Contactar Sindicato de Inquilinas de Madrid
+Tú
+Email de presentación + propuesta de colaboración
+Reunión con 1-2 asociaciones de inquilinos
+Tú
+Feedback de potenciales usuarios reales
+Ajustar producto según feedback
+Desarrollador + Tú
+Mejoras implementadas (ej: filtros, etiquetas)
+Preparar materiales de lanzamiento
+Tú
+Landing page de "próximamente" con email capture
+Semana 14: Preparación de lanzamiento público
+Tarea
+Responsable
+Deliverable
+Revisar analytics y métricas de beta
+Tú + Desarrollador
+Dashboard con: usuarios, reseñas, agencias
+Decidir si se lanza o se itera más
+Tú
+Decisión go/no-go
+Preparar post de lanzamiento (blog, redes)
+Tú
+Contenido listo para publicar
+Configurar publicidad contextual (AdSense)
+Desarrollador
+Banners activos en la web
+Criterio de éxito de Fase 2
+? 100 agencias de Madrid indexadas
+? 50+ reseñas reales publicadas
+? 20-30 usuarios beta activos
+? Feedback de al menos 1 asociación de inquilinos
+? Métricas de uso estables (ej: 5-10 reseñas nuevas por semana)
+? Decisión clara: lanzar o iterar
+Fase 3 - Lanzamiento Público (Semanas 15-20)
+Duración: 6 semanasObjetivo: Abrir al público y empezar a traccionar usuarios orgánicos
+Semana 15: Lanzamiento oficial
+Tarea
+Responsable
+Deliverable
+Publicar post de lanzamiento (blog + redes)
+Tú
+Artículo en LinkedIn/Twitter/foros
+Enviar email a betatesters anunciando lanzamiento
+Tú
+Email enviado
+Publicar en Product Hunt (opcional)
+Tú
+Página de Product Hunt activa
+Monitorizar tráfico y Registrar errores
+Desarrollador
+Dashboard de analytics en tiempo real
+Semana 16-18: Marketing orgánico y captación
+Tarea
+Responsable
+Deliverable
+Escribir 4-6 artículos de blog (SEO)
+Tú
+Posts publicados: "mejores inmobiliarias en Madrid", "cómo elegir inmobiliaria", etc.
+Compartir en foros y grupos (Reddit, Facebook, Telegram)
+Tú
+10-15 posts en comunidades relevantes
+Contactar 5-10 microinfluencers de vivienda
+Tú
+2-3 menciones o posts compartidos
+Recoger feedback de primeros usuarios orgánicos
+Tú
+Lista de 10-20 puntos de mejora
+Semana 19-20: Optimización y monetización inicial
+Tarea
+Responsable
+Deliverable
+Analizar métricas de conversión (registro  reseña)
+Tú + Desarrollador
+Informe con funnel de conversión
+Iterar sobre cuellos de botella
+Desarrollador
+Mejoras en UX que aumenten conversión
+Contactar primeras 10 agencias para perfiles premium
+Tú
+10 emails enviados ofreciendo perfil verificado
+Cerrar 1-3 agencias premium (si posible)
+Tú
+1-3 agencias pagando (validación inicial de modelo)
+Criterio de éxito de Fase 3
+? 500+ visitas únicas mensuales
+? 100+ usuarios registrados
+? 100+ reseñas publicadas (total acumulado)
+? 1-3 agencias premium (validación de monetización)
+? Tráfico orgánico creciente (SEO funcionando)
+Fase 4 - Validación y Escalado a Top 10 Ciudades (Meses 4-9)
+Duración: 6 mesesObjetivo: Confirmar que el modelo funciona y escalar a nivel nacional
+Mes 4-5: Consolidación en Madrid
+Tarea
+Responsable
+Deliverable
+Monitorizar métricas de negocio (MRR, CAC, LTV)
+Tú
+Dashboard mensual de negocio
+Iterar según feedback de usuarios y agencias
+Desarrollador + Tú
+2-3 mejoras mayores implementadas
+Escribir 1 artículo de blog por semana
+Tú
+8-10 artículos SEO publicados
+Explorar partnerships con plataformas de mudanzas/seguros
+Tú
+1-2 acuerdos de publicidad contextual
+Mes 6-7: Expansión a 10 ciudades
+Tarea
+Responsable
+Deliverable
+Investigar y cargar 500 agencias de 10 ciudades
+Tú
+Spreadsheet con 500 agencias (Madrid, Barcelona, Valencia, Sevilla, Bilbao, Zaragoza, Málaga, Granada, A Coruña, Palma)
+Adaptar landing page para múltiples ciudades
+Desarrollador
+Páginas de ciudad específicas (ej: "/inmobiliarias-barcelona")
+Campaña de lanzamiento en cada ciudad
+Tú
+10 posts en redes/foros locales
+Escribir artículos SEO por ciudad
+Tú
+10-15 artículos tipo "mejores inmobiliarias en [ciudad]"
+Mes 8-9: Monetización activa
+Tarea
+Responsable
+Deliverable
+Contactar 50-100 agencias ofereciendo perfil premium
+Tú
+50-100 emails enviados
+Cerrar 10-20 agencias premium
+Tú
+10-20 agencias pagando (MRR: ?150-600)
+Implementar analytics de negocio (Stripe dashboard, etc.)
+Desarrollador
+Panel de ingresos visible
+Optimizar funnel de venta de perfiles premium
+Tú + Desarrollador
+Landing page de ventas + email sequences
+Criterio de éxito de Fase 4
+? 5.000+ visitas únicas mensuales
+? 1.000+ usuarios registrados
+? 500+ reseñas publicadas (total)
+? 500+ agencias indexadas (10 ciudades)
+? 10-20 agencias premium (MRR: ?150-600)
+? Tráfico orgánico estable y creciente
+Fase 5 - España Completa + Optimización (Meses 10-18)
+Duración: 9 mesesObjetivo: Cubrir todo el territorio nacional y optimizar el modelo de negocio
+Mes 10-12: Expansión nacional
+Tarea
+Responsable
+Deliverable
+Investigar y cargar 2.000+ agencias de toda España
+Tú
+Base de datos de 2.000+ agencias
+Mejorar buscador con filtros avanzados
+Desarrollador
+Filtros por ciudad, puntuación, especialidad
+Implementar mapa interactivo de agencias
+Desarrollador
+Mapa con clusters de agencias
+Campaña de PR y medios
+Tú
+2-3 menciones en prensa (El País, Expansión, etc.)
+Mes 13-15: Optimización de monetización
+Tarea
+Responsable
+Deliverable
+Implementar leads premium (pago por contacto)
+Desarrollador
+Sistema de leads con pago integrado
+Testear diferentes precios de perfiles premium
+Tú
+A/B testing de precios (?15, ?20, ?30)
+Contactar 200+ agencias para ventas outbound
+Tú
+200 emails enviados
+Cerrar 50+ agencias premium
+Tú
+50+ agencias pagando (MRR: ?750-1.500)
+Mes 16-18: Automatización y eficiencia
+Targa
+Responsable
+Deliverable
+Automatizar moderación de reseñas (IA básica)
+Desarrollador
+Sistema de flagging automático
+Automatizar claims de agencias (verificación semi-auto)
+Desarrollador
+Proceso de claim más rápido
+Optimizar infraestructura (reducir costes)
+Desarrollador
+Costes &lt;?50/mes con 10k+ usuarios
+Implementar email marketing (newsletters, onboarding)
+Desarrollador + Tú
+Flujos de email automáticos
+Criterio de éxito de Fase 5
+? 20.000+ visitas únicas mensuales
+? 5.000+ usuarios registrados
+? 2.000+ reseñas publicadas
+? 2.000+ agencias indexadas (España completa)
+? 50+ agencias premium (MRR: ?750-1.500)
+? Menciones en prensa nacional
+Fase 6 - considerations de Futuro (Mes 18+)
+Opciones estratégicas (evaluar según métricas):
+Expansión internacional (Latam o Europa): solo si España funciona muy bien y hay demanda
+Añadir funzionalitàes premium para usuarios: alerts de nuevas reseñas, comparador de agencias, etc.
+Vender la plataforma: si hay tracción real (10k+ usuarios, ?2k+ MRR), puede ser un exit interesante para portales inmobiliarios
+Mantener como negocio rentable pequeño: si el objetivo es "rentable y corra solo", con 50-100 agencias premium y publicidad contextual puedes tener un negocio de ?2k-5k/mes con costes muy bajos
+Métricas de Éxito por Fase
+Fase
+Usuarios
+Reseñas
+Agencias
+MRR
+Fase 1 (MVP)
+N/A
+N/A
+100
+?0
+Fase 2 (Beta)
+20-30
+50+
+100
+?0
+Fase 3 (Lanzamiento)
+100+
+100+
+100
+?0-50
+Fase 4 (Top 10)
+1.000+
+500+
+500+
+?150-600
+Fase 5 (España)
+5.000+
+2.000+
+2.000+
+?750-1.500
+Fase 6 (Futuro)
+20.000+
+5.000+
+5.000+
+?2.000-5.000+
+Riesgos por Fase y Mitigaciones
+Fase
+Riesgo principal
+Mitigación
+Fase 1
+No terminar el MVP en 8 semanas
+Congelar scope, no añadir features nuevas
+Fase 2
+Pocos betatesters o feedback insuficiente
+Invitar a 20-30 personas, no solo 10
+Fase 3
+Lanzamiento sin tracción orgánica
+Escribir 10+ artículos SEO antes de lanzar
+Fase 4
+Agencias no pagan perfiles premium
+Validar pricing con 5-10 agencias antes de escalar
+Fase 5
+Costes de infraestructura se disparan
+Monitorizar desde el inicio, optimizar queries
+Fase 6
+Burnout del fundador
+tener un plan claro de mantenimiento o salida
+Responsables y Recursos
+Rol
+Responsable
+Tiempo estimado
+Rol
+Responsable
+Tiempo estimado
+Producto y estrategia
+Tú
+5-10h/semana (Fase 1-3), 10-20h/semana (Fase 4-5)
+Desarrollo
+Tu desarrollador
+20-40h/semana (Fase 1), 10-20h/semana (Fase 2-3), 5-10h/semana (Fase 4-5)
+Legal
+Abogado externo
+5-10h total (Fase 0)
+Marketing y partnerships
+Tú
+5-10h/semana (Fase 3-5)
+
