@@ -1,4 +1,4 @@
-import type { Agency, AgencyWithStats } from "@/lib/domain/types";
+import type { Agency, AgencyWithStats, ReviewWithResponse } from "@/lib/domain/types";
 import type { Repository } from "@/lib/repositories/types";
 
 export class AgencyService {
@@ -33,9 +33,16 @@ export class AgencyService {
     if (!agency) return undefined;
 
     const reviews = await this.repo.listReviewsByAgency(agency.id);
+    const reviewsWithResponses: ReviewWithResponse[] = await Promise.all(
+      reviews.map(async (review) => ({
+        ...review,
+        response: (await this.repo.findResponseByReviewId(review.id)) ?? undefined,
+      })),
+    );
+
     return {
       ...(await this.withStats(agency)),
-      reviews: reviews.sort(
+      reviews: reviewsWithResponses.sort(
         (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
       ),
     };

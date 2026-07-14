@@ -67,6 +67,10 @@ export interface AgencyWithStats extends Agency {
   reviewCount: number;
 }
 
+export interface ReviewWithResponse extends Review {
+  response?: AgencyResponse;
+}
+
 export interface PendingVerification {
   phone: string;
   code: string;

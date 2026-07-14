@@ -79,9 +79,8 @@ export class ClaimService {
       throw new ClaimError("Phone verification required");
     }
 
-    const agency = await this.repo.findAgencyById(agencyId);
-    if (!agency?.verified) {
-      throw new ClaimError("Agency must be verified to respond");
+    if (!(await this.canManageAgency(user, agencyId))) {
+      throw new ClaimError("Not authorized to respond for this agency");
     }
 
     const data = agencyResponseSchema.parse(input);
@@ -103,5 +102,20 @@ export class ClaimService {
 
     await this.repo.createAgencyResponse(response);
     return response;
+  }
+
+  async canManageAgency(user: User | undefined, agencyId: string) {
+    if (!user?.phoneVerified) return false;
+
+    const agency = await this.repo.findAgencyById(agencyId);
+    if (!agency?.verified) return false;
+
+    const claims = await this.repo.listClaims();
+    return claims.some(
+      (claim) =>
+        claim.agencyId === agencyId &&
+        claim.userId === user.id &&
+        claim.status === "aprobado",
+    );
   }
 }

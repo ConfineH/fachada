@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { AgencyOwnerPanel } from "@/components/agency-owner-panel";
 import { ClaimForm } from "@/components/claim-form";
 import { DevBanner } from "@/components/dev-banner";
 import { ReviewForm } from "@/components/review-form";
@@ -14,6 +15,18 @@ export default async function AgencyPage({
   const { slug } = await params;
   const agency = await agencyService.getBySlug(slug);
   if (!agency) notFound();
+
+  const reviewsForOwner = agency.reviews.map((review) => ({
+    id: review.id,
+    title: review.title,
+    body: review.body,
+    response: review.response
+      ? {
+          body: review.response.body,
+          createdAt: review.response.createdAt.toISOString(),
+        }
+      : undefined,
+  }));
 
   return (
     <div className="min-h-screen bg-stone-50 text-stone-900">
@@ -70,6 +83,19 @@ export default async function AgencyPage({
                 </div>
                 <h3 className="mt-2 text-lg font-semibold">{review.title}</h3>
                 <p className="mt-2 text-stone-700">{review.body}</p>
+                {review.response && (
+                  <div className="mt-4 rounded-lg border border-emerald-100 bg-emerald-50 p-4">
+                    <p className="text-sm font-medium text-emerald-900">
+                      Respuesta de la inmobiliaria
+                    </p>
+                    <p className="mt-2 text-sm text-emerald-950">
+                      {review.response.body}
+                    </p>
+                    <p className="mt-2 text-xs text-emerald-800">
+                      {review.response.createdAt.toLocaleDateString("es-ES")}
+                    </p>
+                  </div>
+                )}
                 <p className="mt-3 text-xs text-stone-500">
                   {review.createdAt.toLocaleDateString("es-ES")}
                 </p>
@@ -79,6 +105,11 @@ export default async function AgencyPage({
         </section>
 
         <aside className="space-y-6">
+          <AgencyOwnerPanel
+            agencySlug={slug}
+            agencyVerified={agency.verified}
+            reviews={reviewsForOwner}
+          />
           <ReviewForm agencyId={agency.id} />
           <ClaimForm agencyId={agency.id} agencyClaimed={agency.claimed} />
         </aside>
