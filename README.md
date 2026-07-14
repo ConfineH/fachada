@@ -75,7 +75,8 @@ Migraciones en `supabase/migrations/`.
 
 This project uses Spec-Driven Development. Artifacts live in `openspec/`:
 
-- `openspec/changes/mvp-web-app/` — active MVP change
+- `openspec/changes/archive/2026-07-14-mvp-web-app/` — completed MVP change
+- `openspec/specs/` — main specifications (source of truth)
 - `openspec/config.yaml` — project config with `strict_tdd: true`
 
 ## Seed Data
