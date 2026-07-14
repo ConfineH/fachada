@@ -18,7 +18,9 @@ function createRepository(): Repository {
 
 const repo = createRepository();
 const sms = new MockSmsProvider();
-const exposeDevCode = process.env.NODE_ENV !== "production";
+const exposeDevCode =
+  process.env.NODE_ENV !== "production" ||
+  process.env.EXPOSE_DEV_SMS_CODE === "true";
 
 export const authService = new AuthService(repo, sms, exposeDevCode);
 export const agencyService = new AgencyService(repo);

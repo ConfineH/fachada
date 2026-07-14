@@ -82,6 +82,24 @@ This project uses Spec-Driven Development. Artifacts live in `openspec/`:
 
 3 agencies are preloaded: 2 in Madrid, 1 in Barcelona.
 
+## Deploy en Vercel (preview sin Supabase)
+
+Para una demo navegable sin gastar un slot de Supabase cloud:
+
+1. Push a GitHub y conecta el repo en [Vercel](https://vercel.com/new)
+2. Variables de entorno en el proyecto:
+   - `ADMIN_PASSWORD` — contraseña del panel `/admin`
+   - `EXPOSE_DEV_SMS_CODE=true` — muestra códigos SMS en preview (sin Twilio)
+3. **No** configures `SUPABASE_SERVICE_ROLE_KEY` → la app usa memoria
+
+**Limitaciones del modo memoria en Vercel:** los datos viven en la instancia serverless y pueden resetearse entre peticiones o cold starts. Sirve para demo rápida (buscar, navegar, probar flujos en caliente), no para producción. Cuando tengas slot Supabase, añade las keys y los datos persisten.
+
+```bash
+git push origin main
+npx vercel          # preview
+npx vercel --prod   # producción (recomendado solo con Supabase)
+```
+
 ## License
 
 Private — all rights reserved.
