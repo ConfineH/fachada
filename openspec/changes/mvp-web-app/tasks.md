@@ -24,7 +24,7 @@
 
 - [x] 4.1 Run `npm test` — all green
 - [x] 4.2 Run `npm run build` — succeeds
-- [ ] 4.3 Push to GitHub
+- [x] 4.3 Push to GitHub
 
 ## Review Workload Forecast
 
