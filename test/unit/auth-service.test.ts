@@ -25,14 +25,24 @@ describe("AuthService", () => {
     await service.requestCode("+34600123456");
     const code = sms.lastCodeFor("+34600123456")!;
 
-    const session = service.verifyCode("+34600123456", code);
-    const user = service.getUserFromSession(session.token);
+    const session = await service.verifyCode("+34600123456", code);
+    const user = await service.getUserFromSession(session.token);
 
     expect(user?.phoneVerified).toBe(true);
   });
 
+  it("returns dev code when enabled for local testing", async () => {
+    const devService = new AuthService(store, sms, true);
+    const result = await devService.requestCode("+34600123456");
+
+    expect(result.devCode).toMatch(/^\d{6}$/);
+    expect(result.devCode).toBe(sms.lastCodeFor("+34600123456"));
+  });
+
   it("rejects wrong code", async () => {
     await service.requestCode("+34600123456");
-    expect(() => service.verifyCode("+34600123456", "000000")).toThrow(AuthError);
+    await expect(service.verifyCode("+34600123456", "000000")).rejects.toThrow(
+      AuthError,
+    );
   });
 });

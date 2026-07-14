@@ -19,58 +19,63 @@ export class AuthService {
   constructor(
     private readonly repo: Repository,
     private readonly sms: SmsProvider,
+    private readonly exposeDevCode = false,
   ) {}
 
   async requestCode(rawPhone: string) {
     const phone = spanishPhoneSchema.parse(rawPhone);
     const code = String(randomInt(100000, 999999));
 
-    let user = this.repo.findUserByPhone(phone);
-    if (!user) user = this.repo.createUser(phone);
+    let user = await this.repo.findUserByPhone(phone);
+    if (!user) user = await this.repo.createUser(phone);
 
-    this.repo.savePendingVerification({
+    await this.repo.savePendingVerification({
       phone,
       code,
       expiresAt: new Date(Date.now() + CODE_TTL_MS),
     });
 
     await this.sms.sendCode(phone, code);
-    return { phone, userId: user.id };
+    return {
+      phone,
+      userId: user.id,
+      ...(this.exposeDevCode ? { devCode: code } : {}),
+    };
   }
 
-  verifyCode(rawPhone: string, rawCode: string): Session {
+  async verifyCode(rawPhone: string, rawCode: string): Promise<Session> {
     const phone = spanishPhoneSchema.parse(rawPhone);
     const code = verificationCodeSchema.parse(rawCode);
 
-    const pending = this.repo.getPendingVerification(phone);
+    const pending = await this.repo.getPendingVerification(phone);
     if (!pending) throw new AuthError("No pending verification");
     if (pending.expiresAt < new Date()) {
-      this.repo.deletePendingVerification(phone);
+      await this.repo.deletePendingVerification(phone);
       throw new AuthError("Verification code expired");
     }
     if (pending.code !== code) throw new AuthError("Invalid verification code");
 
-    const user = this.repo.findUserByPhone(phone);
+    const user = await this.repo.findUserByPhone(phone);
     if (!user) throw new AuthError("User not found");
 
     user.phoneVerified = true;
     user.lastActivityAt = new Date();
-    this.repo.updateUser(user);
-    this.repo.deletePendingVerification(phone);
+    await this.repo.updateUser(user);
+    await this.repo.deletePendingVerification(phone);
 
     const session: Session = {
       token: randomBytes(32).toString("hex"),
       userId: user.id,
       expiresAt: new Date(Date.now() + SESSION_TTL_MS),
     };
-    this.repo.createSession(session);
+    await this.repo.createSession(session);
     return session;
   }
 
-  getUserFromSession(token: string | undefined) {
+  async getUserFromSession(token: string | undefined) {
     if (!token) return undefined;
-    const session = this.repo.findSessionByToken(token);
+    const session = await this.repo.findSessionByToken(token);
     if (!session || session.expiresAt < new Date()) return undefined;
-    return this.repo.findUserById(session.userId);
+    return (await this.repo.findUserById(session.userId)) ?? undefined;
   }
 }

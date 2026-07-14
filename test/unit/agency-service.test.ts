@@ -12,24 +12,24 @@ describe("AgencyService.search", () => {
     service = new AgencyService(store);
   });
 
-  it("filters agencies by city", () => {
-    const results = service.search("Madrid");
+  it("filters agencies by city", async () => {
+    const results = await service.search("Madrid");
     expect(results.length).toBe(2);
     expect(results.every((a) => a.city === "Madrid")).toBe(true);
   });
 
-  it("filters agencies by name", () => {
-    const results = service.search("Sol");
+  it("filters agencies by name", async () => {
+    const results = await service.search("Sol");
     expect(results).toHaveLength(1);
     expect(results[0]?.name).toBe("Inmobiliaria Sol");
   });
 
-  it("sorts by average rating descending", () => {
-    const agencies = store.listAgencies();
+  it("sorts by average rating descending", async () => {
+    const agencies = await store.listAgencies();
     const madrid = agencies.find((a) => a.name === "Inmobiliaria Sol")!;
     const other = agencies.find((a) => a.name === "Gestión Urbana")!;
 
-    store.createReview({
+    await store.createReview({
       id: crypto.randomUUID(),
       userId: crypto.randomUUID(),
       agencyId: madrid.id,
@@ -42,7 +42,7 @@ describe("AgencyService.search", () => {
       flagged: false,
     });
 
-    store.createReview({
+    await store.createReview({
       id: crypto.randomUUID(),
       userId: crypto.randomUUID(),
       agencyId: other.id,
@@ -55,7 +55,7 @@ describe("AgencyService.search", () => {
       flagged: false,
     });
 
-    const results = service.search("Madrid");
+    const results = await service.search("Madrid");
     expect(results[0]?.name).toBe("Inmobiliaria Sol");
   });
 });

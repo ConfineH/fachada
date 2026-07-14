@@ -7,7 +7,7 @@ export async function GET(
   { params }: { params: Promise<{ slug: string }> },
 ) {
   const { slug } = await params;
-  const agency = agencyService.getBySlug(slug);
+  const agency = await agencyService.getBySlug(slug);
   if (!agency) {
     return NextResponse.json({ error: "Agency not found" }, { status: 404 });
   }

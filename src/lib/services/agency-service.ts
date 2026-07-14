@@ -4,9 +4,9 @@ import type { Repository } from "@/lib/repositories/types";
 export class AgencyService {
   constructor(private readonly repo: Repository) {}
 
-  search(query?: string): AgencyWithStats[] {
+  async search(query?: string): Promise<AgencyWithStats[]> {
     const normalized = query?.trim().toLowerCase() ?? "";
-    const agencies = this.repo.listAgencies();
+    const agencies = await this.repo.listAgencies();
 
     const filtered = normalized
       ? agencies.filter(
@@ -16,29 +16,33 @@ export class AgencyService {
         )
       : agencies;
 
-    return filtered
-      .map((agency) => this.withStats(agency))
-      .sort((a, b) => {
-        if (b.averageRating !== a.averageRating) {
-          return b.averageRating - a.averageRating;
-        }
-        return b.reviewCount - a.reviewCount;
-      });
+    const withStats = await Promise.all(
+      filtered.map((agency) => this.withStats(agency)),
+    );
+
+    return withStats.sort((a, b) => {
+      if (b.averageRating !== a.averageRating) {
+        return b.averageRating - a.averageRating;
+      }
+      return b.reviewCount - a.reviewCount;
+    });
   }
 
-  getBySlug(slug: string) {
-    const agency = this.repo.findAgencyBySlug(slug);
+  async getBySlug(slug: string) {
+    const agency = await this.repo.findAgencyBySlug(slug);
     if (!agency) return undefined;
+
+    const reviews = await this.repo.listReviewsByAgency(agency.id);
     return {
-      ...this.withStats(agency),
-      reviews: this.repo
-        .listReviewsByAgency(agency.id)
-        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()),
+      ...(await this.withStats(agency)),
+      reviews: reviews.sort(
+        (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
+      ),
     };
   }
 
-  private withStats(agency: Agency): AgencyWithStats {
-    const reviews = this.repo.listReviewsByAgency(agency.id);
+  private async withStats(agency: Agency): Promise<AgencyWithStats> {
+    const reviews = await this.repo.listReviewsByAgency(agency.id);
     const reviewCount = reviews.length;
     const averageRating =
       reviewCount === 0

@@ -17,19 +17,19 @@ describe("ReviewService", () => {
     sms = new MockSmsProvider();
     auth = new AuthService(store, sms);
     service = new ReviewService(store);
-    agencyId = store.listAgencies()[0]!.id;
+    agencyId = (await store.listAgencies())[0]!.id;
   });
 
   async function verifiedUser() {
     await auth.requestCode("+34600111222");
     const code = sms.lastCodeFor("+34600111222")!;
-    const session = auth.verifyCode("+34600111222", code);
-    return auth.getUserFromSession(session.token)!;
+    const session = await auth.verifyCode("+34600111222", code);
+    return auth.getUserFromSession(session.token);
   }
 
-  it("rejects unverified users", () => {
-    const user = store.createUser("+34600999888");
-    expect(() =>
+  it("rejects unverified users", async () => {
+    const user = await store.createUser("+34600999888");
+    await expect(
       service.create(user, {
         agencyId,
         role: "inquilino",
@@ -37,12 +37,12 @@ describe("ReviewService", () => {
         title: "Buena experiencia",
         body: "La gestión fue rápida y clara en todo momento.",
       }),
-    ).toThrow(ReviewError);
+    ).rejects.toThrow(ReviewError);
   });
 
   it("creates review for verified user", async () => {
     const user = await verifiedUser();
-    const review = service.create(user, {
+    const review = await service.create(user, {
       agencyId,
       role: "inquilino",
       rating: 4,
@@ -56,7 +56,7 @@ describe("ReviewService", () => {
 
   it("enforces 7-day rate limit per agency", async () => {
     const user = await verifiedUser();
-    service.create(user, {
+    await service.create(user, {
       agencyId,
       role: "inquilino",
       rating: 5,
@@ -64,7 +64,7 @@ describe("ReviewService", () => {
       body: "Todo correcto con la gestión del alquiler.",
     });
 
-    expect(() =>
+    await expect(
       service.create(user, {
         agencyId,
         role: "propietario",
@@ -72,12 +72,12 @@ describe("ReviewService", () => {
         title: "Segunda reseña",
         body: "Intento de segunda reseña en la misma agencia.",
       }),
-    ).toThrow(/Rate limit/);
+    ).rejects.toThrow(/Rate limit/);
   });
 
   it("rejects invalid rating", async () => {
     const user = await verifiedUser();
-    expect(() =>
+    await expect(
       service.create(user, {
         agencyId,
         role: "inquilino",
@@ -85,6 +85,6 @@ describe("ReviewService", () => {
         title: "Mala",
         body: "Rating inválido para probar validación.",
       }),
-    ).toThrow();
+    ).rejects.toThrow();
   });
 });

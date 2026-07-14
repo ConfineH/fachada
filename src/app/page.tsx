@@ -1,7 +1,8 @@
 import Link from "next/link";
 
-import { agencyService } from "@/lib/container";
+import { DevBanner } from "@/components/dev-banner";
 import { SearchForm } from "@/components/search-form";
+import { agencyService, usingSupabase } from "@/lib/container";
 
 export default async function Home({
   searchParams,
@@ -9,10 +10,11 @@ export default async function Home({
   searchParams: Promise<{ q?: string }>;
 }) {
   const { q } = await searchParams;
-  const agencies = agencyService.search(q);
+  const agencies = await agencyService.search(q);
 
   return (
     <div className="min-h-screen bg-stone-50 text-stone-900">
+      <DevBanner storage={usingSupabase() ? "supabase" : "memory"} />
       <header className="border-b border-stone-200 bg-white">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-5">
           <div>

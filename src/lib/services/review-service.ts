@@ -16,22 +16,21 @@ export class ReviewError extends Error {
 export class ReviewService {
   constructor(private readonly repo: Repository) {}
 
-  create(user: User | undefined, input: unknown): Review {
+  async create(user: User | undefined, input: unknown): Promise<Review> {
     if (!user?.phoneVerified) {
       throw new ReviewError("Phone verification required");
     }
 
     const data = reviewInputSchema.parse(input);
-    const agency = this.repo.findAgencyById(data.agencyId);
+    const agency = await this.repo.findAgencyById(data.agencyId);
     if (!agency) throw new ReviewError("Agency not found");
 
-    const recent = this.repo
-      .listReviewsByUser(user.id)
-      .find(
-        (r) =>
-          r.agencyId === data.agencyId &&
-          Date.now() - r.createdAt.getTime() < RATE_LIMIT_MS,
-      );
+    const userReviews = await this.repo.listReviewsByUser(user.id);
+    const recent = userReviews.find(
+      (r) =>
+        r.agencyId === data.agencyId &&
+        Date.now() - r.createdAt.getTime() < RATE_LIMIT_MS,
+    );
 
     if (recent) {
       throw new ReviewError("Rate limit: one review per agency every 7 days");
@@ -50,7 +49,7 @@ export class ReviewService {
       flagged: false,
     };
 
-    this.repo.createReview(review);
+    await this.repo.createReview(review);
     return review;
   }
 }

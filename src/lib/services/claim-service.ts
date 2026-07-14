@@ -17,13 +17,13 @@ export class ClaimError extends Error {
 export class ClaimService {
   constructor(private readonly repo: Repository) {}
 
-  submit(user: User | undefined, input: unknown): Claim {
+  async submit(user: User | undefined, input: unknown): Promise<Claim> {
     if (!user?.phoneVerified) {
       throw new ClaimError("Phone verification required");
     }
 
     const data = claimInputSchema.parse(input);
-    const agency = this.repo.findAgencyById(data.agencyId);
+    const agency = await this.repo.findAgencyById(data.agencyId);
     if (!agency) throw new ClaimError("Agency not found");
     if (agency.claimed) throw new ClaimError("Agency already claimed");
 
@@ -39,15 +39,15 @@ export class ClaimService {
       requestedAt: new Date(),
     };
 
-    this.repo.createClaim(claim);
+    await this.repo.createClaim(claim);
     return claim;
   }
 
-  approve(claimId: string): Claim {
-    const claim = this.repo.findClaimById(claimId);
+  async approve(claimId: string): Promise<Claim> {
+    const claim = await this.repo.findClaimById(claimId);
     if (!claim) throw new ClaimError("Claim not found");
 
-    const agency = this.repo.findAgencyById(claim.agencyId);
+    const agency = await this.repo.findAgencyById(claim.agencyId);
     if (!agency) throw new ClaimError("Agency not found");
 
     claim.status = "aprobado";
@@ -55,28 +55,41 @@ export class ClaimService {
     agency.claimed = true;
     agency.verified = true;
 
-    this.repo.updateClaim(claim);
-    this.repo.updateAgency(agency);
+    await this.repo.updateClaim(claim);
+    await this.repo.updateAgency(agency);
     return claim;
   }
 
-  respond(user: User | undefined, agencyId: string, input: unknown): AgencyResponse {
+  async reject(claimId: string): Promise<Claim> {
+    const claim = await this.repo.findClaimById(claimId);
+    if (!claim) throw new ClaimError("Claim not found");
+
+    claim.status = "rechazado";
+    claim.resolvedAt = new Date();
+    await this.repo.updateClaim(claim);
+    return claim;
+  }
+
+  async respond(
+    user: User | undefined,
+    agencyId: string,
+    input: unknown,
+  ): Promise<AgencyResponse> {
     if (!user?.phoneVerified) {
       throw new ClaimError("Phone verification required");
     }
 
-    const agency = this.repo.findAgencyById(agencyId);
+    const agency = await this.repo.findAgencyById(agencyId);
     if (!agency?.verified) {
       throw new ClaimError("Agency must be verified to respond");
     }
 
     const data = agencyResponseSchema.parse(input);
-    const review = this.repo
-      .listReviewsByAgency(agencyId)
-      .find((r) => r.id === data.reviewId);
+    const reviews = await this.repo.listReviewsByAgency(agencyId);
+    const review = reviews.find((r) => r.id === data.reviewId);
     if (!review) throw new ClaimError("Review not found");
 
-    if (this.repo.findResponseByReviewId(data.reviewId)) {
+    if (await this.repo.findResponseByReviewId(data.reviewId)) {
       throw new ClaimError("Review already has a response");
     }
 
@@ -88,7 +101,7 @@ export class ClaimService {
       createdAt: new Date(),
     };
 
-    this.repo.createAgencyResponse(response);
+    await this.repo.createAgencyResponse(response);
     return response;
   }
 }

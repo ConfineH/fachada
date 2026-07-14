@@ -91,16 +91,16 @@ export class MemoryStore implements Repository {
     this.seedAgencies();
   }
 
-  findUserByPhone(phone: string) {
+  async findUserByPhone(phone: string) {
     const id = this.usersByPhone.get(phone);
-    return id ? this.users.get(id) : undefined;
+    return id ? (this.users.get(id) ?? null) : null;
   }
 
-  findUserById(id: string) {
-    return this.users.get(id);
+  async findUserById(id: string) {
+    return this.users.get(id) ?? null;
   }
 
-  createUser(phone: string): User {
+  async createUser(phone: string) {
     const user: User = {
       id: randomUUID(),
       phone,
@@ -113,89 +113,104 @@ export class MemoryStore implements Repository {
     return user;
   }
 
-  updateUser(user: User) {
+  async updateUser(user: User) {
     this.users.set(user.id, user);
   }
 
-  savePendingVerification(verification: PendingVerification) {
+  async savePendingVerification(verification: PendingVerification) {
     this.pendingVerifications.set(verification.phone, verification);
   }
 
-  getPendingVerification(phone: string) {
-    return this.pendingVerifications.get(phone);
+  async getPendingVerification(phone: string) {
+    return this.pendingVerifications.get(phone) ?? null;
   }
 
-  deletePendingVerification(phone: string) {
+  async deletePendingVerification(phone: string) {
     this.pendingVerifications.delete(phone);
   }
 
-  createSession(session: Session) {
+  async createSession(session: Session) {
     this.sessions.set(session.token, session);
   }
 
-  findSessionByToken(token: string) {
-    return this.sessions.get(token);
+  async findSessionByToken(token: string) {
+    return this.sessions.get(token) ?? null;
   }
 
-  listAgencies() {
+  async listAgencies() {
     return [...this.agencies.values()];
   }
 
-  findAgencyById(id: string) {
-    return this.agencies.get(id);
+  async findAgencyById(id: string) {
+    return this.agencies.get(id) ?? null;
   }
 
-  findAgencyBySlug(slug: string) {
+  async findAgencyBySlug(slug: string) {
     const id = this.agenciesBySlug.get(slug);
-    return id ? this.agencies.get(id) : undefined;
+    return id ? (this.agencies.get(id) ?? null) : null;
   }
 
-  updateAgency(agency: Agency) {
+  async updateAgency(agency: Agency) {
     this.agencies.set(agency.id, agency);
     this.agenciesBySlug.set(agency.slug, agency.id);
   }
 
-  listReviewsByAgency(agencyId: string) {
+  async listReviewsByAgency(agencyId: string) {
     return this.reviews.filter((r) => r.agencyId === agencyId);
   }
 
-  listReviewsByUser(userId: string) {
+  async listReviewsByUser(userId: string) {
     return this.reviews.filter((r) => r.userId === userId);
   }
 
-  createReview(review: Review) {
+  async listAllReviews() {
+    return [...this.reviews].sort(
+      (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
+    );
+  }
+
+  async findReviewById(id: string) {
+    return this.reviews.find((r) => r.id === id) ?? null;
+  }
+
+  async updateReview(review: Review) {
+    const index = this.reviews.findIndex((r) => r.id === review.id);
+    if (index >= 0) this.reviews[index] = review;
+  }
+
+  async createReview(review: Review) {
     this.reviews.push(review);
   }
 
-  createClaim(claim: Claim) {
+  async createClaim(claim: Claim) {
     this.claims.push(claim);
   }
 
-  listClaims() {
+  async listClaims() {
     return [...this.claims];
   }
 
-  findClaimById(id: string) {
-    return this.claims.find((c) => c.id === id);
+  async findClaimById(id: string) {
+    return this.claims.find((c) => c.id === id) ?? null;
   }
 
-  updateClaim(claim: Claim) {
+  async updateClaim(claim: Claim) {
     const index = this.claims.findIndex((c) => c.id === claim.id);
     if (index >= 0) this.claims[index] = claim;
   }
 
-  findResponseByReviewId(reviewId: string) {
-    return this.responses.get(reviewId);
+  async findResponseByReviewId(reviewId: string) {
+    return this.responses.get(reviewId) ?? null;
   }
 
-  createAgencyResponse(response: AgencyResponse) {
+  async createAgencyResponse(response: AgencyResponse) {
     this.responses.set(response.reviewId, response);
   }
 }
 
 let globalStore: MemoryStore | null = null;
 
-export function getStore(): MemoryStore {
+export function getMemoryStore(): MemoryStore {
   if (!globalStore) globalStore = new MemoryStore();
   return globalStore;
 }

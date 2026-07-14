@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { ClaimForm } from "@/components/claim-form";
+import { DevBanner } from "@/components/dev-banner";
 import { ReviewForm } from "@/components/review-form";
-import { agencyService } from "@/lib/container";
+import { agencyService, usingSupabase } from "@/lib/container";
 
 export default async function AgencyPage({
   params,
@@ -10,11 +12,12 @@ export default async function AgencyPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const agency = agencyService.getBySlug(slug);
+  const agency = await agencyService.getBySlug(slug);
   if (!agency) notFound();
 
   return (
     <div className="min-h-screen bg-stone-50 text-stone-900">
+      <DevBanner storage={usingSupabase() ? "supabase" : "memory"} />
       <header className="border-b border-stone-200 bg-white">
         <div className="mx-auto max-w-5xl px-6 py-5">
           <Link href="/" className="text-sm text-amber-700 hover:underline">
@@ -77,13 +80,7 @@ export default async function AgencyPage({
 
         <aside className="space-y-6">
           <ReviewForm agencyId={agency.id} />
-          <div className="rounded-xl border border-stone-200 bg-white p-5 text-sm text-stone-600">
-            <h3 className="font-medium text-stone-900">¿Eres esta inmobiliaria?</h3>
-            <p className="mt-2">
-              Reclama tu perfil para responder a reseñas y verificar tu
-              información de contacto.
-            </p>
-          </div>
+          <ClaimForm agencyId={agency.id} agencyClaimed={agency.claimed} />
         </aside>
       </main>
     </div>

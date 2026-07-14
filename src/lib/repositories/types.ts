@@ -9,37 +9,34 @@ import type {
 } from "@/lib/domain/types";
 
 export interface Repository {
-  // Users
-  findUserByPhone(phone: string): User | undefined;
-  findUserById(id: string): User | undefined;
-  createUser(phone: string): User;
-  updateUser(user: User): void;
+  findUserByPhone(phone: string): Promise<User | null>;
+  findUserById(id: string): Promise<User | null>;
+  createUser(phone: string): Promise<User>;
+  updateUser(user: User): Promise<void>;
 
-  // Auth
-  savePendingVerification(verification: PendingVerification): void;
-  getPendingVerification(phone: string): PendingVerification | undefined;
-  deletePendingVerification(phone: string): void;
-  createSession(session: Session): void;
-  findSessionByToken(token: string): Session | undefined;
+  savePendingVerification(verification: PendingVerification): Promise<void>;
+  getPendingVerification(phone: string): Promise<PendingVerification | null>;
+  deletePendingVerification(phone: string): Promise<void>;
+  createSession(session: Session): Promise<void>;
+  findSessionByToken(token: string): Promise<Session | null>;
 
-  // Agencies
-  listAgencies(): Agency[];
-  findAgencyById(id: string): Agency | undefined;
-  findAgencyBySlug(slug: string): Agency | undefined;
-  updateAgency(agency: Agency): void;
+  listAgencies(): Promise<Agency[]>;
+  findAgencyById(id: string): Promise<Agency | null>;
+  findAgencyBySlug(slug: string): Promise<Agency | null>;
+  updateAgency(agency: Agency): Promise<void>;
 
-  // Reviews
-  listReviewsByAgency(agencyId: string): Review[];
-  listReviewsByUser(userId: string): Review[];
-  createReview(review: Review): void;
+  listReviewsByAgency(agencyId: string): Promise<Review[]>;
+  listReviewsByUser(userId: string): Promise<Review[]>;
+  listAllReviews(): Promise<Review[]>;
+  findReviewById(id: string): Promise<Review | null>;
+  updateReview(review: Review): Promise<void>;
+  createReview(review: Review): Promise<void>;
 
-  // Claims
-  createClaim(claim: Claim): void;
-  listClaims(): Claim[];
-  findClaimById(id: string): Claim | undefined;
-  updateClaim(claim: Claim): void;
+  createClaim(claim: Claim): Promise<void>;
+  listClaims(): Promise<Claim[]>;
+  findClaimById(id: string): Promise<Claim | null>;
+  updateClaim(claim: Claim): Promise<void>;
 
-  // Agency responses
-  findResponseByReviewId(reviewId: string): AgencyResponse | undefined;
-  createAgencyResponse(response: AgencyResponse): void;
+  findResponseByReviewId(reviewId: string): Promise<AgencyResponse | null>;
+  createAgencyResponse(response: AgencyResponse): Promise<void>;
 }
