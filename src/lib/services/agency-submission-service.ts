@@ -91,7 +91,7 @@ export class AgencySubmissionService {
       postalCode: submission.postalCode.trim(),
       phonePublished,
       phone: phonePublished ? submission.phone!.trim() : "",
-      email: submission.email?.trim() ?? `pendiente+${submission.id}@fachada.local`,
+      email: submission.email?.trim() ?? "",
       website: submission.website,
       idealistaUrl: submission.idealistaUrl,
       claimed: false,

@@ -32,6 +32,7 @@ export function AccountVerification({
   const googleButtonRef = useRef<HTMLDivElement>(null);
   const onVerifiedRef = useRef(onVerified);
   onVerifiedRef.current = onVerified;
+  const [emailEnabled, setEmailEnabled] = useState<boolean | null>(null);
   const [step, setStep] = useState<Step>("email");
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
@@ -39,6 +40,21 @@ export function AccountVerification({
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    void fetch("/api/auth/methods")
+      .then((res) => res.json())
+      .then((data: { email?: boolean }) => {
+        if (!cancelled) setEmailEnabled(Boolean(data.email));
+      })
+      .catch(() => {
+        if (!cancelled) setEmailEnabled(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     if (!googleClientId) return;
@@ -173,6 +189,9 @@ export function AccountVerification({
     onVerified(data.token);
   }
 
+  const waitingForMethods = emailEnabled === null;
+  const noAuthReady = !googleClientId && emailEnabled === false;
+
   return (
     <div className="space-y-4">
       {error && (
@@ -187,14 +206,29 @@ export function AccountVerification({
         </p>
       )}
 
+      {waitingForMethods && !googleClientId && (
+        <p className="text-sm text-zinc-600">Comprobando cómo identificarte…</p>
+      )}
+
+      {noAuthReady && (
+        <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-950">
+          En este sitio aún no se puede identificar una cuenta: falta Google o
+          el envío de email. En local el código sale en pantalla, sin Resend.
+        </p>
+      )}
+
       {googleClientId && step === "email" && (
         <div>
           <div ref={googleButtonRef} className="flex min-h-11 justify-center" />
-          <p className="mt-3 text-center text-xs text-zinc-500">o con un código al email</p>
+          {emailEnabled ? (
+            <p className="mt-3 text-center text-xs text-zinc-500">
+              o con un código al email
+            </p>
+          ) : null}
         </div>
       )}
 
-      {step === "email" && (
+      {step === "email" && emailEnabled && (
         <form
           key="email"
           onSubmit={requestCode}

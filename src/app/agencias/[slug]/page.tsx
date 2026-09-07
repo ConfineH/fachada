@@ -7,7 +7,7 @@ import { ClaimForm } from "@/components/claim-form";
 import { PublicShell } from "@/components/public-shell";
 import { ReviewForm } from "@/components/review-form";
 import { RoleRatingSummary } from "@/components/role-rating-summary";
-import { agencyHasPublishedPhone } from "@/lib/domain/agency-contact";
+import { agencyHasPublishedPhone, publicAgencyEmail } from "@/lib/domain/agency-contact";
 import {
   agencyTrustedDomains,
   maskSpanishPhone,
@@ -48,9 +48,9 @@ export default async function AgencyPage({
         ? "Estás viendo la ficha con foco en propietarios."
         : null;
 
+  const publicEmail = publicAgencyEmail(agency.email);
   const trustedDomains = [...agencyTrustedDomains(agency)];
-  const emailDomainHint =
-    trustedDomains[0] ?? agency.email.split("@")[1] ?? "tudominio.es";
+  const emailDomainHint = trustedDomains[0] ?? "tudominio.es";
 
   const reviewsForClient = agency.reviews.map((review) => ({
     ...review,
@@ -99,7 +99,7 @@ export default async function AgencyPage({
                     Contacto no verificado (sin teléfono público)
                   </span>
                 )}
-                <span>{agency.email}</span>
+                {publicEmail ? <span>{publicEmail}</span> : null}
               </div>
             </div>
             <a

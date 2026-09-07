@@ -47,6 +47,11 @@ export function isResendConfigured() {
   );
 }
 
+/** Local/dev can mock OTP. Vercel production needs Resend. */
+export function isEmailAuthEnabled() {
+  return isResendConfigured() || process.env.NODE_ENV !== "production";
+}
+
 export function createEmailProvider(): EmailProvider {
   if (isResendConfigured()) {
     return new ResendEmailProvider(

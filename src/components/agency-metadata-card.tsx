@@ -47,11 +47,9 @@ export function AgencyMetadataCard({
           </div>
         )}
       </dl>
-      <div
-        className="mt-5 aspect-[4/3] rounded-lg border border-zinc-100 bg-gradient-to-br from-zinc-100 to-zinc-50"
-        role="img"
-        aria-label={`Ubicación aproximada en ${agency.city}`}
-      />
+      <p className="mt-5 text-xs text-zinc-500">
+        Sin plano. La dirección está en la cabecera de la ficha.
+      </p>
     </div>
   );
 }

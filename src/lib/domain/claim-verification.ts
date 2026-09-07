@@ -68,7 +68,13 @@ export function isFreeEmailDomain(domain: string) {
 export function agencyTrustedDomains(agency: Agency) {
   const domains = new Set<string>();
   const fromEmail = emailDomain(agency.email);
-  if (fromEmail && !isFreeEmailDomain(fromEmail)) domains.add(fromEmail);
+  if (
+    fromEmail &&
+    fromEmail !== "fachada.local" &&
+    !isFreeEmailDomain(fromEmail)
+  ) {
+    domains.add(fromEmail);
+  }
   const fromWeb = websiteDomain(agency.website);
   if (fromWeb) domains.add(fromWeb);
   return domains;

@@ -79,5 +79,6 @@ describe("AgencySubmissionService", () => {
     const agency = await adminService.approveAgencySubmission(submission.id);
     expect(agency.phonePublished).toBe(false);
     expect(agency.phone).toBe("");
+    expect(agency.email).toBe("");
   });
 });

@@ -8,7 +8,7 @@ const AUTH_ERROR_ES: Record<string, string> = {
   "SMS provider not configured":
     "El envío de SMS no está configurado en este entorno. Prueba más tarde.",
   "Email provider not configured":
-    "El envío de email no está configurado. Entra con Google o prueba más tarde.",
+    "El envío de email no está configurado en este entorno.",
   "Invalid Google token":
     "No se pudo entrar con Google. Inténtalo de nuevo.",
   "Verification code recently sent":
