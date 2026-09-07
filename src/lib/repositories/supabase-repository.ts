@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
   Agency,
   AgencyResponse,
+  AgencySubmission,
   Claim,
   PendingVerification,
   Review,
@@ -161,14 +162,45 @@ export class SupabaseRepository implements Repository {
         city: agency.city,
         postal_code: agency.postalCode,
         phone: agency.phone,
+        phone_published: agency.phonePublished,
         email: agency.email,
+        legal_name: agency.legalName ?? null,
+        legal_address: agency.legalAddress ?? null,
         website: agency.website ?? null,
         google_maps_url: agency.googleMapsUrl ?? null,
+        idealista_url: agency.idealistaUrl ?? null,
+        fotocasa_url: agency.fotocasaUrl ?? null,
         claimed: agency.claimed,
         verified: agency.verified,
         premium: agency.premium,
       })
       .eq("id", agency.id);
+    throwIfError(error);
+  }
+
+  async createAgency(agency: Agency) {
+    const { error } = await this.client.from("agencies").insert({
+      id: agency.id,
+      slug: agency.slug,
+      name: agency.name,
+      cif: agency.cif ?? null,
+      legal_name: agency.legalName ?? null,
+      legal_address: agency.legalAddress ?? null,
+      address: agency.address,
+      city: agency.city,
+      postal_code: agency.postalCode,
+      phone: agency.phone,
+      phone_published: agency.phonePublished,
+      email: agency.email,
+      website: agency.website ?? null,
+      google_maps_url: agency.googleMapsUrl ?? null,
+      idealista_url: agency.idealistaUrl ?? null,
+      fotocasa_url: agency.fotocasaUrl ?? null,
+      claimed: agency.claimed,
+      verified: agency.verified,
+      premium: agency.premium,
+      created_at: agency.createdAt.toISOString(),
+    });
     throwIfError(error);
   }
 
@@ -229,6 +261,7 @@ export class SupabaseRepository implements Repository {
       rating: review.rating,
       title: review.title,
       body: review.body,
+      incident_tags: review.incidentTags,
       created_at: review.createdAt.toISOString(),
       moderated: review.moderated,
       flagged: review.flagged,
@@ -244,7 +277,14 @@ export class SupabaseRepository implements Repository {
       contact_name: claim.contactName,
       contact_email: claim.contactEmail,
       contact_phone: claim.contactPhone,
+      representative_role: claim.representativeRole,
+      company_cif: claim.companyCif ?? null,
+      evidence: claim.evidence,
       documentation_urls: claim.documentationUrls,
+      attestation_accepted: claim.attestationAccepted,
+      business_phone_verified: claim.businessPhoneVerified,
+      verification_path: claim.verificationPath,
+      work_email_domain_match: claim.workEmailDomainMatch,
       status: claim.status,
       requested_at: claim.requestedAt.toISOString(),
       resolved_at: claim.resolvedAt?.toISOString() ?? null,
@@ -301,5 +341,210 @@ export class SupabaseRepository implements Repository {
       created_at: response.createdAt.toISOString(),
     });
     throwIfError(error);
+  }
+
+  async listAliasesByAgency(agencyId: string) {
+    const { data, error } = await this.client
+      .from("agency_name_aliases")
+      .select("*")
+      .eq("agency_id", agencyId);
+    throwIfError(error);
+    return (data ?? []).map((row) => ({
+      id: row.id as string,
+      agencyId: row.agency_id as string,
+      alias: row.alias as string,
+      kind: row.kind as "commercial" | "legal",
+      effectiveUntil: row.effective_until
+        ? new Date(row.effective_until as string)
+        : undefined,
+      sourceUrl: (row.source_url as string) ?? undefined,
+      note: (row.note as string) ?? undefined,
+    }));
+  }
+
+  async listAllAliases() {
+    const { data, error } = await this.client.from("agency_name_aliases").select("*");
+    throwIfError(error);
+    return (data ?? []).map((row) => ({
+      id: row.id as string,
+      agencyId: row.agency_id as string,
+      alias: row.alias as string,
+      kind: row.kind as "commercial" | "legal",
+      effectiveUntil: row.effective_until
+        ? new Date(row.effective_until as string)
+        : undefined,
+      sourceUrl: (row.source_url as string) ?? undefined,
+      note: (row.note as string) ?? undefined,
+    }));
+  }
+
+  async createAlias(alias: import("@/lib/domain/types").AgencyNameAlias) {
+    const { error } = await this.client.from("agency_name_aliases").insert({
+      id: alias.id,
+      agency_id: alias.agencyId,
+      alias: alias.alias,
+      kind: alias.kind,
+      effective_until: alias.effectiveUntil?.toISOString() ?? null,
+      source_url: alias.sourceUrl ?? null,
+      note: alias.note ?? null,
+    });
+    throwIfError(error);
+  }
+
+  async savePendingBusinessLineVerification(
+    userId: string,
+    agencyId: string,
+    verification: PendingVerification,
+  ) {
+    const { error } = await this.client
+      .from("pending_business_line_verifications")
+      .upsert({
+        user_id: userId,
+        agency_id: agencyId,
+        code: verification.code,
+        expires_at: verification.expiresAt.toISOString(),
+      });
+    throwIfError(error);
+  }
+
+  async getPendingBusinessLineVerification(userId: string, agencyId: string) {
+    const { data, error } = await this.client
+      .from("pending_business_line_verifications")
+      .select("*")
+      .eq("user_id", userId)
+      .eq("agency_id", agencyId)
+      .maybeSingle();
+    throwIfError(error);
+    if (!data) return null;
+    return {
+      phone: "",
+      code: data.code as string,
+      expiresAt: new Date(data.expires_at as string),
+    };
+  }
+
+  async deletePendingBusinessLineVerification(userId: string, agencyId: string) {
+    const { error } = await this.client
+      .from("pending_business_line_verifications")
+      .delete()
+      .eq("user_id", userId)
+      .eq("agency_id", agencyId);
+    throwIfError(error);
+  }
+
+  async markBusinessLineVerified(
+    userId: string,
+    agencyId: string,
+    expiresAt: Date,
+  ) {
+    const { error } = await this.client
+      .from("agency_business_line_verified")
+      .upsert({
+        user_id: userId,
+        agency_id: agencyId,
+        verified_at: new Date().toISOString(),
+        expires_at: expiresAt.toISOString(),
+      });
+    throwIfError(error);
+  }
+
+  async hasBusinessLineVerified(userId: string, agencyId: string) {
+    const { data, error } = await this.client
+      .from("agency_business_line_verified")
+      .select("expires_at")
+      .eq("user_id", userId)
+      .eq("agency_id", agencyId)
+      .maybeSingle();
+    throwIfError(error);
+    if (!data) return false;
+    return new Date(data.expires_at as string) > new Date();
+  }
+
+  async clearBusinessLineVerified(userId: string, agencyId: string) {
+    const { error } = await this.client
+      .from("agency_business_line_verified")
+      .delete()
+      .eq("user_id", userId)
+      .eq("agency_id", agencyId);
+    throwIfError(error);
+  }
+
+  async createAgencySubmission(submission: AgencySubmission) {
+    const { error } = await this.client.from("agency_submissions").insert({
+      id: submission.id,
+      user_id: submission.userId,
+      name: submission.name,
+      city: submission.city,
+      postal_code: submission.postalCode,
+      address: submission.address,
+      no_phone_online: submission.noPhoneOnline,
+      phone: submission.phone ?? null,
+      email: submission.email ?? null,
+      website: submission.website ?? null,
+      idealista_url: submission.idealistaUrl ?? null,
+      note: submission.note ?? null,
+      status: submission.status,
+      created_at: submission.createdAt.toISOString(),
+      resolved_at: submission.resolvedAt?.toISOString() ?? null,
+      created_agency_id: submission.createdAgencyId ?? null,
+      created_agency_slug: submission.createdAgencySlug ?? null,
+    });
+    throwIfError(error);
+  }
+
+  async listAgencySubmissions() {
+    const { data, error } = await this.client
+      .from("agency_submissions")
+      .select("*")
+      .order("created_at", { ascending: false });
+    throwIfError(error);
+    return (data ?? []).map((row) => this.mapSubmission(row));
+  }
+
+  async findAgencySubmissionById(id: string) {
+    const { data, error } = await this.client
+      .from("agency_submissions")
+      .select("*")
+      .eq("id", id)
+      .maybeSingle();
+    throwIfError(error);
+    return data ? this.mapSubmission(data) : null;
+  }
+
+  async updateAgencySubmission(submission: AgencySubmission) {
+    const { error } = await this.client
+      .from("agency_submissions")
+      .update({
+        status: submission.status,
+        resolved_at: submission.resolvedAt?.toISOString() ?? null,
+        created_agency_id: submission.createdAgencyId ?? null,
+        created_agency_slug: submission.createdAgencySlug ?? null,
+      })
+      .eq("id", submission.id);
+    throwIfError(error);
+  }
+
+  private mapSubmission(row: Record<string, unknown>): AgencySubmission {
+    return {
+      id: row.id as string,
+      userId: row.user_id as string,
+      name: row.name as string,
+      city: row.city as string,
+      postalCode: row.postal_code as string,
+      address: row.address as string,
+      noPhoneOnline: Boolean(row.no_phone_online),
+      phone: (row.phone as string) ?? undefined,
+      email: (row.email as string) ?? undefined,
+      website: (row.website as string) ?? undefined,
+      idealistaUrl: (row.idealista_url as string) ?? undefined,
+      note: (row.note as string) ?? undefined,
+      status: row.status as AgencySubmission["status"],
+      createdAt: new Date(row.created_at as string),
+      resolvedAt: row.resolved_at
+        ? new Date(row.resolved_at as string)
+        : undefined,
+      createdAgencyId: (row.created_agency_id as string) ?? undefined,
+      createdAgencySlug: (row.created_agency_slug as string) ?? undefined,
+    };
   }
 }

@@ -34,6 +34,12 @@ Los tests viven en `test/`, no junto al código fuente.
 
 ## Probar flujos manualmente
 
+### 0. Añadir inmobiliaria que no está en el listado
+1. Nav → **Añadir inmobiliaria** o http://localhost:3000/agregar-inmobiliaria
+2. Verificar tu móvil → datos de la oficina (nombre, ciudad, dirección, teléfono de la agencia **o** marcar *No hay teléfono publicado en internet*)
+3. `/admin` → sección **Nuevas inmobiliarias sugeridas** → **Publicar**
+4. Buscar la agencia en home y escribir reseña
+
 ### 1. Escribir reseña
 1. Home → Inmobiliaria Sol
 2. Panel "Escribir reseña" → teléfono `+34600111222`

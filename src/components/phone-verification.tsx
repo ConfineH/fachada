@@ -14,13 +14,15 @@ export function PhoneVerification({
   const [code, setCode] = useState("");
   const [devCode, setDevCode] = useState<string | null>(null);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
   const [loading, setLoading] = useState(false);
 
-  async function requestCode(event: FormEvent) {
-    event.preventDefault();
+  async function sendCode() {
     setLoading(true);
     setError("");
+    setNotice("");
     setDevCode(null);
+    setCode("");
 
     const res = await fetch("/api/auth/request-code", {
       method: "POST",
@@ -32,13 +34,19 @@ export function PhoneVerification({
 
     if (!res.ok) {
       setError(data.error ?? "Error al enviar código");
-      return;
+      return false;
     }
 
     if (typeof data.devCode === "string") {
       setDevCode(data.devCode);
     }
     setStep("code");
+    return true;
+  }
+
+  async function requestCode(event: FormEvent) {
+    event.preventDefault();
+    await sendCode();
   }
 
   async function verifyCode(event: FormEvent) {
@@ -55,7 +63,23 @@ export function PhoneVerification({
     setLoading(false);
 
     if (!res.ok) {
-      setError(data.error ?? "Código inválido");
+      const message = data.error ?? "Código inválido";
+      if (
+        typeof message === "string" &&
+        (message.includes("código activo") ||
+          message.includes("caducado") ||
+          message.includes("reiniciaste"))
+      ) {
+        setDevCode(null);
+        setCode("");
+        setStep("phone");
+        setError("");
+        setNotice(
+          "El código anterior ya no vale. Pulsa «Enviar código SMS» para recibir uno nuevo.",
+        );
+        return;
+      }
+      setError(message);
       return;
     }
 
@@ -65,22 +89,33 @@ export function PhoneVerification({
   return (
     <div>
       {error && (
-        <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p className="motion-fade-in rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
           {error}
         </p>
       )}
 
+      {notice && (
+        <p className="motion-fade-in rounded-lg bg-sky-50 px-3 py-2 text-sm text-sky-900">
+          {notice}
+        </p>
+      )}
+
       {step === "phone" && (
-        <form onSubmit={requestCode} className="space-y-3">
+        <form
+          key="phone"
+          onSubmit={requestCode}
+          className="motion-scale-in space-y-3"
+        >
           <input
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             placeholder="+34600123456"
-            className="w-full rounded-lg border border-stone-300 px-3 py-2"
+            className="input-field"
           />
           <button
+            type="submit"
             disabled={loading}
-            className="w-full rounded-lg bg-amber-700 py-2 font-medium text-white"
+            className="btn-primary w-full min-h-11"
           >
             Enviar código SMS
           </button>
@@ -88,9 +123,12 @@ export function PhoneVerification({
       )}
 
       {step === "code" && (
-        <form onSubmit={verifyCode} className="space-y-3">
+        <form key="code" onSubmit={verifyCode} className="motion-scale-in space-y-3">
+          <p className="text-sm text-zinc-600">
+            Código enviado a <strong>{phone}</strong>
+          </p>
           {devCode && (
-            <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">
+            <p className="motion-fade-in rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">
               Modo desarrollo: tu código es <strong>{devCode}</strong>
             </p>
           )}
@@ -98,14 +136,41 @@ export function PhoneVerification({
             value={code}
             onChange={(e) => setCode(e.target.value)}
             placeholder="Código de 6 dígitos"
-            className="w-full rounded-lg border border-stone-300 px-3 py-2"
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            className="input-field"
           />
           <button
+            type="submit"
             disabled={loading}
-            className="w-full rounded-lg bg-amber-700 py-2 font-medium text-white"
+            className="btn-primary w-full min-h-11"
           >
             Verificar
           </button>
+          <div className="flex flex-wrap gap-3 text-sm">
+            <button
+              type="button"
+              disabled={loading}
+              onClick={() => void sendCode()}
+              className="link-brand"
+            >
+              Reenviar código
+            </button>
+            <button
+              type="button"
+              disabled={loading}
+              onClick={() => {
+                setStep("phone");
+                setDevCode(null);
+                setCode("");
+                setError("");
+                setNotice("");
+              }}
+              className="text-zinc-600 hover:text-zinc-900"
+            >
+              Cambiar móvil
+            </button>
+          </div>
         </form>
       )}
     </div>

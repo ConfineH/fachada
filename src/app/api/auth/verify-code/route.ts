@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { authErrorMessage } from "@/lib/auth/auth-errors";
 import { authService } from "@/lib/container";
 
 export async function POST(request: Request) {
@@ -9,7 +10,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, token: session.token });
   } catch (error) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Invalid request" },
+      { error: authErrorMessage(error) },
       { status: 400 },
     );
   }

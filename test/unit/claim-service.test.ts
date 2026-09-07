@@ -1,11 +1,27 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { MemoryStore } from "@/lib/repositories/memory-store";
+import { AgencySubmissionService } from "@/lib/services/agency-submission-service";
 import { AdminService } from "@/lib/services/admin-service";
 import { AuthService } from "@/lib/services/auth-service";
 import { ClaimError, ClaimService } from "@/lib/services/claim-service";
 import { ReviewService } from "@/lib/services/review-service";
 import { MockSmsProvider } from "@/lib/services/sms-provider";
+
+const validClaimPayload = {
+  contactName: "Ana García",
+  contactEmail: "ana@inmobiliariasol.es",
+  contactPhone: "+34600333444",
+  representativeRole: "administrador" as const,
+  companyCif: "B12345678",
+  evidence: [
+    {
+      type: "cif_document" as const,
+      url: "https://example.com/cif.pdf",
+    },
+  ],
+  attestationAccepted: true as const,
+};
 
 describe("ClaimService and AdminService", () => {
   let store: MemoryStore;
@@ -21,7 +37,8 @@ describe("ClaimService and AdminService", () => {
     sms = new MockSmsProvider();
     auth = new AuthService(store, sms);
     claimService = new ClaimService(store);
-    adminService = new AdminService(store, claimService);
+    const submissionService = new AgencySubmissionService(store);
+    adminService = new AdminService(store, claimService, submissionService);
     reviewService = new ReviewService(store);
     agencyId = (await store.listAgencies())[0]!.id;
   });
@@ -33,14 +50,19 @@ describe("ClaimService and AdminService", () => {
     return auth.getUserFromSession(session.token);
   }
 
+  async function verifyBusinessLine(userId: string) {
+    const agency = await store.findAgencyById(agencyId);
+    await auth.requestAgencyBusinessCode(userId, agencyId);
+    const code = sms.lastCodeFor(agency!.phone)!;
+    await auth.verifyAgencyBusinessCode(userId, agencyId, code);
+  }
+
   async function verifiedOwner(phone = "+34600333444") {
     const user = await verifiedUser(phone);
+    await verifyBusinessLine(user!.id);
     const claim = await claimService.submit(user, {
       agencyId,
-      contactName: "Ana García",
-      contactEmail: "ana@inmobiliaria.es",
-      contactPhone: phone,
-      documentationUrls: ["https://example.com/cif.pdf"],
+      ...validClaimPayload,
     });
     await adminService.approveClaim(claim.id);
     return user;
@@ -57,27 +79,44 @@ describe("ClaimService and AdminService", () => {
     });
   }
 
-  it("submits claim for verified user", async () => {
+  it("submits claim for verified user with business line and evidence", async () => {
     const user = await verifiedUser();
+    await verifyBusinessLine(user!.id);
     const claim = await claimService.submit(user, {
       agencyId,
-      contactName: "Ana García",
-      contactEmail: "ana@inmobiliaria.es",
-      contactPhone: "+34600333444",
-      documentationUrls: ["https://example.com/cif.pdf"],
+      ...validClaimPayload,
     });
 
     expect(claim.status).toBe("pendiente");
+    expect(claim.businessPhoneVerified).toBe(true);
+    expect(claim.workEmailDomainMatch).toBe(true);
+  });
+
+  it("rejects claim without business phone verification", async () => {
+    const user = await verifiedUser();
+    await expect(
+      claimService.submit(user, { agencyId, ...validClaimPayload }),
+    ).rejects.toThrow(ClaimError);
+  });
+
+  it("rejects claim with personal email", async () => {
+    const user = await verifiedUser();
+    await verifyBusinessLine(user!.id);
+    await expect(
+      claimService.submit(user, {
+        agencyId,
+        ...validClaimPayload,
+        contactEmail: "ana@gmail.com",
+      }),
+    ).rejects.toThrow(/corporativo/i);
   });
 
   it("approves claim and marks agency verified", async () => {
     const user = await verifiedUser();
+    await verifyBusinessLine(user!.id);
     const claim = await claimService.submit(user, {
       agencyId,
-      contactName: "Ana García",
-      contactEmail: "ana@inmobiliaria.es",
-      contactPhone: "+34600333444",
-      documentationUrls: ["https://example.com/cif.pdf"],
+      ...validClaimPayload,
     });
 
     await adminService.approveClaim(claim.id);
@@ -88,13 +127,8 @@ describe("ClaimService and AdminService", () => {
 
   it("lists pending claims for admin", async () => {
     const user = await verifiedUser();
-    await claimService.submit(user, {
-      agencyId,
-      contactName: "Ana García",
-      contactEmail: "ana@inmobiliaria.es",
-      contactPhone: "+34600333444",
-      documentationUrls: ["https://example.com/cif.pdf"],
-    });
+    await verifyBusinessLine(user!.id);
+    await claimService.submit(user, { agencyId, ...validClaimPayload });
 
     const pending = await adminService.listPendingClaims();
     expect(pending).toHaveLength(1);

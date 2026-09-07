@@ -1,4 +1,5 @@
-import type { Claim, Review } from "@/lib/domain/types";
+import type { AgencySubmission, Claim, Review } from "@/lib/domain/types";
+import type { AgencySubmissionService } from "@/lib/services/agency-submission-service";
 import type { Repository } from "@/lib/repositories/types";
 import type { ClaimService } from "@/lib/services/claim-service";
 
@@ -12,10 +13,13 @@ export class AdminError extends Error {
 export type ClaimWithAgency = Claim & { agencyName: string };
 export type ReviewWithAgency = Review & { agencyName: string };
 
+export type SubmissionWithMeta = AgencySubmission;
+
 export class AdminService {
   constructor(
     private readonly repo: Repository,
     private readonly claimService: ClaimService,
+    private readonly agencySubmissionService: AgencySubmissionService,
   ) {}
 
   async listPendingClaims(): Promise<ClaimWithAgency[]> {
@@ -46,6 +50,19 @@ export class AdminService {
         };
       }),
     );
+  }
+
+  async listPendingAgencySubmissions(): Promise<SubmissionWithMeta[]> {
+    const all = await this.repo.listAgencySubmissions();
+    return all.filter((s) => s.status === "pendiente");
+  }
+
+  async approveAgencySubmission(id: string) {
+    return this.agencySubmissionService.approve(id);
+  }
+
+  async rejectAgencySubmission(id: string) {
+    return this.agencySubmissionService.reject(id);
   }
 
   async approveClaim(claimId: string) {

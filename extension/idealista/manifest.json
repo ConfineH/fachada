@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "Fachada — reseñas en Idealista",
+  "version": "0.1.0",
+  "description": "Muestra valoraciones de Fachada junto al nombre de la inmobiliaria en Idealista.",
+  "permissions": [],
+  "host_permissions": [
+    "https://www.idealista.com/*",
+    "https://*.vercel.app/*",
+    "http://localhost:3000/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["https://www.idealista.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

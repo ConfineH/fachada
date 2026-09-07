@@ -9,7 +9,8 @@ export function DevBanner({ storage }: { storage: "memory" | "supabase" }) {
         <p>
           Modo desarrollo · Datos en{" "}
           <strong>{storage === "memory" ? "memoria" : "Supabase"}</strong>
-          {storage === "memory" && " (sin .env necesario)"}
+          {storage === "memory" &&
+            " (se borran al reiniciar npm run dev; usa Supabase en .env.local para persistir)"}
         </p>
         <Link href="/admin" className="font-medium underline">
           Panel admin

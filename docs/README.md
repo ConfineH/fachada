@@ -6,13 +6,17 @@
 
 | Si quieres… | Lee esto |
 |-------------|----------|
+| **Definición de producto final + auditoría + backlog** | [Producto final](./producto-final.md) |
 | Entender por qué no está live y qué hacemos mientras tanto | [Estrategia y estado](./estrategia.md) |
 | Ver cómo encaja Fachada con el resto de proyectos | [Portfolio y slots](./portfolio.md) |
 | Arquitectura técnica del código | [Arquitectura](./arquitectura.md) |
 | Decisiones tomadas (y por qué) | [Registro de decisiones](./decisiones.md) |
 | Cómo desarrollar, desplegar o cambiar de modo | [Infraestructura](./infraestructura.md) |
 | Qué está hecho y qué viene después | [Roadmap](./roadmap.md) |
+| Visión Fase 2 (dashboard, roles, historial; features) | [Producto Fase 2](./producto-fase-2.md) |
 | Arrancar el proyecto en 5 minutos | [Guía de desarrollo](./desarrollo.md) |
+| **Brief diseño (Stitch / UI)** | [Brief Stitch](./brief-stitch.md) |
+| Contexto marketing para skills de copy | [`.agents/product-marketing.md`](../.agents/product-marketing.md) |
 
 ## Principios que guían este proyecto
 
@@ -28,7 +32,9 @@
 |------|-----------|
 | Specs funcionales | `openspec/specs/` |
 | Cambio MVP archivado | `openspec/changes/archive/2026-07-14-mvp-web-app/` |
+| Visión de producto (canónica ago 2026) | `docs/producto-final.md` |
 | Visión de producto (doc original) | `docs/docs-extracted.txt` |
+| Product marketing (skills copy/SEO) | `.agents/product-marketing.md` |
 | Código de arranque | `README.md` (quick start) |
 
 ## Mantenimiento de esta documentación

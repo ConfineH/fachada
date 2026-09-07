@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 
+import { AgencyProfileEditor } from "@/components/agency-profile-editor";
 import { PhoneVerification } from "@/components/phone-verification";
 
 type ReviewItem = {
@@ -16,10 +17,18 @@ type Step = "verify" | "manage";
 export function AgencyOwnerPanel({
   agencySlug,
   agencyVerified,
+  website,
+  googleMapsUrl,
+  idealistaUrl,
+  fotocasaUrl,
   reviews,
 }: {
   agencySlug: string;
   agencyVerified: boolean;
+  website?: string;
+  googleMapsUrl?: string;
+  idealistaUrl?: string;
+  fotocasaUrl?: string;
   reviews: ReviewItem[];
 }) {
   const [step, setStep] = useState<Step>("verify");
@@ -31,7 +40,20 @@ export function AgencyOwnerPanel({
   const [responses, setResponses] = useState<Record<string, string>>({});
   const [submittedReviewIds, setSubmittedReviewIds] = useState<string[]>([]);
 
-  if (!agencyVerified) return null;
+  if (!agencyVerified) {
+    return (
+      <div className="rounded-xl border border-dashed border-stone-300 bg-white p-6">
+        <h3 className="font-medium">Esta ficha aún no está verificada</h3>
+        <p className="mt-2 text-sm text-zinc-600">
+          Cuando un moderador apruebe la reclamación, podrás responder reseñas
+          y editar enlaces públicos.
+        </p>
+        <a href={`/agencias/${agencySlug}`} className="link-brand mt-4 inline-block text-sm">
+          Reclamar desde la ficha pública
+        </a>
+      </div>
+    );
+  }
 
   const pendingReviews = reviews.filter(
     (review) => !review.response && !submittedReviewIds.includes(review.id),
@@ -118,6 +140,19 @@ export function AgencyOwnerPanel({
           No tienes permisos para gestionar este perfil. Reclama la agencia y
           espera la aprobación del administrador.
         </p>
+      )}
+
+      {step === "manage" && canManage && (
+        <div className="mt-6">
+          <AgencyProfileEditor
+            agencySlug={agencySlug}
+            token={token}
+            website={website}
+            googleMapsUrl={googleMapsUrl}
+            idealistaUrl={idealistaUrl}
+            fotocasaUrl={fotocasaUrl}
+          />
+        </div>
       )}
 
       {step === "manage" && canManage && pendingReviews.length === 0 && (

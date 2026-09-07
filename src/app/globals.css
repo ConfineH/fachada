@@ -1,26 +1,263 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --surface-canvas: #fafaf9;
+  --surface-raised: #ffffff;
+  --text-primary: #18181b;
+  --text-secondary: #52525b;
+  --brand-primary: #1e293b;
+  --brand-primary-hover: #334155;
+  --rating-accent: #b45309;
+  --trust-positive: #0f766e;
+  --trust-positive-bg: #f0fdfa;
+  --warning-muted-bg: #fffbeb;
+  --warning-muted-text: #78350f;
+
+  /* Motion — restrained trust UI (Emil: ease-out, short budgets) */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-soft: cubic-bezier(0.25, 1, 0.5, 1);
+  --duration-press: 140ms;
+  --duration-fast: 180ms;
+  --duration-ui: 240ms;
+  --duration-enter: 420ms;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-background: var(--surface-canvas);
+  --color-foreground: var(--text-primary);
+  --color-brand: var(--brand-primary);
+  --color-brand-hover: var(--brand-primary-hover);
+  --color-rating: var(--rating-accent);
+  --color-trust: var(--trust-positive);
+  --color-trust-bg: var(--trust-positive-bg);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+body {
+  background: var(--surface-canvas);
+  color: var(--text-primary);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+@keyframes fade-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes bar-fill {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply rounded-lg bg-brand px-5 py-2.5 text-sm font-medium text-white;
+    transition:
+      background-color var(--duration-fast) var(--ease-soft),
+      transform var(--duration-press) var(--ease-out),
+      box-shadow var(--duration-fast) var(--ease-soft);
+  }
+
+  .btn-primary:hover {
+    @apply bg-brand-hover;
+  }
+
+  .btn-primary:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+
+  .btn-secondary {
+    @apply rounded-lg border border-zinc-300 bg-white px-5 py-2.5 text-sm font-medium text-zinc-800;
+    transition:
+      background-color var(--duration-fast) var(--ease-soft),
+      border-color var(--duration-fast) var(--ease-soft),
+      transform var(--duration-press) var(--ease-out);
+  }
+
+  .btn-secondary:hover {
+    @apply border-zinc-400 bg-zinc-50;
+  }
+
+  .btn-secondary:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+
+  .link-brand {
+    @apply font-medium text-brand;
+    transition: color var(--duration-fast) var(--ease-soft);
+  }
+
+  .link-brand:hover {
+    @apply text-brand-hover underline;
+  }
+
+  .input-field {
+    @apply w-full rounded-lg border border-stone-300 bg-white px-3 py-2.5 text-base outline-none;
+    transition:
+      border-color var(--duration-fast) var(--ease-soft),
+      box-shadow var(--duration-fast) var(--ease-soft);
+  }
+
+  .input-field:focus {
+    @apply border-slate-500 ring-2 ring-slate-200;
+  }
+
+  .card-raised {
+    @apply rounded-xl border border-stone-200 bg-white shadow-sm;
+  }
+
+  .card-interactive {
+    @apply rounded-xl border border-stone-200 bg-white shadow-sm;
+    transition:
+      border-color var(--duration-ui) var(--ease-soft),
+      box-shadow var(--duration-ui) var(--ease-soft),
+      transform var(--duration-ui) var(--ease-out);
+  }
+
+  .card-interactive:hover {
+    @apply border-zinc-300 shadow-md;
+    transform: translateY(-2px);
+  }
+
+  .badge-trust {
+    @apply rounded-full bg-teal-50 px-3 py-1 text-sm font-medium text-teal-800;
+  }
+
+  .badge-warning {
+    @apply rounded-full bg-amber-50 px-3 py-1 text-sm font-medium text-amber-900;
+  }
+
+  .score-rating {
+    @apply font-semibold text-rating;
+  }
+
+  .nav-link {
+    @apply text-xs font-semibold uppercase tracking-wide text-zinc-600;
+    transition: color var(--duration-fast) var(--ease-soft);
+  }
+
+  .nav-link:hover {
+    @apply text-brand;
+  }
+
+  .motion-fade-rise {
+    animation: fade-rise var(--duration-enter) var(--ease-out) both;
+  }
+
+  .motion-fade-in {
+    animation: fade-in var(--duration-ui) var(--ease-out) both;
+  }
+
+  .motion-scale-in {
+    animation: scale-in var(--duration-enter) var(--ease-out) both;
+  }
+
+  .motion-stagger > * {
+    animation: fade-rise var(--duration-enter) var(--ease-out) both;
+  }
+
+  .motion-stagger > *:nth-child(1) {
+    animation-delay: 0ms;
+  }
+  .motion-stagger > *:nth-child(2) {
+    animation-delay: 50ms;
+  }
+  .motion-stagger > *:nth-child(3) {
+    animation-delay: 100ms;
+  }
+  .motion-stagger > *:nth-child(4) {
+    animation-delay: 150ms;
+  }
+  .motion-stagger > *:nth-child(5) {
+    animation-delay: 200ms;
+  }
+  .motion-stagger > *:nth-child(6) {
+    animation-delay: 250ms;
+  }
+
+  .motion-bar-fill {
+    transform-origin: left center;
+    animation: bar-fill var(--duration-enter) var(--ease-out) both;
+  }
+
+  .filter-chip {
+    @apply rounded-full px-3 py-1 text-sm;
+    transition:
+      background-color var(--duration-fast) var(--ease-soft),
+      color var(--duration-fast) var(--ease-soft),
+      border-color var(--duration-fast) var(--ease-soft),
+      transform var(--duration-press) var(--ease-out);
+  }
+
+  .filter-chip:active {
+    transform: scale(0.97);
+  }
+
+  .filter-chip-active {
+    @apply bg-brand text-white;
+  }
+
+  .filter-chip-idle {
+    @apply border border-stone-300 bg-white text-stone-700;
+  }
+
+  .filter-chip-idle:hover {
+    @apply border-zinc-400;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-press: 0ms;
+    --duration-fast: 0ms;
+    --duration-ui: 0ms;
+    --duration-enter: 0ms;
+  }
+
+  .motion-fade-rise,
+  .motion-fade-in,
+  .motion-scale-in,
+  .motion-stagger > *,
+  .motion-bar-fill {
+    animation: none !important;
+  }
+
+  .card-interactive:hover,
+  .btn-primary:active:not(:disabled),
+  .btn-secondary:active:not(:disabled),
+  .filter-chip:active {
+    transform: none;
+  }
 }

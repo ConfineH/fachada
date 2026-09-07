@@ -52,6 +52,21 @@ describe("ReviewService", () => {
 
     expect(review.agencyId).toBe(agencyId);
     expect(review.moderated).toBe(false);
+    expect(review.incidentTags).toEqual([]);
+  });
+
+  it("stores incident tags", async () => {
+    const user = await verifiedUser();
+    const review = await service.create(user, {
+      agencyId,
+      role: "inquilino",
+      rating: 2,
+      title: "Fianza y reparaciones",
+      body: "Tardaron en devolver la fianza y no enviaron al fontanero.",
+      incidentTags: ["fianza", "reparaciones"],
+    });
+
+    expect(review.incidentTags).toEqual(["fianza", "reparaciones"]);
   });
 
   it("enforces 7-day rate limit per agency", async () => {

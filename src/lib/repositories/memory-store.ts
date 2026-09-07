@@ -2,13 +2,22 @@ import { randomUUID } from "node:crypto";
 
 import type {
   Agency,
+  AgencyNameAlias,
   AgencyResponse,
+  AgencySubmission,
   Claim,
   PendingVerification,
   Review,
   Session,
   User,
 } from "@/lib/domain/types";
+import {
+  DEMO_ALIASES,
+  DEMO_REVIEWS,
+  createDemoUserId,
+} from "@/lib/seed/demo-content";
+
+import { stableEntityId } from "@/lib/domain/stable-id";
 
 import type { Repository } from "./types";
 
@@ -16,11 +25,16 @@ const MADRID_AGENCIES: Omit<Agency, "id" | "createdAt">[] = [
   {
     slug: "inmobiliaria-sol-madrid",
     name: "Inmobiliaria Sol",
+    cif: "B12345678",
+    legalName: "Inmobiliaria Sol Madrid S.L.",
     address: "Calle Mayor 12",
+    legalAddress: "Calle Alcalá 100, 28009 Madrid (domicilio social)",
     city: "Madrid",
     postalCode: "28013",
     phone: "+34911222333",
+    phonePublished: true,
     email: "info@inmobiliariasol.es",
+    website: "https://www.inmobiliariasol.es",
     claimed: false,
     verified: false,
     premium: false,
@@ -32,6 +46,7 @@ const MADRID_AGENCIES: Omit<Agency, "id" | "createdAt">[] = [
     city: "Madrid",
     postalCode: "28013",
     phone: "+34911444555",
+    phonePublished: true,
     email: "hola@gestionurbana.es",
     claimed: false,
     verified: false,
@@ -44,7 +59,22 @@ const MADRID_AGENCIES: Omit<Agency, "id" | "createdAt">[] = [
     city: "Barcelona",
     postalCode: "08007",
     phone: "+34933666777",
+    phonePublished: true,
     email: "contacto@pisosbarcelona.es",
+    claimed: false,
+    verified: false,
+    premium: false,
+  },
+  {
+    slug: "inmobiliaria-javier-valencia",
+    name: "Inmobiliaria Javier",
+    address: "Calle Colón 28",
+    city: "Valencia",
+    postalCode: "46004",
+    phone: "+34961222333",
+    phonePublished: true,
+    email: "hola@inmobiliariajavier.es",
+    idealistaUrl: "https://www.idealista.com/pro/inmobiliaria-javier/",
     claimed: false,
     verified: false,
     premium: false,
@@ -61,16 +91,25 @@ export class MemoryStore implements Repository {
   private reviews: Review[] = [];
   private claims: Claim[] = [];
   private responses = new Map<string, AgencyResponse>();
+  private aliases: AgencyNameAlias[] = [];
+  private submissions: AgencySubmission[] = [];
+  private pendingBusinessLine = new Map<string, PendingVerification>();
+  private businessLineVerified = new Map<string, Date>();
+
+  private businessKey(userId: string, agencyId: string) {
+    return `${userId}:${agencyId}`;
+  }
 
   constructor() {
     this.seedAgencies();
+    this.seedDemoContent();
   }
 
   private seedAgencies() {
     for (const seed of MADRID_AGENCIES) {
       const agency: Agency = {
         ...seed,
-        id: randomUUID(),
+        id: stableEntityId("agency", seed.slug),
         createdAt: new Date(),
       };
       this.agencies.set(agency.id, agency);
@@ -88,7 +127,48 @@ export class MemoryStore implements Repository {
     this.reviews = [];
     this.claims = [];
     this.responses.clear();
+    this.aliases = [];
+    this.submissions = [];
+    this.pendingBusinessLine.clear();
+    this.businessLineVerified.clear();
     this.seedAgencies();
+    this.seedDemoContent();
+  }
+
+  private seedDemoContent() {
+    const demoUserId = createDemoUserId();
+    for (const seed of DEMO_REVIEWS) {
+      const agencyId = this.agenciesBySlug.get(seed.agencySlug);
+      if (!agencyId) continue;
+      const review: Review = {
+        id: randomUUID(),
+        userId: demoUserId,
+        agencyId,
+        role: seed.role,
+        rating: seed.rating,
+        title: seed.title,
+        body: seed.body,
+        incidentTags: seed.incidentTags,
+        createdAt: new Date(),
+        moderated: seed.moderated,
+        flagged: seed.flagged,
+      };
+      this.reviews.push(review);
+    }
+
+    for (const seed of DEMO_ALIASES) {
+      const agencyId = this.agenciesBySlug.get(seed.agencySlug);
+      if (!agencyId) continue;
+      this.aliases.push({
+        id: randomUUID(),
+        agencyId,
+        alias: seed.alias,
+        kind: seed.kind,
+        effectiveUntil: seed.effectiveUntil,
+        sourceUrl: seed.sourceUrl,
+        note: seed.note,
+      });
+    }
   }
 
   async findUserByPhone(phone: string) {
@@ -155,6 +235,33 @@ export class MemoryStore implements Repository {
     this.agenciesBySlug.set(agency.slug, agency.id);
   }
 
+  async createAgency(agency: Agency) {
+    if (this.agenciesBySlug.has(agency.slug)) {
+      throw new Error("Agency slug already exists");
+    }
+    this.agencies.set(agency.id, agency);
+    this.agenciesBySlug.set(agency.slug, agency.id);
+  }
+
+  async createAgencySubmission(submission: AgencySubmission) {
+    this.submissions.push(submission);
+  }
+
+  async listAgencySubmissions() {
+    return [...this.submissions].sort(
+      (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
+    );
+  }
+
+  async findAgencySubmissionById(id: string) {
+    return this.submissions.find((s) => s.id === id) ?? null;
+  }
+
+  async updateAgencySubmission(submission: AgencySubmission) {
+    const index = this.submissions.findIndex((s) => s.id === submission.id);
+    if (index >= 0) this.submissions[index] = submission;
+  }
+
   async listReviewsByAgency(agencyId: string) {
     return this.reviews.filter((r) => r.agencyId === agencyId);
   }
@@ -206,12 +313,78 @@ export class MemoryStore implements Repository {
   async createAgencyResponse(response: AgencyResponse) {
     this.responses.set(response.reviewId, response);
   }
+
+  async listAliasesByAgency(agencyId: string) {
+    return this.aliases.filter((a) => a.agencyId === agencyId);
+  }
+
+  async listAllAliases() {
+    return [...this.aliases];
+  }
+
+  async createAlias(alias: AgencyNameAlias) {
+    this.aliases.push(alias);
+  }
+
+  async savePendingBusinessLineVerification(
+    userId: string,
+    agencyId: string,
+    verification: PendingVerification,
+  ) {
+    this.pendingBusinessLine.set(
+      this.businessKey(userId, agencyId),
+      verification,
+    );
+  }
+
+  async getPendingBusinessLineVerification(userId: string, agencyId: string) {
+    return (
+      this.pendingBusinessLine.get(this.businessKey(userId, agencyId)) ?? null
+    );
+  }
+
+  async deletePendingBusinessLineVerification(userId: string, agencyId: string) {
+    this.pendingBusinessLine.delete(this.businessKey(userId, agencyId));
+  }
+
+  async markBusinessLineVerified(
+    userId: string,
+    agencyId: string,
+    expiresAt: Date,
+  ) {
+    this.businessLineVerified.set(this.businessKey(userId, agencyId), expiresAt);
+  }
+
+  async hasBusinessLineVerified(userId: string, agencyId: string) {
+    const expiresAt = this.businessLineVerified.get(
+      this.businessKey(userId, agencyId),
+    );
+    if (!expiresAt) return false;
+    if (expiresAt < new Date()) {
+      this.businessLineVerified.delete(this.businessKey(userId, agencyId));
+      return false;
+    }
+    return true;
+  }
+
+  async clearBusinessLineVerified(userId: string, agencyId: string) {
+    this.businessLineVerified.delete(this.businessKey(userId, agencyId));
+  }
 }
 
 let globalStore: MemoryStore | null = null;
 
+const MEMORY_STORE_KEY = Symbol.for("fachada.memoryStore");
+
 export function getMemoryStore(): MemoryStore {
+  const globalRef = globalThis as typeof globalThis & {
+    [MEMORY_STORE_KEY]?: MemoryStore;
+  };
+  if (globalRef[MEMORY_STORE_KEY]) {
+    return globalRef[MEMORY_STORE_KEY];
+  }
   if (!globalStore) globalStore = new MemoryStore();
+  globalRef[MEMORY_STORE_KEY] = globalStore;
   return globalStore;
 }
 

@@ -1,9 +1,12 @@
+import { parseIncidentTags } from "@/lib/domain/incidents";
 import type {
   Agency,
   AgencyResponse,
   Claim,
+  ClaimEvidenceItem,
   PendingVerification,
   Review,
+  RepresentativeRole,
   Session,
   User,
 } from "@/lib/domain/types";
@@ -13,13 +16,18 @@ type AgencyRow = {
   slug: string;
   name: string;
   cif: string | null;
+  legal_name: string | null;
+  legal_address: string | null;
   address: string;
   city: string;
   postal_code: string;
   phone: string;
+  phone_published: boolean | null;
   email: string;
   website: string | null;
   google_maps_url: string | null;
+  idealista_url: string | null;
+  fotocasa_url: string | null;
   claimed: boolean;
   verified: boolean;
   premium: boolean;
@@ -42,6 +50,7 @@ type ReviewRow = {
   rating: number;
   title: string;
   body: string;
+  incident_tags: string[] | null;
   created_at: string;
   moderated: boolean;
   flagged: boolean;
@@ -54,7 +63,14 @@ type ClaimRow = {
   contact_name: string;
   contact_email: string;
   contact_phone: string;
+  representative_role: string | null;
+  company_cif: string | null;
+  evidence: { type: string; url: string }[] | null;
   documentation_urls: string[];
+  attestation_accepted: boolean;
+  business_phone_verified: boolean;
+  verification_path: string | null;
+  work_email_domain_match: boolean;
   status: "pendiente" | "aprobado" | "rechazado";
   requested_at: string;
   resolved_at: string | null;
@@ -86,13 +102,18 @@ export function mapAgency(row: AgencyRow): Agency {
     slug: row.slug,
     name: row.name,
     cif: row.cif ?? undefined,
+    legalName: row.legal_name ?? undefined,
     address: row.address,
+    legalAddress: row.legal_address ?? undefined,
     city: row.city,
     postalCode: row.postal_code,
+    phonePublished: row.phone_published ?? true,
     phone: row.phone,
     email: row.email,
     website: row.website ?? undefined,
     googleMapsUrl: row.google_maps_url ?? undefined,
+    idealistaUrl: row.idealista_url ?? undefined,
+    fotocasaUrl: row.fotocasa_url ?? undefined,
     claimed: row.claimed,
     verified: row.verified,
     premium: row.premium,
@@ -119,6 +140,7 @@ export function mapReview(row: ReviewRow): Review {
     rating: row.rating,
     title: row.title,
     body: row.body,
+    incidentTags: parseIncidentTags(row.incident_tags),
     createdAt: new Date(row.created_at),
     moderated: row.moderated,
     flagged: row.flagged,
@@ -126,6 +148,7 @@ export function mapReview(row: ReviewRow): Review {
 }
 
 export function mapClaim(row: ClaimRow): Claim {
+  const evidence = (row.evidence ?? []) as ClaimEvidenceItem[];
   return {
     id: row.id,
     agencyId: row.agency_id,
@@ -133,7 +156,19 @@ export function mapClaim(row: ClaimRow): Claim {
     contactName: row.contact_name,
     contactEmail: row.contact_email,
     contactPhone: row.contact_phone,
-    documentationUrls: row.documentation_urls,
+    representativeRole: (row.representative_role ??
+      "otro") as RepresentativeRole,
+    companyCif: row.company_cif ?? undefined,
+    evidence,
+    documentationUrls:
+      row.documentation_urls?.length > 0
+        ? row.documentation_urls
+        : evidence.map((e) => e.url),
+    attestationAccepted: row.attestation_accepted ?? false,
+    businessPhoneVerified: row.business_phone_verified ?? false,
+    verificationPath:
+      (row.verification_path as Claim["verificationPath"]) ?? "business_phone",
+    workEmailDomainMatch: row.work_email_domain_match ?? false,
     status: row.status,
     requestedAt: new Date(row.requested_at),
     resolvedAt: row.resolved_at ? new Date(row.resolved_at) : undefined,

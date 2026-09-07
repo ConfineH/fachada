@@ -1,6 +1,11 @@
 import { randomUUID } from "node:crypto";
 
 import type { AgencyResponse, Claim, User } from "@/lib/domain/types";
+import { agencyHasPublishedPhone } from "@/lib/domain/agency-contact";
+import {
+  validateClaimAntiImpersonation,
+  workEmailMatchesAgency,
+} from "@/lib/domain/claim-verification";
 import {
   agencyResponseSchema,
   claimInputSchema,
@@ -27,6 +32,48 @@ export class ClaimService {
     if (!agency) throw new ClaimError("Agency not found");
     if (agency.claimed) throw new ClaimError("Agency already claimed");
 
+    const needsBusinessPhone = agencyHasPublishedPhone(agency);
+    let businessOk = false;
+
+    if (needsBusinessPhone) {
+      businessOk = await this.repo.hasBusinessLineVerified(
+        user.id,
+        data.agencyId,
+      );
+      if (!businessOk) {
+        throw new ClaimError(
+          "Verifica el teléfono de la inmobiliaria publicado en la ficha antes de reclamar",
+        );
+      }
+    }
+
+    if (agency.cif && !data.companyCif) {
+      throw new ClaimError("Indica el CIF de la sociedad para esta inmobiliaria");
+    }
+
+    try {
+      validateClaimAntiImpersonation(
+        {
+          contactEmail: data.contactEmail,
+          companyCif: data.companyCif,
+          evidence: data.evidence,
+          attestationAccepted: data.attestationAccepted,
+          agencyPhoneVerified: businessOk,
+        },
+        agency,
+      );
+    } catch (error) {
+      throw new ClaimError(
+        error instanceof Error ? error.message : "Claim validation failed",
+      );
+    }
+
+    const documentationUrls = data.evidence.map((item) => item.url);
+    const workEmailDomainMatch = workEmailMatchesAgency(
+      data.contactEmail,
+      agency,
+    );
+
     const claim: Claim = {
       id: randomUUID(),
       agencyId: data.agencyId,
@@ -34,12 +81,22 @@ export class ClaimService {
       contactName: data.contactName,
       contactEmail: data.contactEmail,
       contactPhone: data.contactPhone,
-      documentationUrls: data.documentationUrls,
+      representativeRole: data.representativeRole,
+      companyCif: data.companyCif,
+      evidence: data.evidence,
+      documentationUrls,
+      attestationAccepted: data.attestationAccepted,
+      businessPhoneVerified: businessOk,
+      verificationPath: needsBusinessPhone ? "business_phone" : "document_only",
+      workEmailDomainMatch,
       status: "pendiente",
       requestedAt: new Date(),
     };
 
     await this.repo.createClaim(claim);
+    if (needsBusinessPhone) {
+      await this.repo.clearBusinessLineVerified(user.id, data.agencyId);
+    }
     return claim;
   }
 

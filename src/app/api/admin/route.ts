@@ -9,12 +9,13 @@ export async function GET() {
   const unauthorized = await requireAdmin();
   if (unauthorized) return unauthorized;
 
-  const [claims, reviews] = await Promise.all([
+  const [claims, reviews, submissions] = await Promise.all([
     adminService.listPendingClaims(),
     adminService.listReviewsForModeration(),
+    adminService.listPendingAgencySubmissions(),
   ]);
 
-  return NextResponse.json({ claims, reviews });
+  return NextResponse.json({ claims, reviews, submissions });
 }
 
 export async function POST(request: Request) {
@@ -37,6 +38,14 @@ export async function POST(request: Request) {
         return NextResponse.json({ review: await adminService.moderateReview(id) });
       case "flag-review":
         return NextResponse.json({ review: await adminService.flagReview(id) });
+      case "approve-agency-submission": {
+        const agency = await adminService.approveAgencySubmission(id);
+        return NextResponse.json({ agency });
+      }
+      case "reject-agency-submission":
+        return NextResponse.json({
+          submission: await adminService.rejectAgencySubmission(id),
+        });
       default:
         return NextResponse.json({ error: "Unknown action" }, { status: 400 });
     }

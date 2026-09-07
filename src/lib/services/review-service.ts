@@ -22,13 +22,24 @@ export class ReviewService {
     }
 
     const data = reviewInputSchema.parse(input);
-    const agency = await this.repo.findAgencyById(data.agencyId);
-    if (!agency) throw new ReviewError("Agency not found");
+    const agency =
+      (data.agencyId
+        ? await this.repo.findAgencyById(data.agencyId)
+        : null) ??
+      (data.agencySlug
+        ? await this.repo.findAgencyBySlug(data.agencySlug)
+        : null);
+    if (!agency) {
+      throw new ReviewError(
+        "Inmobiliaria no encontrada. Recarga la ficha e inténtalo de nuevo.",
+      );
+    }
+    const agencyId = agency.id;
 
     const userReviews = await this.repo.listReviewsByUser(user.id);
     const recent = userReviews.find(
       (r) =>
-        r.agencyId === data.agencyId &&
+        r.agencyId === agencyId &&
         Date.now() - r.createdAt.getTime() < RATE_LIMIT_MS,
     );
 
@@ -39,11 +50,12 @@ export class ReviewService {
     const review: Review = {
       id: randomUUID(),
       userId: user.id,
-      agencyId: data.agencyId,
+      agencyId,
       role: data.role,
       rating: data.rating,
       title: data.title,
       body: data.body,
+      incidentTags: data.incidentTags ?? [],
       createdAt: new Date(),
       moderated: false,
       flagged: false,

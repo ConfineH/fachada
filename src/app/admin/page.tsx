@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { AdminDashboard } from "@/components/admin-dashboard";
 import { AdminLoginForm } from "@/components/admin-login-form";
 import { COOKIE_NAME, verifyAdminToken } from "@/lib/auth/admin-session";
-import { adminService } from "@/lib/container";
+import { adminService, usingSupabase } from "@/lib/container";
 
 export default async function AdminPage() {
   const cookieStore = await cookies();
@@ -23,9 +23,10 @@ export default async function AdminPage() {
     );
   }
 
-  const [claims, reviews] = await Promise.all([
+  const [claims, reviews, submissions] = await Promise.all([
     adminService.listPendingClaims(),
     adminService.listReviewsForModeration(),
+    adminService.listPendingAgencySubmissions(),
   ]);
 
   return (
@@ -46,7 +47,19 @@ export default async function AdminPage() {
         </div>
       </header>
       <main className="mx-auto max-w-6xl px-6 py-8">
-        <AdminDashboard initialClaims={claims} initialReviews={reviews} />
+        {process.env.NODE_ENV !== "production" && (
+          <p className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+            Almacenamiento:{" "}
+            <strong>{usingSupabase() ? "Supabase" : "memoria"}</strong>.
+            {!usingSupabase() &&
+              " Las sugerencias de inmobiliaria solo existen hasta que reinicies el servidor de desarrollo."}
+          </p>
+        )}
+        <AdminDashboard
+          initialClaims={claims}
+          initialReviews={reviews}
+          initialSubmissions={submissions}
+        />
       </main>
     </div>
   );

@@ -1,17 +1,36 @@
 import { NextResponse } from "next/server";
+import { ZodError } from "zod";
 
+import { reviewErrorMessage } from "@/lib/auth/review-errors";
 import { authService, reviewService } from "@/lib/container";
+
+function formatReviewApiError(error: unknown): string {
+  if (error instanceof ZodError) {
+    return error.issues[0]?.message ?? "Datos de la reseña no válidos";
+  }
+  return reviewErrorMessage(error);
+}
+
+function sessionTokenFromRequest(request: Request): string | undefined {
+  const header = request.headers.get("authorization");
+  if (header?.startsWith("Bearer ")) {
+    return header.slice("Bearer ".length).trim();
+  }
+  return undefined;
+}
 
 export async function POST(request: Request) {
   try {
-    const token = request.headers.get("authorization")?.replace("Bearer ", "");
+    const token = sessionTokenFromRequest(request);
     const user = await authService.getUserFromSession(token);
     const body = await request.json();
     const review = await reviewService.create(user, body);
     return NextResponse.json({ review }, { status: 201 });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Invalid request";
-    const status = message.includes("verification") ? 401 : 400;
+    const message = formatReviewApiError(error);
+    const status = message.includes("verificación") || message.includes("verification")
+      ? 401
+      : 400;
     return NextResponse.json({ error: message }, { status });
   }
 }
