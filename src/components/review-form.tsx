@@ -260,8 +260,8 @@ export function ReviewForm({ agencySlug }: { agencySlug: string }) {
         >
           <p className="font-medium">Reseña enviada</p>
           <p className="mt-1">
-            La verás en la ficha cuando un moderador la apruebe en{" "}
-            <strong>/admin</strong>. Puedes recargar esta página más tarde.
+            Sale en la ficha cuando un moderador la revise. Puedes recargar
+            esta página más tarde.
           </p>
         </div>
       )}
