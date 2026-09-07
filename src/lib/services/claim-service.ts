@@ -1,7 +1,8 @@
 import { randomUUID } from "node:crypto";
 
-import type { AgencyResponse, Claim, User } from "@/lib/domain/types";
 import { agencyHasPublishedPhone } from "@/lib/domain/agency-contact";
+import { isAccountVerified } from "@/lib/domain/identity";
+import type { AgencyResponse, Claim, User } from "@/lib/domain/types";
 import {
   validateClaimAntiImpersonation,
   workEmailMatchesAgency,
@@ -20,11 +21,14 @@ export class ClaimError extends Error {
 }
 
 export class ClaimService {
-  constructor(private readonly repo: Repository) {}
+  constructor(
+    private readonly repo: Repository,
+    private readonly businessSmsEnabled = false,
+  ) {}
 
   async submit(user: User | undefined, input: unknown): Promise<Claim> {
-    if (!user?.phoneVerified) {
-      throw new ClaimError("Phone verification required");
+    if (!isAccountVerified(user)) {
+      throw new ClaimError("Account verification required");
     }
 
     const data = claimInputSchema.parse(input);
@@ -32,7 +36,8 @@ export class ClaimService {
     if (!agency) throw new ClaimError("Agency not found");
     if (agency.claimed) throw new ClaimError("Agency already claimed");
 
-    const needsBusinessPhone = agencyHasPublishedPhone(agency);
+    const needsBusinessPhone =
+      this.businessSmsEnabled && agencyHasPublishedPhone(agency);
     let businessOk = false;
 
     if (needsBusinessPhone) {
@@ -132,8 +137,8 @@ export class ClaimService {
     agencyId: string,
     input: unknown,
   ): Promise<AgencyResponse> {
-    if (!user?.phoneVerified) {
-      throw new ClaimError("Phone verification required");
+    if (!isAccountVerified(user)) {
+      throw new ClaimError("Account verification required");
     }
 
     if (!(await this.canManageAgency(user, agencyId))) {
@@ -162,7 +167,7 @@ export class ClaimService {
   }
 
   async canManageAgency(user: User | undefined, agencyId: string) {
-    if (!user?.phoneVerified) return false;
+    if (!isAccountVerified(user)) return false;
 
     const agency = await this.repo.findAgencyById(agencyId);
     if (!agency?.verified) return false;

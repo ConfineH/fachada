@@ -13,6 +13,7 @@ import {
   maskSpanishPhone,
 } from "@/lib/domain/claim-verification";
 import { agencyService, usingSupabase } from "@/lib/container";
+import { isTwilioConfigured } from "@/lib/services/sms-provider";
 
 export async function generateMetadata({
   params,
@@ -187,6 +188,7 @@ export default async function AgencyPage({
                 agencyPhoneHint={maskSpanishPhone(agency.phone)}
                 agencyEmailDomainHint={emailDomainHint}
                 requiresCif={Boolean(agency.cif)}
+                businessSmsEnabled={isTwilioConfigured()}
               />
             </div>
           </div>

@@ -6,6 +6,7 @@ import type {
   AgencyResponse,
   AgencySubmission,
   Claim,
+  PendingEmailVerification,
   PendingVerification,
   Review,
   Session,
@@ -84,7 +85,9 @@ const MADRID_AGENCIES: Omit<Agency, "id" | "createdAt">[] = [
 export class MemoryStore implements Repository {
   private users = new Map<string, User>();
   private usersByPhone = new Map<string, string>();
+  private usersByEmail = new Map<string, string>();
   private pendingVerifications = new Map<string, PendingVerification>();
+  private pendingEmailVerifications = new Map<string, PendingEmailVerification>();
   private sessions = new Map<string, Session>();
   private agencies = new Map<string, Agency>();
   private agenciesBySlug = new Map<string, string>();
@@ -120,7 +123,9 @@ export class MemoryStore implements Repository {
   reset() {
     this.users.clear();
     this.usersByPhone.clear();
+    this.usersByEmail.clear();
     this.pendingVerifications.clear();
+    this.pendingEmailVerifications.clear();
     this.sessions.clear();
     this.agencies.clear();
     this.agenciesBySlug.clear();
@@ -176,25 +181,36 @@ export class MemoryStore implements Repository {
     return id ? (this.users.get(id) ?? null) : null;
   }
 
+  async findUserByEmail(email: string) {
+    const id = this.usersByEmail.get(email.toLowerCase());
+    return id ? (this.users.get(id) ?? null) : null;
+  }
+
   async findUserById(id: string) {
     return this.users.get(id) ?? null;
   }
 
-  async createUser(phone: string) {
+  async createUser(input: { phone?: string; email?: string }) {
+    const email = input.email?.toLowerCase();
     const user: User = {
       id: randomUUID(),
-      phone,
+      phone: input.phone,
+      email,
       phoneVerified: false,
+      emailVerified: false,
       createdAt: new Date(),
       lastActivityAt: new Date(),
     };
     this.users.set(user.id, user);
-    this.usersByPhone.set(phone, user.id);
+    if (user.phone) this.usersByPhone.set(user.phone, user.id);
+    if (email) this.usersByEmail.set(email, user.id);
     return user;
   }
 
   async updateUser(user: User) {
     this.users.set(user.id, user);
+    if (user.phone) this.usersByPhone.set(user.phone, user.id);
+    if (user.email) this.usersByEmail.set(user.email.toLowerCase(), user.id);
   }
 
   async savePendingVerification(verification: PendingVerification) {
@@ -207,6 +223,21 @@ export class MemoryStore implements Repository {
 
   async deletePendingVerification(phone: string) {
     this.pendingVerifications.delete(phone);
+  }
+
+  async savePendingEmailVerification(verification: PendingEmailVerification) {
+    this.pendingEmailVerifications.set(
+      verification.email.toLowerCase(),
+      { ...verification, email: verification.email.toLowerCase() },
+    );
+  }
+
+  async getPendingEmailVerification(email: string) {
+    return this.pendingEmailVerifications.get(email.toLowerCase()) ?? null;
+  }
+
+  async deletePendingEmailVerification(email: string) {
+    this.pendingEmailVerifications.delete(email.toLowerCase());
   }
 
   async createSession(session: Session) {

@@ -3,7 +3,7 @@
 import { FormEvent, useState } from "react";
 
 import { AgencyProfileEditor } from "@/components/agency-profile-editor";
-import { PhoneVerification } from "@/components/phone-verification";
+import { AccountVerification } from "@/components/account-verification";
 
 type ReviewItem = {
   id: string;
@@ -127,7 +127,10 @@ export function AgencyOwnerPanel({
 
       {step === "verify" && (
         <div className="mt-4">
-          <PhoneVerification
+          <p className="mb-3 text-sm text-emerald-900">
+            Entra con la misma cuenta con la que reclamaste la ficha.
+          </p>
+          <AccountVerification
             onVerified={(sessionToken) => {
               void checkAccess(sessionToken);
             }}

@@ -1,13 +1,18 @@
 import { NextResponse } from "next/server";
 
+import { reviewErrorMessage } from "@/lib/auth/review-errors";
+import { isAccountVerified } from "@/lib/domain/identity";
 import { authService } from "@/lib/container";
 
 export async function POST(request: Request) {
   try {
     const token = request.headers.get("authorization")?.replace("Bearer ", "");
     const user = await authService.getUserFromSession(token);
-    if (!user?.phoneVerified) {
-      return NextResponse.json({ error: "Phone verification required" }, { status: 401 });
+    if (!isAccountVerified(user)) {
+      return NextResponse.json(
+        { error: reviewErrorMessage(new Error("Account verification required")) },
+        { status: 401 },
+      );
     }
 
     const body = await request.json();

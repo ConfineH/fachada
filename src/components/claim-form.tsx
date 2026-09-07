@@ -8,8 +8,8 @@ import {
 } from "@/lib/domain/claim-verification";
 import type { ClaimEvidenceType, RepresentativeRole } from "@/lib/domain/types";
 
+import { AccountVerification } from "@/components/account-verification";
 import { BusinessPhoneVerification } from "@/components/business-phone-verification";
-import { PhoneVerification } from "@/components/phone-verification";
 
 type Step = "personal" | "business" | "claim" | "done";
 
@@ -24,6 +24,7 @@ export function ClaimForm({
   agencyPhoneHint,
   agencyEmailDomainHint,
   requiresCif,
+  businessSmsEnabled,
 }: {
   agencyId: string;
   agencyClaimed: boolean;
@@ -31,7 +32,9 @@ export function ClaimForm({
   agencyPhoneHint: string;
   agencyEmailDomainHint: string;
   requiresCif: boolean;
+  businessSmsEnabled: boolean;
 }) {
+  const needsBusinessPhone = businessSmsEnabled && agencyPhonePublished;
   const [step, setStep] = useState<Step>("personal");
   const [token, setToken] = useState("");
   const [businessVerified, setBusinessVerified] = useState(false);
@@ -110,9 +113,9 @@ export function ClaimForm({
     <div className="rounded-xl border border-stone-200 bg-white p-5">
       <h3 className="font-medium">Reclamar perfil</h3>
       <p className="mt-1 text-sm text-stone-600">
-        {agencyPhonePublished
-          ? "Verificamos teléfono de la ficha, email corporativo y documentación (estilo Google Business / Glassdoor)."
-          : "Esta ficha no tiene teléfono público: solo reclamo documental con revisión manual estricta."}
+        {needsBusinessPhone
+          ? "Pedimos cuenta identificada, teléfono de la ficha, email corporativo y documentos."
+          : "Esta ficha se reclama con cuenta identificada, email corporativo y documentación. Un moderador lo revisa a mano."}
       </p>
 
       {error && (
@@ -124,18 +127,21 @@ export function ClaimForm({
       {step === "personal" && (
         <div className="mt-4">
           <p className="mb-2 text-sm font-medium text-stone-800">
-            Paso 1 — Tu móvil personal
+            Paso 1 — Tu cuenta
           </p>
-          <PhoneVerification
+          <p className="mb-3 text-sm text-stone-600">
+            Entra con Google o un código al email. No sale en la ficha pública.
+          </p>
+          <AccountVerification
             onVerified={(sessionToken) => {
               setToken(sessionToken);
-              setStep(agencyPhonePublished ? "business" : "claim");
+              setStep(needsBusinessPhone ? "business" : "claim");
             }}
           />
         </div>
       )}
 
-      {step === "business" && agencyPhonePublished && (
+      {step === "business" && needsBusinessPhone && (
         <div className="mt-4 space-y-4">
           <BusinessPhoneVerification
             agencyId={agencyId}
@@ -158,9 +164,9 @@ export function ClaimForm({
       {step === "claim" && (
         <form onSubmit={submitClaim} className="mt-4 space-y-3">
           <p className="text-sm font-medium text-stone-800">
-            Paso {agencyPhonePublished ? "3" : "2"} — Identidad y documentación
+            Paso {needsBusinessPhone ? "3" : "2"} — Identidad y documentación
           </p>
-          {!agencyPhonePublished && (
+          {!needsBusinessPhone && (
             <p className="text-xs text-amber-900">
               Necesitamos al menos dos documentos fuertes (CIF, registro,
               poder) o uno fuerte más prueba de web/portal en la ficha.

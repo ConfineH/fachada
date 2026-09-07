@@ -6,7 +6,7 @@ import { usingSupabase } from "@/lib/container";
 export const metadata = {
   title: "Metodología de verificación — Fachada",
   description:
-    "Cómo Fachada publica reseñas de inmobiliarias: SMS, rol, moderación y taxonomía de incidencias.",
+    "Cómo Fachada publica reseñas de inmobiliarias: cuenta identificada, rol, moderación y taxonomía de incidencias.",
 };
 
 export default function MetodologiaPage() {
@@ -28,13 +28,13 @@ export default function MetodologiaPage() {
         <section className="mt-10 space-y-8 text-zinc-700">
           <div>
             <h2 className="text-xl font-semibold text-zinc-900">
-              1. Teléfono verificado
+              1. Cuenta identificada
             </h2>
             <p className="mt-2">
-              Para dejar una reseña hay que confirmar un móvil español con un
-              código SMS. En la ficha pública no mostramos el número: aparece
-              un seudónimo o un identificador neutro. El teléfono queda en
-              backend para moderación y límites de abuso.
+              Para dejar una reseña hay que confirmar un email (código o Google).
+              En la ficha pública no mostramos el correo: aparece un seudónimo
+              o un identificador neutro. El email queda en backend para
+              moderación y límites de abuso. No prometemos anonimato absoluto.
             </p>
           </div>
           <div>

@@ -36,8 +36,10 @@ type AgencyRow = {
 
 type UserRow = {
   id: string;
-  phone: string;
+  phone: string | null;
+  email: string | null;
   phone_verified: boolean;
+  email_verified: boolean | null;
   created_at: string;
   last_activity_at: string;
 };
@@ -124,8 +126,10 @@ export function mapAgency(row: AgencyRow): Agency {
 export function mapUser(row: UserRow): User {
   return {
     id: row.id,
-    phone: row.phone,
+    phone: row.phone ?? undefined,
+    email: row.email ?? undefined,
     phoneVerified: row.phone_verified,
+    emailVerified: Boolean(row.email_verified),
     createdAt: new Date(row.created_at),
     lastActivityAt: new Date(row.last_activity_at),
   };

@@ -15,16 +15,17 @@ export default function PrivacidadPage() {
       <SiteNav />
       <main className="mx-auto max-w-3xl px-6 py-10 prose prose-stone">
         <h1>Política de privacidad</h1>
-        <p className="text-sm text-stone-500">Última actualización: agosto 2026</p>
+        <p className="text-sm text-stone-500">Última actualización: septiembre 2026</p>
         <p>
-          Fachada trata datos personales para verificar identidad por SMS,
-          publicar reseñas y gestionar reclamaciones de inmobiliarias.
+          Fachada trata datos personales para identificar cuentas (email o
+          Google), publicar reseñas y gestionar reclamaciones de inmobiliarias.
         </p>
         <h2>Datos que recogemos</h2>
         <ul>
-          <li>Número de teléfono (verificación)</li>
+          <li>Email (código de verificación o inicio de sesión con Google)</li>
+          <li>Teléfono, solo si se usa para contrastar la línea de una agencia</li>
           <li>Contenido de reseñas y reclamaciones</li>
-          <li>Datos de contacto en solicitudes de claim</li>
+          <li>Datos de contacto en solicitudes de reclamo</li>
         </ul>
         <h2>Base legal</h2>
         <p>

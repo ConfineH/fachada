@@ -125,11 +125,12 @@ export function PhoneVerification({
       {step === "code" && (
         <form key="code" onSubmit={verifyCode} className="motion-scale-in space-y-3">
           <p className="text-sm text-zinc-600">
-            Código enviado a <strong>{phone}</strong>
+            Te hemos enviado un SMS a <strong>{phone}</strong>. El código caduca
+            en 10 minutos.
           </p>
           {devCode && (
             <p className="motion-fade-in rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">
-              Modo desarrollo: tu código es <strong>{devCode}</strong>
+              Solo en local (sin Twilio): tu código es <strong>{devCode}</strong>
             </p>
           )}
           <input

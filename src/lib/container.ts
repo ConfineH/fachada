@@ -7,7 +7,11 @@ import { AdminService } from "@/lib/services/admin-service";
 import { AuthService } from "@/lib/services/auth-service";
 import { ClaimService } from "@/lib/services/claim-service";
 import { ReviewService } from "@/lib/services/review-service";
-import { createSmsProvider } from "@/lib/services/sms-provider";
+import { createEmailProvider, isResendConfigured } from "@/lib/services/email-provider";
+import {
+  createSmsProvider,
+  isTwilioConfigured,
+} from "@/lib/services/sms-provider";
 import { createServiceClient, isSupabaseConfigured } from "@/lib/supabase/server";
 
 function createRepository(): Repository {
@@ -19,15 +23,23 @@ function createRepository(): Repository {
 
 const repo = createRepository();
 const sms = createSmsProvider();
+const email = createEmailProvider();
 const exposeDevCode =
-  process.env.NODE_ENV !== "production" ||
-  process.env.EXPOSE_DEV_SMS_CODE === "true";
+  !isTwilioConfigured() && process.env.NODE_ENV !== "production";
+const exposeEmailDevCode =
+  !isResendConfigured() && process.env.NODE_ENV !== "production";
 
-export const authService = new AuthService(repo, sms, exposeDevCode);
+export const authService = new AuthService(
+  repo,
+  sms,
+  exposeDevCode,
+  email,
+  exposeEmailDevCode,
+);
 export const agencyService = new AgencyService(repo);
 export const agencySubmissionService = new AgencySubmissionService(repo);
 export const reviewService = new ReviewService(repo);
-export const claimService = new ClaimService(repo);
+export const claimService = new ClaimService(repo, isTwilioConfigured());
 export const adminService = new AdminService(repo, claimService, agencySubmissionService);
 
 export function usingSupabase() {

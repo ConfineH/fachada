@@ -28,7 +28,7 @@ describe("ReviewService", () => {
   }
 
   it("rejects unverified users", async () => {
-    const user = await store.createUser("+34600999888");
+    const user = await store.createUser({ phone: "+34600999888" });
     await expect(
       service.create(user, {
         agencyId,
@@ -38,6 +38,22 @@ describe("ReviewService", () => {
         body: "La gestión fue rápida y clara en todo momento.",
       }),
     ).rejects.toThrow(ReviewError);
+  });
+
+  it("creates review for email-verified user", async () => {
+    const user = await store.createUser({ email: "ana@gmail.com" });
+    user.emailVerified = true;
+    await store.updateUser(user);
+
+    const review = await service.create(user, {
+      agencyId,
+      role: "inquilino",
+      rating: 4,
+      title: "Buena experiencia",
+      body: "La gestión fue rápida y clara en todo momento.",
+    });
+
+    expect(review.agencyId).toBe(agencyId);
   });
 
   it("creates review for verified user", async () => {

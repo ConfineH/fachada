@@ -45,8 +45,8 @@ export default async function AgencyPanelPage({
         </Link>
         <h1 className="mt-3 text-2xl font-semibold">Panel — {agency.name}</h1>
         <p className="mt-2 text-sm text-stone-600">
-          Verifica tu teléfono y responde a reseñas. Las respuestas se muestran
-          en la ficha cuando la reseña está publicada.
+          Identifícate con la cuenta del reclamo y responde reseñas. Las
+          respuestas se muestran en la ficha cuando la reseña está publicada.
         </p>
         <div className="mt-6">
           <RoleRatingSummary roleRatings={agency.roleRatings} />

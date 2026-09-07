@@ -46,12 +46,21 @@ export class TwilioSmsProvider implements SmsProvider {
   }
 }
 
+export function isTwilioConfigured() {
+  return Boolean(
+    process.env.TWILIO_ACCOUNT_SID?.trim() &&
+      process.env.TWILIO_AUTH_TOKEN?.trim() &&
+      process.env.TWILIO_FROM_NUMBER?.trim(),
+  );
+}
+
 export function createSmsProvider(): SmsProvider {
-  const sid = process.env.TWILIO_ACCOUNT_SID;
-  const token = process.env.TWILIO_AUTH_TOKEN;
-  const from = process.env.TWILIO_FROM_NUMBER;
-  if (sid && token && from) {
-    return new TwilioSmsProvider(sid, token, from);
+  if (isTwilioConfigured()) {
+    return new TwilioSmsProvider(
+      process.env.TWILIO_ACCOUNT_SID!,
+      process.env.TWILIO_AUTH_TOKEN!,
+      process.env.TWILIO_FROM_NUMBER!,
+    );
   }
   return new MockSmsProvider();
 }

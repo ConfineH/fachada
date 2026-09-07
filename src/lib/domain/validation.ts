@@ -38,6 +38,12 @@ export const verificationCodeSchema = z
   .string()
   .regex(/^\d{6}$/, "Code must be 6 digits");
 
+export const accountEmailSchema = z
+  .string()
+  .trim()
+  .email("Indica un email válido")
+  .transform((value) => value.toLowerCase());
+
 export const reviewInputSchema = z
   .object({
     agencyId: z.string().uuid().optional(),

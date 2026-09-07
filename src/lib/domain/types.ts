@@ -29,8 +29,10 @@ export interface ClaimEvidenceItem {
 
 export interface User {
   id: string;
-  phone: string;
+  phone?: string;
+  email?: string;
   phoneVerified: boolean;
+  emailVerified: boolean;
   createdAt: Date;
   lastActivityAt: Date;
 }
@@ -145,6 +147,12 @@ export interface AgencyWithStats extends Agency {
 
 export interface ReviewWithResponse extends Review {
   response?: AgencyResponse;
+}
+
+export interface PendingEmailVerification {
+  email: string;
+  code: string;
+  expiresAt: Date;
 }
 
 export interface PendingVerification {

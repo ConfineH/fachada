@@ -38,7 +38,8 @@ export async function POST(
   } catch (error) {
     const message = error instanceof Error ? error.message : "Invalid request";
     const status = message.includes("verification") ||
-      message.includes("authorized")
+      message.includes("authorized") ||
+      message.includes("Account verification")
       ? 403
       : 400;
     return NextResponse.json({ error: message }, { status });

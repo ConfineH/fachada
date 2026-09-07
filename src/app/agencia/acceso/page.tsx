@@ -33,7 +33,9 @@ export default function AccesoAgenciasPage() {
           </li>
           <li>
             <strong className="text-zinc-900">2. Reclama.</strong> En la ficha
-            pública, inicia el proceso con teléfono de empresa y documentación.
+            pública, identifica tu cuenta, aporta email corporativo y
+            documentación. Si la ficha tiene teléfono publicado, también lo
+            contrastamos cuando ese canal está activo.
           </li>
           <li>
             <strong className="text-zinc-900">3. Panel.</strong> Cuando esté

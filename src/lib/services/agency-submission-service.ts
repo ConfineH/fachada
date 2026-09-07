@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 
 import { buildAgencySlug } from "@/lib/domain/agency-slug";
+import { isAccountVerified } from "@/lib/domain/identity";
 import type { Agency, AgencySubmission, User } from "@/lib/domain/types";
 import { agencySubmissionInputSchema } from "@/lib/domain/validation";
 import type { Repository } from "@/lib/repositories/types";
@@ -16,8 +17,8 @@ export class AgencySubmissionService {
   constructor(private readonly repo: Repository) {}
 
   async submit(user: User | undefined, input: unknown): Promise<AgencySubmission> {
-    if (!user?.phoneVerified) {
-      throw new AgencySubmissionError("Phone verification required");
+    if (!isAccountVerified(user)) {
+      throw new AgencySubmissionError("Account verification required");
     }
 
     const data = agencySubmissionInputSchema.parse(input);

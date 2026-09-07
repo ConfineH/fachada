@@ -2,7 +2,7 @@
 
 import { FormEvent, useState } from "react";
 
-import { PhoneVerification } from "@/components/phone-verification";
+import { AccountVerification } from "@/components/account-verification";
 import { SubmissionStepper } from "@/components/submission-stepper";
 
 type Step = "verify" | "form" | "done";
@@ -72,10 +72,11 @@ export function SuggestAgencyForm() {
         <div key="verify" className="motion-scale-in card-raised p-6">
           <h2 className="text-lg font-semibold text-zinc-900">Verificación</h2>
           <p className="mt-2 text-sm text-zinc-600">
-            Verifica tu móvil para enviar la solicitud (evita spam).
+            Identifícate para enviar el alta. Evita spam; tu email no se
+            publica en la ficha.
           </p>
           <div className="mt-6">
-          <PhoneVerification
+          <AccountVerification
             onVerified={(sessionToken) => {
               setToken(sessionToken);
               setStep("form");

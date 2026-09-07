@@ -138,7 +138,8 @@ export default async function Home({
               <ul className="mt-6 space-y-3 text-sm text-zinc-700">
                 <li className="flex gap-2">
                   <span className="font-semibold text-brand">—</span>
-                  Teléfono verificado por SMS; en público no mostramos el número
+                  Cuenta identificada (Google o email); en la ficha no sale tu
+                  correo
                 </li>
                 <li className="flex gap-2">
                   <span className="font-semibold text-brand">—</span>

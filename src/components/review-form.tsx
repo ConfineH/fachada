@@ -2,8 +2,8 @@
 
 import { FormEvent, useRef, useState } from "react";
 
-import { PhoneVerification } from "@/components/phone-verification";
-import { PHONE_SESSION_STORAGE_KEY } from "@/lib/auth/review-errors";
+import { AccountVerification } from "@/components/account-verification";
+import { SESSION_STORAGE_KEY } from "@/lib/auth/review-errors";
 import {
   INCIDENT_TAG_LABELS,
   INCIDENT_TAGS,
@@ -31,7 +31,7 @@ export function ReviewForm({ agencySlug }: { agencySlug: string }) {
   function persistToken(sessionToken: string) {
     setToken(sessionToken);
     try {
-      sessionStorage.setItem(PHONE_SESSION_STORAGE_KEY, sessionToken);
+      sessionStorage.setItem(SESSION_STORAGE_KEY, sessionToken);
     } catch {
       // ignore
     }
@@ -42,7 +42,7 @@ export function ReviewForm({ agencySlug }: { agencySlug: string }) {
   function clearSession() {
     setToken("");
     try {
-      sessionStorage.removeItem(PHONE_SESSION_STORAGE_KEY);
+      sessionStorage.removeItem(SESSION_STORAGE_KEY);
     } catch {
       // ignore
     }
@@ -53,7 +53,7 @@ export function ReviewForm({ agencySlug }: { agencySlug: string }) {
     event.preventDefault();
     if (!token) {
       setError(
-        "Falta la verificación del móvil. Solicita el código SMS antes de publicar.",
+        "Identifícate otra vez. Pide un código al email (o entra con Google) y publica sin recargar.",
       );
       clearSession();
       scrollToFeedback();
@@ -115,7 +115,7 @@ export function ReviewForm({ agencySlug }: { agencySlug: string }) {
       }
 
       try {
-        sessionStorage.removeItem(PHONE_SESSION_STORAGE_KEY);
+        sessionStorage.removeItem(SESSION_STORAGE_KEY);
       } catch {
         // ignore
       }
@@ -138,7 +138,8 @@ export function ReviewForm({ agencySlug }: { agencySlug: string }) {
     >
       <h3 className="font-medium">Escribir reseña</h3>
       <p className="mt-1 text-sm text-stone-600">
-        Verifica tu teléfono para publicar una opinión verificada.
+        Identifícate con Google o un código al email. En la ficha no sale tu
+        correo; queda en backend para moderación.
       </p>
 
       {error && (
@@ -149,7 +150,7 @@ export function ReviewForm({ agencySlug }: { agencySlug: string }) {
 
       {step === "verify" && (
         <div key="verify" className="motion-scale-in mt-4">
-          <PhoneVerification onVerified={persistToken} />
+          <AccountVerification onVerified={persistToken} />
         </div>
       )}
 
@@ -161,7 +162,7 @@ export function ReviewForm({ agencySlug }: { agencySlug: string }) {
           noValidate
         >
           <p className="text-xs text-emerald-800">
-            Móvil verificado. Publica la reseña ahora (sin recargar la página).
+            Cuenta identificada. Publica ahora, sin recargar la página.
           </p>
           <select
             value={role}
@@ -247,7 +248,7 @@ export function ReviewForm({ agencySlug }: { agencySlug: string }) {
             onClick={clearSession}
             className="text-sm text-zinc-600 hover:text-zinc-900"
           >
-            Verificar otro móvil
+            Usar otra cuenta
           </button>
         </form>
       )}

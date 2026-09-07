@@ -103,7 +103,7 @@ export function BusinessPhoneVerification({
         <form onSubmit={verifyCode} className="mt-4 space-y-3">
           {devCode && (
             <p className="rounded-lg bg-white px-3 py-2 text-sm text-amber-900">
-              Modo desarrollo: código de la línea de negocio{" "}
+              Solo en local (sin Twilio): código{" "}
               <strong>{devCode}</strong>
             </p>
           )}

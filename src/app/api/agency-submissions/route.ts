@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { reviewErrorMessage } from "@/lib/auth/review-errors";
 import { agencySubmissionService, authService } from "@/lib/container";
 
 export async function POST(request: Request) {
@@ -10,7 +11,7 @@ export async function POST(request: Request) {
     const submission = await agencySubmissionService.submit(user, body);
     return NextResponse.json({ submission }, { status: 201 });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Invalid request";
+    const message = reviewErrorMessage(error);
     const status = message.includes("verification") ? 401 : 400;
     return NextResponse.json({ error: message }, { status });
   }

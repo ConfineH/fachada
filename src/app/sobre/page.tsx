@@ -24,6 +24,10 @@ export default function SobrePage() {
           alquiler en España: fianzas, reparaciones, trato y comunicación.
           No vendemos pisos ni anuncios.
         </p>
+        <p className="mt-4 text-lg text-zinc-600">
+          Quien escribe se identifica con email o Google. En la ficha no sale
+          el correo.
+        </p>
         <section className="mt-10 space-y-4 text-zinc-700">
           <p>
             El mercado ya tiene portales de inmuebles y reseñas genéricas de

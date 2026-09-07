@@ -46,6 +46,16 @@ export class SupabaseRepository implements Repository {
     return data ? mapUser(data as UserRow) : null;
   }
 
+  async findUserByEmail(email: string) {
+    const { data, error } = await this.client
+      .from("users")
+      .select("*")
+      .eq("email", email.toLowerCase())
+      .maybeSingle();
+    throwIfError(error);
+    return data ? mapUser(data as UserRow) : null;
+  }
+
   async findUserById(id: string) {
     const { data, error } = await this.client
       .from("users")
@@ -56,10 +66,13 @@ export class SupabaseRepository implements Repository {
     return data ? mapUser(data as UserRow) : null;
   }
 
-  async createUser(phone: string) {
+  async createUser(input: { phone?: string; email?: string }) {
     const { data, error } = await this.client
       .from("users")
-      .insert({ phone })
+      .insert({
+        phone: input.phone ?? null,
+        email: input.email?.toLowerCase() ?? null,
+      })
       .select("*")
       .single();
     throwIfError(error);
@@ -70,7 +83,10 @@ export class SupabaseRepository implements Repository {
     const { error } = await this.client
       .from("users")
       .update({
+        phone: user.phone ?? null,
+        email: user.email?.toLowerCase() ?? null,
         phone_verified: user.phoneVerified,
+        email_verified: user.emailVerified,
         last_activity_at: user.lastActivityAt.toISOString(),
       })
       .eq("id", user.id);
@@ -103,6 +119,45 @@ export class SupabaseRepository implements Repository {
       .from("pending_verifications")
       .delete()
       .eq("phone", phone);
+    throwIfError(error);
+  }
+
+  async savePendingEmailVerification(verification: {
+    email: string;
+    code: string;
+    expiresAt: Date;
+  }) {
+    const { error } = await this.client
+      .from("pending_email_verifications")
+      .upsert({
+        email: verification.email.toLowerCase(),
+        code: verification.code,
+        expires_at: verification.expiresAt.toISOString(),
+      });
+    throwIfError(error);
+  }
+
+  async getPendingEmailVerification(email: string) {
+    const { data, error } = await this.client
+      .from("pending_email_verifications")
+      .select("*")
+      .eq("email", email.toLowerCase())
+      .maybeSingle();
+    throwIfError(error);
+    return data
+      ? {
+          email: data.email as string,
+          code: data.code as string,
+          expiresAt: new Date(data.expires_at as string),
+        }
+      : null;
+  }
+
+  async deletePendingEmailVerification(email: string) {
+    const { error } = await this.client
+      .from("pending_email_verifications")
+      .delete()
+      .eq("email", email.toLowerCase());
     throwIfError(error);
   }
 

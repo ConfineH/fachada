@@ -4,6 +4,7 @@ import type {
   AgencyResponse,
   AgencySubmission,
   Claim,
+  PendingEmailVerification,
   PendingVerification,
   Review,
   Session,
@@ -12,13 +13,22 @@ import type {
 
 export interface Repository {
   findUserByPhone(phone: string): Promise<User | null>;
+  findUserByEmail(email: string): Promise<User | null>;
   findUserById(id: string): Promise<User | null>;
-  createUser(phone: string): Promise<User>;
+  createUser(input: { phone?: string; email?: string }): Promise<User>;
   updateUser(user: User): Promise<void>;
 
   savePendingVerification(verification: PendingVerification): Promise<void>;
   getPendingVerification(phone: string): Promise<PendingVerification | null>;
   deletePendingVerification(phone: string): Promise<void>;
+
+  savePendingEmailVerification(
+    verification: PendingEmailVerification,
+  ): Promise<void>;
+  getPendingEmailVerification(
+    email: string,
+  ): Promise<PendingEmailVerification | null>;
+  deletePendingEmailVerification(email: string): Promise<void>;
 
   savePendingBusinessLineVerification(
     userId: string,

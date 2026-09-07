@@ -1,8 +1,13 @@
-export const PHONE_SESSION_STORAGE_KEY = "fachada.phoneSessionToken";
+export const SESSION_STORAGE_KEY = "fachada.sessionToken";
+/** @deprecated Use SESSION_STORAGE_KEY */
+export const PHONE_SESSION_STORAGE_KEY = SESSION_STORAGE_KEY;
+
+const ACCOUNT_EXPIRED =
+  "La sesión ha caducado. Vuelve a identificarte y publica sin recargar la página.";
 
 export const REVIEW_ERROR_ES: Record<string, string> = {
-  "Phone verification required":
-    "La verificación del móvil ha caducado. Vuelve a solicitar el código SMS y publica la reseña sin recargar la página.",
+  "Account verification required": ACCOUNT_EXPIRED,
+  "Phone verification required": ACCOUNT_EXPIRED,
 };
 
 export function reviewErrorMessage(error: unknown): string {

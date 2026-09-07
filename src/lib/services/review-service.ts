@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 
+import { isAccountVerified } from "@/lib/domain/identity";
 import type { Review, User } from "@/lib/domain/types";
 import { reviewInputSchema } from "@/lib/domain/validation";
 import type { Repository } from "@/lib/repositories/types";
@@ -17,8 +18,8 @@ export class ReviewService {
   constructor(private readonly repo: Repository) {}
 
   async create(user: User | undefined, input: unknown): Promise<Review> {
-    if (!user?.phoneVerified) {
-      throw new ReviewError("Phone verification required");
+    if (!isAccountVerified(user)) {
+      throw new ReviewError("Account verification required");
     }
 
     const data = reviewInputSchema.parse(input);
