@@ -83,6 +83,12 @@ export interface Review {
   rating: number;
   title: string;
   body: string;
+  pros?: string;
+  cons?: string;
+  anonymous: boolean;
+  publicName?: string;
+  wouldRecommend?: boolean;
+  helpfulCount: number;
   incidentTags: IncidentTag[];
   createdAt: Date;
   moderated: boolean;

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 
+import { sessionTokenFromRequest } from "@/lib/auth/bearer";
 import { reviewErrorMessage } from "@/lib/auth/review-errors";
 import { authService, reviewService } from "@/lib/container";
 
@@ -9,14 +10,6 @@ function formatReviewApiError(error: unknown): string {
     return error.issues[0]?.message ?? "Datos de la reseña no válidos";
   }
   return reviewErrorMessage(error);
-}
-
-function sessionTokenFromRequest(request: Request): string | undefined {
-  const header = request.headers.get("authorization");
-  if (header?.startsWith("Bearer ")) {
-    return header.slice("Bearer ".length).trim();
-  }
-  return undefined;
 }
 
 export async function POST(request: Request) {

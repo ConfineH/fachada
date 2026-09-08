@@ -55,11 +55,19 @@ export const reviewInputSchema = z
       .trim()
       .min(1, "El título es obligatorio")
       .max(100),
-    body: z
+    pros: z
       .string()
       .trim()
-      .min(10, "El comentario debe tener al menos 10 caracteres")
-      .max(1000),
+      .min(10, "Las ventajas deben tener al menos 10 caracteres")
+      .max(450),
+    cons: z
+      .string()
+      .trim()
+      .min(10, "Las desventajas deben tener al menos 10 caracteres")
+      .max(450),
+    anonymous: z.boolean().optional().default(true),
+    publicName: z.string().trim().max(40).optional(),
+    wouldRecommend: z.boolean().optional(),
     incidentTags: z.array(z.enum(INCIDENT_TAGS)).max(7).optional().default([]),
   })
   .superRefine((data, ctx) => {
@@ -68,6 +76,13 @@ export const reviewInputSchema = z
         code: "custom",
         path: ["agencySlug"],
         message: "Indica la inmobiliaria",
+      });
+    }
+    if (!data.anonymous && !data.publicName?.trim()) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["publicName"],
+        message: "Indica un nombre público o publica de forma anónima",
       });
     }
   });

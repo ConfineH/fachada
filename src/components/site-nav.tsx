@@ -22,12 +22,9 @@ export function SiteNav() {
           <Link href="/agencia/acceso" className="btn-secondary hidden min-h-10 sm:inline-flex">
             Acceso agencias
           </Link>
-          <span
-            className="flex h-9 w-9 items-center justify-center rounded-full border border-stone-200 bg-stone-50 text-xs font-medium text-zinc-400"
-            aria-hidden
-          >
-            ·
-          </span>
+          <Link href="/cuenta" className="btn-secondary min-h-10 px-3">
+            Cuenta
+          </Link>
         </div>
       </div>
     </nav>

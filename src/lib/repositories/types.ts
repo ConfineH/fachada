@@ -71,6 +71,15 @@ export interface Repository {
   findReviewById(id: string): Promise<Review | null>;
   updateReview(review: Review): Promise<void>;
   createReview(review: Review): Promise<void>;
+  addReviewHelpful(
+    userId: string,
+    reviewId: string,
+  ): Promise<{ added: boolean; helpfulCount: number }>;
+
+  listSavedAgencies(userId: string): Promise<Agency[]>;
+  saveAgency(userId: string, agencyId: string): Promise<void>;
+  unsaveAgency(userId: string, agencyId: string): Promise<void>;
+  isAgencySaved(userId: string, agencyId: string): Promise<boolean>;
 
   createClaim(claim: Claim): Promise<void>;
   listClaims(): Promise<Claim[]>;

@@ -98,6 +98,9 @@ export class MemoryStore implements Repository {
   private submissions: AgencySubmission[] = [];
   private pendingBusinessLine = new Map<string, PendingVerification>();
   private businessLineVerified = new Map<string, Date>();
+  private reviewHelpful = new Set<string>();
+  private savedAgencies: { userId: string; agencyId: string; createdAt: Date }[] =
+    [];
 
   private businessKey(userId: string, agencyId: string) {
     return `${userId}:${agencyId}`;
@@ -136,6 +139,8 @@ export class MemoryStore implements Repository {
     this.submissions = [];
     this.pendingBusinessLine.clear();
     this.businessLineVerified.clear();
+    this.reviewHelpful.clear();
+    this.savedAgencies = [];
     this.seedAgencies();
     this.seedDemoContent();
   }
@@ -153,6 +158,12 @@ export class MemoryStore implements Repository {
         rating: seed.rating,
         title: seed.title,
         body: seed.body,
+        pros: seed.pros,
+        cons: seed.cons,
+        anonymous: seed.anonymous,
+        publicName: seed.publicName,
+        wouldRecommend: seed.wouldRecommend,
+        helpfulCount: seed.helpfulCount,
         incidentTags: seed.incidentTags,
         createdAt: new Date(),
         moderated: seed.moderated,
@@ -318,6 +329,47 @@ export class MemoryStore implements Repository {
 
   async createReview(review: Review) {
     this.reviews.push(review);
+  }
+
+  async addReviewHelpful(userId: string, reviewId: string) {
+    const key = `${userId}:${reviewId}`;
+    const review = this.reviews.find((r) => r.id === reviewId);
+    if (!review) return { added: false, helpfulCount: 0 };
+    if (this.reviewHelpful.has(key)) {
+      return { added: false, helpfulCount: review.helpfulCount };
+    }
+    this.reviewHelpful.add(key);
+    review.helpfulCount += 1;
+    return { added: true, helpfulCount: review.helpfulCount };
+  }
+
+  async listSavedAgencies(userId: string) {
+    return this.savedAgencies
+      .filter((row) => row.userId === userId)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+      .flatMap((row) => {
+        const agency = this.agencies.get(row.agencyId);
+        return agency ? [agency] : [];
+      });
+  }
+
+  async saveAgency(userId: string, agencyId: string) {
+    if (this.savedAgencies.some((row) => row.userId === userId && row.agencyId === agencyId)) {
+      return;
+    }
+    this.savedAgencies.push({ userId, agencyId, createdAt: new Date() });
+  }
+
+  async unsaveAgency(userId: string, agencyId: string) {
+    this.savedAgencies = this.savedAgencies.filter(
+      (row) => !(row.userId === userId && row.agencyId === agencyId),
+    );
+  }
+
+  async isAgencySaved(userId: string, agencyId: string) {
+    return this.savedAgencies.some(
+      (row) => row.userId === userId && row.agencyId === agencyId,
+    );
   }
 
   async createClaim(claim: Claim) {

@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { AgencyFichaTabs } from "@/components/agency-ficha-tabs";
 import { AgencyMetadataCard } from "@/components/agency-metadata-card";
-import { AgencyReviewList } from "@/components/agency-review-list";
 import { ClaimForm } from "@/components/claim-form";
 import { PublicShell } from "@/components/public-shell";
 import { ReviewForm } from "@/components/review-form";
 import { RoleRatingSummary } from "@/components/role-rating-summary";
+import { SaveAgencyButton } from "@/components/save-agency-button";
 import { agencyHasPublishedPhone, publicAgencyEmail } from "@/lib/domain/agency-contact";
 import {
   agencyTrustedDomains,
@@ -102,12 +103,15 @@ export default async function AgencyPage({
                 {publicEmail ? <span>{publicEmail}</span> : null}
               </div>
             </div>
-            <a
-              href="#dejar-resena"
-              className="btn-primary inline-flex min-h-11 shrink-0 items-center justify-center px-6"
-            >
-              Añadir reseña
-            </a>
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <SaveAgencyButton agencyId={agency.id} />
+              <a
+                href="#dejar-resena"
+                className="btn-primary inline-flex min-h-11 shrink-0 items-center justify-center px-6"
+              >
+                Añadir reseña
+              </a>
+            </div>
           </div>
         </div>
       </header>
@@ -162,9 +166,13 @@ export default async function AgencyPage({
             {totalReviews} reseñas publicadas tras moderación.
           </p>
           <div className="mt-6">
-            <AgencyReviewList
-              reviews={reviewsForClient as never}
+            <AgencyFichaTabs
+              reviews={reviewsForClient}
               initialFilter={perspectiva}
+              portalLinks={{
+                idealistaUrl: agency.idealistaUrl,
+                fotocasaUrl: agency.fotocasaUrl,
+              }}
             />
           </div>
         </section>

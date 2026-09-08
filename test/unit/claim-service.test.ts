@@ -75,7 +75,8 @@ describe("ClaimService and AdminService", () => {
       role: "inquilino",
       rating: 4,
       title: "Buena experiencia",
-      body: "La gestión fue rápida y clara en todo momento.",
+      pros: "La gestión fue rápida y clara en todo momento.",
+      cons: "Mejoraría la velocidad al contestar emails.",
     });
   }
 

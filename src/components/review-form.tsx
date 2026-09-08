@@ -1,9 +1,13 @@
 "use client";
 
-import { FormEvent, useRef, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 
 import { AccountVerification } from "@/components/account-verification";
-import { SESSION_STORAGE_KEY } from "@/lib/auth/review-errors";
+import {
+  clearSessionToken,
+  readSessionToken,
+  writeSessionToken,
+} from "@/lib/auth/session-client";
 import {
   INCIDENT_TAG_LABELS,
   INCIDENT_TAGS,
@@ -18,11 +22,25 @@ export function ReviewForm({ agencySlug }: { agencySlug: string }) {
   const [role, setRole] = useState<"inquilino" | "propietario">("inquilino");
   const [rating, setRating] = useState(5);
   const [title, setTitle] = useState("");
-  const [body, setBody] = useState("");
+  const [pros, setPros] = useState("");
+  const [cons, setCons] = useState("");
+  const [anonymous, setAnonymous] = useState(true);
+  const [publicName, setPublicName] = useState("");
+  const [wouldRecommend, setWouldRecommend] = useState<"yes" | "no" | "skip">(
+    "skip",
+  );
   const [incidentTags, setIncidentTags] = useState<IncidentTag[]>([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const feedbackRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const stored = readSessionToken();
+    if (stored) {
+      setToken(stored);
+      setStep("review");
+    }
+  }, []);
 
   function scrollToFeedback() {
     feedbackRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
@@ -30,22 +48,14 @@ export function ReviewForm({ agencySlug }: { agencySlug: string }) {
 
   function persistToken(sessionToken: string) {
     setToken(sessionToken);
-    try {
-      sessionStorage.setItem(SESSION_STORAGE_KEY, sessionToken);
-    } catch {
-      // ignore
-    }
+    writeSessionToken(sessionToken);
     setStep("review");
     setError("");
   }
 
   function clearSession() {
     setToken("");
-    try {
-      sessionStorage.removeItem(SESSION_STORAGE_KEY);
-    } catch {
-      // ignore
-    }
+    clearSessionToken();
     setStep("verify");
   }
 
@@ -61,14 +71,25 @@ export function ReviewForm({ agencySlug }: { agencySlug: string }) {
     }
 
     const trimmedTitle = title.trim();
-    const trimmedBody = body.trim();
+    const trimmedPros = pros.trim();
+    const trimmedCons = cons.trim();
     if (!trimmedTitle) {
       setError("Añade un título a la reseña.");
       scrollToFeedback();
       return;
     }
-    if (trimmedBody.length < 10) {
-      setError("El comentario debe tener al menos 10 caracteres.");
+    if (trimmedPros.length < 10) {
+      setError("Las ventajas deben tener al menos 10 caracteres.");
+      scrollToFeedback();
+      return;
+    }
+    if (trimmedCons.length < 10) {
+      setError("Las desventajas deben tener al menos 10 caracteres.");
+      scrollToFeedback();
+      return;
+    }
+    if (!anonymous && !publicName.trim()) {
+      setError("Indica un nombre público o publica de forma anónima.");
       scrollToFeedback();
       return;
     }
@@ -92,7 +113,12 @@ export function ReviewForm({ agencySlug }: { agencySlug: string }) {
           role,
           rating,
           title: trimmedTitle,
-          body: trimmedBody,
+          pros: trimmedPros,
+          cons: trimmedCons,
+          anonymous,
+          publicName: anonymous ? undefined : publicName.trim(),
+          wouldRecommend:
+            wouldRecommend === "skip" ? undefined : wouldRecommend === "yes",
           incidentTags,
         }),
       });
@@ -114,11 +140,6 @@ export function ReviewForm({ agencySlug }: { agencySlug: string }) {
         return;
       }
 
-      try {
-        sessionStorage.removeItem(SESSION_STORAGE_KEY);
-      } catch {
-        // ignore
-      }
       setStep("done");
       scrollToFeedback();
     } catch {
@@ -194,16 +215,75 @@ export function ReviewForm({ agencySlug }: { agencySlug: string }) {
             maxLength={100}
             className="input-field"
           />
-          <textarea
-            value={body}
-            onChange={(e) => setBody(e.target.value)}
-            placeholder="Cuéntanos tu experiencia (mín. 10 caracteres)"
-            required
-            minLength={10}
-            maxLength={1000}
-            rows={4}
-            className="input-field"
-          />
+          <label className="block text-xs font-medium text-zinc-600">
+            Ventajas
+            <textarea
+              value={pros}
+              onChange={(e) => setPros(e.target.value)}
+              placeholder="Qué funcionó: plazos, trato, contrato…"
+              required
+              minLength={10}
+              maxLength={450}
+              rows={3}
+              className="input-field mt-1"
+            />
+          </label>
+          <label className="block text-xs font-medium text-zinc-600">
+            Desventajas
+            <textarea
+              value={cons}
+              onChange={(e) => setCons(e.target.value)}
+              placeholder="Qué falló o qué mejorarías."
+              required
+              minLength={10}
+              maxLength={450}
+              rows={3}
+              className="input-field mt-1"
+            />
+          </label>
+          <fieldset>
+            <legend className="text-xs font-medium text-zinc-600">
+              ¿Recomendarías esta inmobiliaria?
+            </legend>
+            <div className="mt-2 flex flex-wrap gap-3 text-sm">
+              {(
+                [
+                  ["yes", "Sí"],
+                  ["no", "No"],
+                  ["skip", "Prefiero no decirlo"],
+                ] as const
+              ).map(([value, label]) => (
+                <label key={value} className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="wouldRecommend"
+                    checked={wouldRecommend === value}
+                    onChange={() => setWouldRecommend(value)}
+                  />
+                  {label}
+                </label>
+              ))}
+            </div>
+          </fieldset>
+          <label className="flex items-start gap-2 text-sm text-zinc-800">
+            <input
+              type="checkbox"
+              className="mt-0.5"
+              checked={anonymous}
+              onChange={(e) => setAnonymous(e.target.checked)}
+            />
+            Publicar solo como {role} (recomendado). Fachada sigue identificando
+            la cuenta en backend.
+          </label>
+          {!anonymous && (
+            <input
+              value={publicName}
+              onChange={(e) => setPublicName(e.target.value)}
+              placeholder="Nombre público (no uses email)"
+              maxLength={40}
+              className="input-field"
+            />
+          )}
           <fieldset>
             <legend className="text-xs font-medium text-zinc-600">
               Incidencias (opcional)
@@ -260,8 +340,8 @@ export function ReviewForm({ agencySlug }: { agencySlug: string }) {
         >
           <p className="font-medium">Reseña enviada</p>
           <p className="mt-1">
-            Sale en la ficha cuando un moderador la revise. Puedes recargar
-            esta página más tarde.
+            Sale en la ficha cuando un moderador la revise. Puedes ver el estado
+            en tu cuenta.
           </p>
         </div>
       )}

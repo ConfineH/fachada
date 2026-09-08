@@ -5,6 +5,7 @@ import { AgencyService } from "@/lib/services/agency-service";
 import { AgencySubmissionService } from "@/lib/services/agency-submission-service";
 import { AdminService } from "@/lib/services/admin-service";
 import { AuthService } from "@/lib/services/auth-service";
+import { AccountService } from "@/lib/services/account-service";
 import { ClaimService } from "@/lib/services/claim-service";
 import { ReviewService } from "@/lib/services/review-service";
 import { createEmailProvider, isResendConfigured } from "@/lib/services/email-provider";
@@ -39,6 +40,7 @@ export const authService = new AuthService(
 export const agencyService = new AgencyService(repo);
 export const agencySubmissionService = new AgencySubmissionService(repo);
 export const reviewService = new ReviewService(repo);
+export const accountService = new AccountService(repo);
 export const claimService = new ClaimService(repo, isTwilioConfigured());
 export const adminService = new AdminService(repo, claimService, agencySubmissionService);
 

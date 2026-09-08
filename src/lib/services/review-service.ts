@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 
 import { isAccountVerified } from "@/lib/domain/identity";
+import { composeReviewBody } from "@/lib/domain/review-copy";
 import type { Review, User } from "@/lib/domain/types";
 import { reviewInputSchema } from "@/lib/domain/validation";
 import type { Repository } from "@/lib/repositories/types";
@@ -48,6 +49,7 @@ export class ReviewService {
       throw new ReviewError("Rate limit: one review per agency every 7 days");
     }
 
+    const anonymous = data.anonymous ?? true;
     const review: Review = {
       id: randomUUID(),
       userId: user.id,
@@ -55,7 +57,13 @@ export class ReviewService {
       role: data.role,
       rating: data.rating,
       title: data.title,
-      body: data.body,
+      pros: data.pros,
+      cons: data.cons,
+      body: composeReviewBody(data.pros, data.cons),
+      anonymous,
+      publicName: anonymous ? undefined : data.publicName?.trim(),
+      wouldRecommend: data.wouldRecommend,
+      helpfulCount: 0,
       incidentTags: data.incidentTags ?? [],
       createdAt: new Date(),
       moderated: false,
@@ -64,5 +72,19 @@ export class ReviewService {
 
     await this.repo.createReview(review);
     return review;
+  }
+
+  async markHelpful(user: User | undefined, reviewId: string) {
+    if (!isAccountVerified(user)) {
+      throw new ReviewError("Account verification required");
+    }
+    const review = await this.repo.findReviewById(reviewId);
+    if (!review || !review.moderated || review.flagged) {
+      throw new ReviewError("Reseña no encontrada");
+    }
+    if (review.userId === user.id) {
+      throw new ReviewError("No puedes marcar tu propia reseña como útil");
+    }
+    return this.repo.addReviewHelpful(user.id, reviewId);
   }
 }

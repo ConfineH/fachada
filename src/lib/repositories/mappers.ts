@@ -52,6 +52,12 @@ type ReviewRow = {
   rating: number;
   title: string;
   body: string;
+  pros: string | null;
+  cons: string | null;
+  anonymous: boolean | null;
+  public_name: string | null;
+  would_recommend: boolean | null;
+  helpful_count: number | null;
   incident_tags: string[] | null;
   created_at: string;
   moderated: boolean;
@@ -144,6 +150,12 @@ export function mapReview(row: ReviewRow): Review {
     rating: row.rating,
     title: row.title,
     body: row.body,
+    pros: row.pros ?? undefined,
+    cons: row.cons ?? undefined,
+    anonymous: row.anonymous ?? true,
+    publicName: row.public_name ?? undefined,
+    wouldRecommend: row.would_recommend ?? undefined,
+    helpfulCount: row.helpful_count ?? 0,
     incidentTags: parseIncidentTags(row.incident_tags),
     createdAt: new Date(row.created_at),
     moderated: row.moderated,

@@ -302,6 +302,7 @@ export class SupabaseRepository implements Repository {
       .update({
         moderated: review.moderated,
         flagged: review.flagged,
+        helpful_count: review.helpfulCount,
       })
       .eq("id", review.id);
     throwIfError(error);
@@ -316,12 +317,85 @@ export class SupabaseRepository implements Repository {
       rating: review.rating,
       title: review.title,
       body: review.body,
+      pros: review.pros ?? null,
+      cons: review.cons ?? null,
+      anonymous: review.anonymous,
+      public_name: review.publicName ?? null,
+      would_recommend: review.wouldRecommend ?? null,
+      helpful_count: review.helpfulCount,
       incident_tags: review.incidentTags,
       created_at: review.createdAt.toISOString(),
       moderated: review.moderated,
       flagged: review.flagged,
     });
     throwIfError(error);
+  }
+
+  async addReviewHelpful(userId: string, reviewId: string) {
+    const { error } = await this.client.from("review_helpful").insert({
+      user_id: userId,
+      review_id: reviewId,
+    });
+    if (error?.code === "23505") {
+      const review = await this.findReviewById(reviewId);
+      return { added: false, helpfulCount: review?.helpfulCount ?? 0 };
+    }
+    throwIfError(error);
+
+    const { count, error: countError } = await this.client
+      .from("review_helpful")
+      .select("*", { count: "exact", head: true })
+      .eq("review_id", reviewId);
+    throwIfError(countError);
+    const helpfulCount = count ?? 0;
+    const { error: updateError } = await this.client
+      .from("reviews")
+      .update({ helpful_count: helpfulCount })
+      .eq("id", reviewId);
+    throwIfError(updateError);
+    return { added: true, helpfulCount };
+  }
+
+  async listSavedAgencies(userId: string) {
+    const { data, error } = await this.client
+      .from("saved_agencies")
+      .select("agency_id, created_at")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false });
+    throwIfError(error);
+    const rows = (data ?? []) as { agency_id: string }[];
+    const agencies = await Promise.all(
+      rows.map((row) => this.findAgencyById(row.agency_id)),
+    );
+    return agencies.filter((agency): agency is Agency => agency !== null);
+  }
+
+  async saveAgency(userId: string, agencyId: string) {
+    const { error } = await this.client.from("saved_agencies").upsert(
+      { user_id: userId, agency_id: agencyId },
+      { onConflict: "user_id,agency_id" },
+    );
+    throwIfError(error);
+  }
+
+  async unsaveAgency(userId: string, agencyId: string) {
+    const { error } = await this.client
+      .from("saved_agencies")
+      .delete()
+      .eq("user_id", userId)
+      .eq("agency_id", agencyId);
+    throwIfError(error);
+  }
+
+  async isAgencySaved(userId: string, agencyId: string) {
+    const { data, error } = await this.client
+      .from("saved_agencies")
+      .select("agency_id")
+      .eq("user_id", userId)
+      .eq("agency_id", agencyId)
+      .maybeSingle();
+    throwIfError(error);
+    return Boolean(data);
   }
 
   async createClaim(claim: Claim) {
