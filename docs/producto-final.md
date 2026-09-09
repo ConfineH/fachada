@@ -166,11 +166,11 @@ Objetivo: producto *shaped* y demoable en MemoryStore / local. **No** tracción 
 
 | # | Item |
 |---|------|
-| 1 | Cloud + migraciones (incl. tags) + prod sin MemoryStore |
-| 2 | Twilio real; sin `EXPOSE_DEV_SMS_CODE` en production |
-| 3 | Soft launch ciudad piloto + ops moderación + canal contacto |
+| 1 | ~~Cloud + migraciones~~ hecho (`embmicoogxrxsvchywis`) |
+| 2 | Twilio real cuando haga falta SMS de ficha |
+| 3 | Soft launch ciudad piloto + canal contacto (dominio) |
 | 4 | SEO ciudad/ficha + pasar `seo-audit` |
-| 5 | `/cuenta` persistente; alertas de reseña nueva a agencia claimada |
+| 5 | ~~`/cuenta`~~ hecho; alertas de reseña nueva a agencia claimada |
 | 6 | Publicar extensión Idealista; luego Fotocasa |
 | 7 | Impugnar reseña (agencia) + flujo admin |
 | 8 | Premium Stripe cuando haya densidad + N reclamadas |

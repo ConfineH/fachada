@@ -17,17 +17,17 @@ Norte: [`producto-final.md`](./producto-final.md). Infra: [`estrategia.md`](./es
 
 ## Siguiente
 
-1. `SUPABASE_SERVICE_ROLE_KEY` en `.env.local` y Vercel (sin ella el deploy sigue en memoria)
-2. Claim → aprobación → respuesta contra DB real
-3. Twilio; quitar `EXPOSE_DEV_SMS_CODE` en production
+1. Preview Vercel = mismas env que Production (Supabase + Google + `SITE_URL`)
+2. Quitar `EXPOSE_DEV_SMS_CODE` del dashboard si sigue
+3. Twilio cuando haga falta SMS de ficha reclamada
 4. Publicar extensión Idealista contra la URL live
-5. `/cuenta`
-6. Densidad ciudad piloto; premium después
-7. CTA Roomeo (flag), no en el hero
+5. Densidad ciudad piloto; premium después
+6. CTA Roomeo (flag), no en el hero
 
 ## Go-live residual
 
-- [ ] Env de producción con service_role (no anon)
-- [ ] Admin password rotada
-- [ ] Proceso de moderación documentado
-- [ ] Canal de contacto
+- [x] Env de producción con service_role (no anon)
+- [x] Google Sign-In publicado (cualquier Gmail)
+- [ ] Admin password rotada (si aún es la de demo)
+- [ ] Canal de contacto real (`privacidad@fachada.app` cuando haya dominio)
+- [x] Moderación manual en `/admin`

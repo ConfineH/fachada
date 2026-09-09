@@ -16,7 +16,7 @@ Abre http://localhost:3000 — **no necesitas `.env`**.
 | Comando | Uso |
 |---------|-----|
 | `npm run dev` | Servidor desarrollo |
-| `npm test` | Suite Vitest (17 tests) |
+| `npm test` | Suite Vitest |
 | `npm run test:watch` | TDD interactivo |
 | `npm run build` | Build producción |
 | `npm run lint` | ESLint |
@@ -97,12 +97,13 @@ El banner superior dirá "Datos en Supabase" en lugar de "memoria".
 
 Leer en este orden:
 
-1. [docs/estrategia.md](./estrategia.md) — **no hay cloud slot**
+1. [docs/estrategia.md](./estrategia.md)
 2. [docs/portfolio.md](./portfolio.md) — no pausar Migajas/Meant To
-3. [docs/arquitectura.md](./arquitectura.md) — dónde va cada cosa
-4. [docs/decisiones.md](./decisiones.md) — qué ya está decidido
+3. [docs/arquitectura.md](./arquitectura.md)
+4. [docs/infraestructura.md](./infraestructura.md) — live: Supabase + Google
+5. [docs/decisiones.md](./decisiones.md)
 
-**No asumir** producción live. **No configurar** Supabase cloud sin confirmar slot disponible.
+**No asumir** que Preview tiene las mismas env que Production. **No** activar Twilio ni Resend sin decidirlo.
 
 ## Convenciones
 
@@ -119,8 +120,9 @@ Leer en este orden:
 | Síntoma | Solución |
 |---------|----------|
 | Build falla tras git pull | `rm -rf .next && npm run build` |
-| No veo código SMS | Comprobar `EXPOSE_DEV_SMS_CODE` o usar local dev |
-| Reseña no aparece en Vercel | Normal en modo memoria serverless — probar en local |
+| No veo código SMS | En local, sin Twilio, el mock muestra el código. En Vercel Production no se expone |
+| Reseña no aparece en Vercel | Si no hay `SUPABASE_SERVICE_ROLE_KEY`, el deploy está en memoria y se pierde. Si hay Supabase: falta moderación en `/admin` |
+| Google no sale / error 403 | Client ID del proyecto GCP Fachada, origen `https://fachada-tau.vercel.app`, app OAuth en producción |
 | "No autorizado" al responder | Mismo teléfono que hizo el claim aprobado |
 | Hydration warning en dev | Conocido con DevBanner; no bloquea en local |
 

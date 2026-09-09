@@ -45,13 +45,13 @@ Inspirado en cómo documentamos decisiones en Meant To y Migajas para no re-deba
 
 **Contexto:** Sin Twilio en MVP; hay que probar flujos de verificación.
 
-**Decisión:** `MockSmsProvider` + `devCode` en respuesta API cuando `NODE_ENV !== 'production'` o `EXPOSE_DEV_SMS_CODE=true`.
+**Decisión:** `MockSmsProvider` + `devCode` en la API solo cuando no hay Twilio y `NODE_ENV !== 'production'`. `EXPOSE_DEV_SMS_CODE` quedó documentada en el MVP y **ya no se usa**.
 
 **Consecuencias:**
-- ✅ Flujos testeables sin SMS real
-- ⚠️ En Vercel preview hay que setear `EXPOSE_DEV_SMS_CODE=true`
-- 🔜 Twilio cuando haya producción
-- 📁 `src/lib/services/sms-provider.ts`, `auth-service.ts`
+- ✅ Flujos testeables en local sin SMS real
+- ✅ Vercel Production/Preview (`NODE_ENV=production`) no revelan OTP
+- 🔜 Twilio cuando haga falta SMS de línea de negocio
+- 📁 `src/lib/container.ts`, `sms-provider.ts`, `auth-service.ts`
 
 ---
 
@@ -118,18 +118,17 @@ Inspirado en cómo documentamos decisiones en Meant To y Migajas para no re-deba
 
 ---
 
-## ADR-008: Deploy Vercel permitido solo como demo
+## ADR-008: Deploy Vercel como archivo live
 
-**Fecha:** 2026-07-14  
-**Estado:** Aceptada
+**Fecha:** 2026-07-14 (superseded 2026-09-09)  
+**Estado:** Sustituida
 
-**Contexto:** Queríamos URL compartible sin slot Supabase.
+**Contexto original:** URL compartible sin slot Supabase.
 
-**Decisión:** Vercel con modo memoria + `EXPOSE_DEV_SMS_CODE`. Documentar limitaciones. No promocionar como producto live.
+**Decisión actual:** Production usa Supabase cloud + Google Sign-In. Ya no se promociona como demo en memoria.
 
 **Consecuencias:**
-- ✅ https://fachada-tau.vercel.app para demos visuales
-- ⚠️ Datos no confiables entre sesiones
+- ✅ https://fachada-tau.vercel.app persiste reseñas
 - 📁 `docs/infraestructura.md`
 
 ---
