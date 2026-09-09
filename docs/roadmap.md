@@ -17,7 +17,7 @@ Norte: [`producto-final.md`](./producto-final.md). Infra: [`estrategia.md`](./es
 
 ## Siguiente
 
-1. Preview Vercel = mismas env que Production (Supabase + Google + `SITE_URL`)
+1. Preview Vercel = mismas env que Production (Supabase + Google)
 2. Quitar `EXPOSE_DEV_SMS_CODE` del dashboard si sigue
 3. Twilio cuando haga falta SMS de ficha reclamada
 4. Publicar extensión Idealista contra la URL live

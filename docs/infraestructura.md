@@ -20,7 +20,7 @@ Ver `.env.local.example`. Resumen:
 | `NEXT_PUBLIC_SUPABASE_URL` | Sí | URL del proyecto |
 | `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | Sí | Sign-In (OAuth web, proyecto GCP **Fachada**). Tipo Config, no Secret. No subir el client secret. |
 | `ADMIN_PASSWORD` | Sí | Panel `/admin` |
-| `NEXT_PUBLIC_SITE_URL` | Recomendada | `https://fachada-tau.vercel.app` |
+| `NEXT_PUBLIC_SITE_URL` | No | Override de la URL pública. Si no está, Production usa el dominio de Vercel (`fachada-tau.vercel.app` hoy) |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | No | Cliente público (futuro); las tablas tienen RLS revoke |
 | `RESEND_API_KEY` + `EMAIL_FROM` | No | Códigos al email en Vercel. Sin esto, login = solo Google |
 | `TWILIO_*` | No | SMS de línea de negocio al reclamar ficha. No activar aún |
@@ -92,7 +92,7 @@ npm cache clean --force
 - [x] Supabase cloud + migraciones
 - [x] Google OAuth (proyecto GCP Fachada, app publicada, login con Gmail ajeno)
 - [x] `ADMIN_PASSWORD` y moderación en `/admin`
-- [ ] Preview con las mismas env que Production (Google + Supabase + `SITE_URL`)
+- [ ] Preview con las mismas env que Production (Google + Supabase)
 - [ ] Quitar `EXPOSE_DEV_SMS_CODE` si sigue en el dashboard
 - [ ] Dominio `fachada.app` y buzón `privacidad@fachada.app`
 - [ ] Twilio — cuando haga falta SMS de ficha
