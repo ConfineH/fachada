@@ -40,6 +40,7 @@ export function AccountVerification({
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [loading, setLoading] = useState(false);
+  const [googleRequested, setGoogleRequested] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -57,7 +58,7 @@ export function AccountVerification({
   }, []);
 
   useEffect(() => {
-    if (!googleClientId) return;
+    if (!googleClientId || !googleRequested) return;
 
     function handleCredential(response: { credential: string }) {
       setLoading(true);
@@ -118,7 +119,7 @@ export function AccountVerification({
     return () => {
       script.onload = null;
     };
-  }, [googleClientId]);
+  }, [googleClientId, googleRequested]);
 
   async function sendCode() {
     setLoading(true);
@@ -219,7 +220,17 @@ export function AccountVerification({
 
       {googleClientId && step === "email" && (
         <div>
-          <div ref={googleButtonRef} className="flex min-h-11 justify-center" />
+          {googleRequested ? (
+            <div ref={googleButtonRef} className="flex min-h-11 justify-center" />
+          ) : (
+            <button
+              type="button"
+              className="btn-secondary w-full min-h-11"
+              onClick={() => setGoogleRequested(true)}
+            >
+              Continuar con Google
+            </button>
+          )}
           {emailEnabled ? (
             <p className="mt-3 text-center text-xs text-zinc-500">
               o con un código al email

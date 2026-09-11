@@ -25,7 +25,7 @@ Original vision archive: [`docs/docs-extracted.txt`](../docs/docs-extracted.txt)
 
 **Category:** Proptech trust / reputation (not marketplace).
 
-**Stage:** Local-first MVP; demo Vercel ephemeral; no cloud production until Supabase Pro/slot.
+**Stage:** Live piloto (Vercel + Supabase). Producto usable; tracción aún no. Norte operativo: [`docs/roadmap.md`](../docs/roadmap.md).
 
 ## 2. Audience
 

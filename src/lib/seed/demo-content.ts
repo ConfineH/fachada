@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 
 import { composeReviewBody } from "@/lib/domain/review-copy";
-import type { AgencyNameAlias, Review } from "@/lib/domain/types";
+import type { AgencyLocation, AgencyNameAlias, Review } from "@/lib/domain/types";
 
 type SeedReview = Omit<Review, "id" | "userId" | "agencyId" | "createdAt"> & {
   agencySlug: string;
@@ -23,6 +23,12 @@ export const DEMO_ALIASES: SeedAlias[] = [
     alias: "Sol Inmobiliaria Madrid",
     kind: "commercial",
   },
+  {
+    agencySlug: "inmobiliaria-sol-madrid",
+    alias: "Sol Gestión",
+    kind: "former",
+    note: "Nombre comercial anterior",
+  },
 ];
 
 function demoReview(
@@ -38,6 +44,23 @@ function demoReview(
     helpfulCount: 0,
   };
 }
+
+type SeedLocation = Omit<AgencyLocation, "id" | "agencyId" | "createdAt"> & {
+  agencySlug: string;
+};
+
+export const DEMO_LOCATIONS: SeedLocation[] = [
+  {
+    agencySlug: "inmobiliaria-sol-madrid",
+    kind: "branch",
+    status: "publicado",
+    label: "Chamberí",
+    address: "Calle de Trafalgar 8",
+    city: "Madrid",
+    postalCode: "28010",
+    note: "Oficina de atención al público, distinta del domicilio social.",
+  },
+];
 
 export const DEMO_REVIEWS: SeedReview[] = [
   demoReview({

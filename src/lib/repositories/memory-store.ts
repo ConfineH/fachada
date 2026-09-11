@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 
 import type {
   Agency,
+  AgencyLocation,
   AgencyNameAlias,
   AgencyResponse,
   AgencySubmission,
@@ -14,6 +15,7 @@ import type {
 } from "@/lib/domain/types";
 import {
   DEMO_ALIASES,
+  DEMO_LOCATIONS,
   DEMO_REVIEWS,
   createDemoUserId,
 } from "@/lib/seed/demo-content";
@@ -95,6 +97,7 @@ export class MemoryStore implements Repository {
   private claims: Claim[] = [];
   private responses = new Map<string, AgencyResponse>();
   private aliases: AgencyNameAlias[] = [];
+  private locations: AgencyLocation[] = [];
   private submissions: AgencySubmission[] = [];
   private pendingBusinessLine = new Map<string, PendingVerification>();
   private businessLineVerified = new Map<string, Date>();
@@ -136,6 +139,7 @@ export class MemoryStore implements Repository {
     this.claims = [];
     this.responses.clear();
     this.aliases = [];
+    this.locations = [];
     this.submissions = [];
     this.pendingBusinessLine.clear();
     this.businessLineVerified.clear();
@@ -183,6 +187,23 @@ export class MemoryStore implements Repository {
         effectiveUntil: seed.effectiveUntil,
         sourceUrl: seed.sourceUrl,
         note: seed.note,
+      });
+    }
+
+    for (const seed of DEMO_LOCATIONS) {
+      const agencyId = this.agenciesBySlug.get(seed.agencySlug);
+      if (!agencyId) continue;
+      this.locations.push({
+        id: randomUUID(),
+        agencyId,
+        kind: seed.kind,
+        status: seed.status,
+        label: seed.label,
+        address: seed.address,
+        city: seed.city,
+        postalCode: seed.postalCode,
+        note: seed.note,
+        createdAt: new Date(),
       });
     }
   }
@@ -407,6 +428,31 @@ export class MemoryStore implements Repository {
 
   async createAlias(alias: AgencyNameAlias) {
     this.aliases.push(alias);
+  }
+
+  async listLocationsByAgency(agencyId: string) {
+    return this.locations.filter((location) => location.agencyId === agencyId);
+  }
+
+  async listPendingLocations() {
+    return this.locations.filter((location) => location.status === "pendiente");
+  }
+
+  async createLocation(location: AgencyLocation) {
+    this.locations.push(location);
+  }
+
+  async updateLocation(location: AgencyLocation) {
+    const index = this.locations.findIndex((item) => item.id === location.id);
+    if (index >= 0) this.locations[index] = location;
+  }
+
+  async findLocationById(id: string) {
+    return this.locations.find((location) => location.id === id) ?? null;
+  }
+
+  async deleteLocation(id: string) {
+    this.locations = this.locations.filter((location) => location.id !== id);
   }
 
   async savePendingBusinessLineVerification(

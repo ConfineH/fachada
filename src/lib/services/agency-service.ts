@@ -1,11 +1,25 @@
 import { randomUUID } from "node:crypto";
 
-import type { Review } from "@/lib/domain/types";
+import { isAccountVerified } from "@/lib/domain/identity";
 import { cityToSlug } from "@/lib/domain/city";
 import { matchScore } from "@/lib/domain/match";
 import { summarizeRoleRatings } from "@/lib/domain/ratings";
-import type { Agency, AgencyNameAlias } from "@/lib/domain/types";
+import type {
+  Agency,
+  AgencyLocation,
+  AgencyNameAlias,
+  Review,
+  User,
+} from "@/lib/domain/types";
+import { agencyLocationInputSchema } from "@/lib/domain/validation";
 import type { Repository } from "@/lib/repositories/types";
+
+export class AgencyError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "AgencyError";
+  }
+}
 
 export type AgencyMatchResult = {
   agency: Agency;
@@ -164,11 +178,62 @@ export class AgencyService {
     return this.getBySlug(slug, { publicOnly: false });
   }
 
+  async addLocation(
+    agencyId: string,
+    input: {
+      kind: AgencyLocation["kind"];
+      status: AgencyLocation["status"];
+      address: string;
+      city: string;
+      postalCode: string;
+      label?: string;
+      note?: string;
+    },
+  ) {
+    const location: AgencyLocation = {
+      id: randomUUID(),
+      agencyId,
+      kind: input.kind,
+      status: input.status,
+      address: input.address.trim(),
+      city: input.city.trim(),
+      postalCode: input.postalCode.trim(),
+      label: input.label?.trim() || undefined,
+      note: input.note?.trim() || undefined,
+      createdAt: new Date(),
+    };
+    await this.repo.createLocation(location);
+    return location;
+  }
+
+  async suggestLocation(user: User | undefined, slug: string, input: unknown) {
+    if (!isAccountVerified(user)) {
+      throw new AgencyError("Account verification required");
+    }
+    const agency = await this.repo.findAgencyBySlug(slug);
+    if (!agency) throw new AgencyError("Agency not found");
+    const data = agencyLocationInputSchema.parse(input);
+    return this.addLocation(agency.id, {
+      kind: "reported",
+      status: "pendiente",
+      address: data.address,
+      city: data.city,
+      postalCode: data.postalCode ?? "",
+      label: data.label,
+      note: data.note,
+    });
+  }
+
   async getBySlug(slug: string, options?: { publicOnly?: boolean }) {
     const agency = await this.repo.findAgencyBySlug(slug);
     if (!agency) return undefined;
 
     const aliases = await this.repo.listAliasesByAgency(agency.id);
+    const locations = await this.repo.listLocationsByAgency(agency.id);
+    const visibleLocations =
+      options?.publicOnly === false
+        ? locations
+        : locations.filter((location) => location.status === "publicado");
     const reviews = await this.filterReviews(
       await this.repo.listReviewsByAgency(agency.id),
       options,
@@ -184,6 +249,7 @@ export class AgencyService {
     return {
       ...(await this.withStats(agency, options)),
       aliases,
+      locations: visibleLocations,
       reviews: reviewsWithResponses.sort(
         (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
       ),

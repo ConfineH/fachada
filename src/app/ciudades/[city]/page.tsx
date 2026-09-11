@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { PublicShell } from "@/components/public-shell";
 import { RoleRatingSummary } from "@/components/role-rating-summary";
 import { slugToCityLabel } from "@/lib/domain/city";
+import { publicStreetLine } from "@/lib/domain/agency-presence";
 import { agencyService, usingSupabase } from "@/lib/container";
 
 export async function generateMetadata({
@@ -58,7 +59,9 @@ export default async function CityPage({
               >
                 {agency.name}
               </Link>
-              <p className="mt-1 text-sm text-zinc-600">{agency.address}</p>
+              <p className="mt-1 text-sm text-zinc-600">
+                {publicStreetLine(agency)}
+              </p>
               <div className="mt-4">
                 <RoleRatingSummary roleRatings={agency.roleRatings} />
               </div>

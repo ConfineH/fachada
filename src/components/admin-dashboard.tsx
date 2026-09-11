@@ -5,6 +5,7 @@ import { useState } from "react";
 
 import type {
   ClaimWithAgency,
+  LocationWithAgency,
   ReviewWithAgency,
   SubmissionWithMeta,
 } from "@/lib/services/admin-service";
@@ -13,15 +14,18 @@ export function AdminDashboard({
   initialClaims,
   initialReviews,
   initialSubmissions,
+  initialLocations,
 }: {
   initialClaims: ClaimWithAgency[];
   initialReviews: ReviewWithAgency[];
   initialSubmissions: SubmissionWithMeta[];
+  initialLocations: LocationWithAgency[];
 }) {
   const router = useRouter();
   const [claims, setClaims] = useState(initialClaims);
   const [reviews, setReviews] = useState(initialReviews);
   const [submissions, setSubmissions] = useState(initialSubmissions);
+  const [locations, setLocations] = useState(initialLocations);
   const [message, setMessage] = useState("");
 
   async function runAction(action: string, id: string) {
@@ -41,6 +45,9 @@ export function AdminDashboard({
     setClaims((current) => current.filter((c) => c.id !== id));
     if (action.startsWith("approve-agency") || action.startsWith("reject-agency")) {
       setSubmissions((current) => current.filter((s) => s.id !== id));
+    }
+    if (action.endsWith("-location")) {
+      setLocations((current) => current.filter((item) => item.id !== id));
     }
     if (action.startsWith("moderate") || action.startsWith("flag")) {
       setReviews((current) => current.filter((r) => r.id !== id));
@@ -168,11 +175,21 @@ export function AdminDashboard({
                       : submission.phone}
                     {submission.email ? ` · ${submission.email}` : ""}
                   </p>
-                  {submission.note && (
+                  {submission.website ? (
+                    <p className="text-sm text-stone-600">
+                      Web: {submission.website}
+                    </p>
+                  ) : null}
+                  {submission.idealistaUrl ? (
+                    <p className="text-sm text-stone-600">
+                      Idealista: {submission.idealistaUrl}
+                    </p>
+                  ) : null}
+                  {submission.note ? (
                     <p className="mt-2 text-sm text-stone-700">
                       Nota: {submission.note}
                     </p>
-                  )}
+                  ) : null}
                 </div>
                 <div className="flex gap-2">
                   <button
@@ -190,6 +207,53 @@ export function AdminDashboard({
                     className="rounded-lg bg-red-700 px-3 py-2 text-sm text-white"
                   >
                     Rechazar
+                  </button>
+                </div>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section>
+        <h2 className="text-lg font-medium">
+          Ubicaciones sugeridas ({locations.length})
+        </h2>
+        <ul className="mt-4 space-y-4">
+          {locations.length === 0 && (
+            <li className="rounded-xl border border-dashed border-stone-300 bg-white p-5 text-stone-600">
+              No hay ubicaciones pendientes.
+            </li>
+          )}
+          {locations.map((location) => (
+            <li
+              key={location.id}
+              className="rounded-xl border border-stone-200 bg-white p-5"
+            >
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                  <h3 className="font-semibold">
+                    {location.agencyName} · {location.kind}
+                  </h3>
+                  <p className="text-sm text-stone-600">
+                    {location.address}, {location.postalCode} {location.city}
+                  </p>
+                  {location.note ? (
+                    <p className="mt-1 text-sm text-stone-700">{location.note}</p>
+                  ) : null}
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => runAction("publish-location", location.id)}
+                    className="rounded-lg bg-emerald-700 px-3 py-2 text-sm text-white"
+                  >
+                    Publicar
+                  </button>
+                  <button
+                    onClick={() => runAction("reject-location", location.id)}
+                    className="rounded-lg bg-red-700 px-3 py-2 text-sm text-white"
+                  >
+                    Descartar
                   </button>
                 </div>
               </div>

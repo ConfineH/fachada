@@ -2,7 +2,7 @@
 
 import { FormEvent, useState } from "react";
 
-import { AgencyProfileEditor } from "@/components/agency-profile-editor";
+import { AgencyProfileEditor, AgencyAddOfficeForm } from "@/components/agency-profile-editor";
 import { AccountVerification } from "@/components/account-verification";
 
 type ReviewItem = {
@@ -155,6 +155,7 @@ export function AgencyOwnerPanel({
             idealistaUrl={idealistaUrl}
             fotocasaUrl={fotocasaUrl}
           />
+          <AgencyAddOfficeForm agencySlug={agencySlug} token={token} />
         </div>
       )}
 

@@ -2,9 +2,17 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 
 const COOKIE_NAME = "fachada_admin";
 const MAX_AGE_SEC = 60 * 60 * 8;
+const DEV_DEFAULT_PASSWORD = "fachada-admin-dev";
+
+export function isProductionAdminMisconfigured() {
+  if (process.env.NODE_ENV !== "production") return false;
+  const secret = process.env.ADMIN_PASSWORD?.trim();
+  return !secret || secret === DEV_DEFAULT_PASSWORD;
+}
 
 function getAdminSecret() {
-  return process.env.ADMIN_PASSWORD ?? "fachada-admin-dev";
+  if (isProductionAdminMisconfigured()) return "";
+  return process.env.ADMIN_PASSWORD ?? DEV_DEFAULT_PASSWORD;
 }
 
 function sign(value: string) {

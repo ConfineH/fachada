@@ -136,3 +136,94 @@ export function AgencyProfileEditor({
     </form>
   );
 }
+
+export function AgencyAddOfficeForm({
+  agencySlug,
+  token,
+}: {
+  agencySlug: string;
+  token: string;
+}) {
+  const [address, setAddress] = useState("");
+  const [label, setLabel] = useState("");
+  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  async function onSubmit(event: FormEvent) {
+    event.preventDefault();
+    setLoading(true);
+    setError("");
+    setMessage("");
+    const res = await fetch(`/api/agencies/${agencySlug}/locations`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        address,
+        city: "Madrid",
+        label: label.trim() || undefined,
+        kind: "branch",
+      }),
+    });
+    const data = (await res.json()) as { error?: string };
+    setLoading(false);
+    if (!res.ok) {
+      setError(data.error ?? "No se pudo añadir la oficina");
+      return;
+    }
+    setAddress("");
+    setLabel("");
+    setMessage("Oficina publicada en la ficha.");
+  }
+
+  return (
+    <form
+      onSubmit={onSubmit}
+      className="mt-4 rounded-xl border border-stone-200 bg-white p-5"
+    >
+      <h3 className="font-medium">Otra oficina</h3>
+      <p className="mt-1 text-sm text-zinc-600">
+        Si atendéis en más de un local, añádelo aquí. Sale en «dónde
+        encontrarlos».
+      </p>
+      {error ? (
+        <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+          {error}
+        </p>
+      ) : null}
+      {message ? (
+        <p className="mt-3 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+          {message}
+        </p>
+      ) : null}
+      <label className="mt-4 block text-xs text-zinc-500">
+        Etiqueta
+        <input
+          value={label}
+          onChange={(e) => setLabel(e.target.value)}
+          placeholder="Chamberí, local 2…"
+          className="input-field mt-1"
+        />
+      </label>
+      <label className="mt-3 block text-xs text-zinc-500">
+        Dirección
+        <input
+          required
+          value={address}
+          onChange={(e) => setAddress(e.target.value)}
+          className="input-field mt-1"
+        />
+      </label>
+      <button
+        type="submit"
+        disabled={loading}
+        className="btn-primary mt-4 min-h-10 disabled:opacity-60"
+      >
+        {loading ? "Guardando…" : "Añadir oficina"}
+      </button>
+    </form>
+  );
+}

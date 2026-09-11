@@ -1,0 +1,187 @@
+[
+  {
+    "name": "Alquiler Seguro",
+    "address": "Oficina en Madrid",
+    "postalCode": "28001",
+    "website": "https://www.alquilerseguro.es",
+    "aliases": ["AlquilerSeguro", "Alquiler Seguro S.A.", "Alquiler Seguro SA"]
+  },
+  {
+    "name": "Housfy",
+    "address": "Oficina en Madrid",
+    "postalCode": "28001",
+    "website": "https://housfy.com",
+    "aliases": ["Housfy Alquiler", "Housfy Madrid"]
+  },
+  {
+    "name": "Tecnocasa",
+    "address": "Oficina en Madrid",
+    "postalCode": "28001",
+    "website": "https://www.tecnocasa.es",
+    "aliases": ["Grupo Tecnocasa", "Tecnocasa Madrid", "Tecnocasa España"]
+  },
+  {
+    "name": "Look & Find",
+    "address": "Oficina en Madrid",
+    "postalCode": "28001",
+    "website": "https://www.lookandfind.es",
+    "aliases": [
+      "Look and Find",
+      "Look&Find",
+      "Look & Find Chamberí",
+      "Look & Find Pacífico"
+    ]
+  },
+  {
+    "name": "Gilmar",
+    "address": "Oficina en Madrid",
+    "postalCode": "28001",
+    "website": "https://www.gilmar.es",
+    "aliases": ["Gilmar Madrid", "Inmobiliaria Gilmar"]
+  },
+  {
+    "name": "Engel & Völkers",
+    "address": "Oficina en Madrid",
+    "postalCode": "28001",
+    "website": "https://www.engelvoelkers.com",
+    "aliases": [
+      "Engel and Volkers",
+      "Engel Voelkers",
+      "Engel & Volkers Madrid",
+      "E&V"
+    ]
+  },
+  {
+    "name": "Lucas Fox",
+    "address": "Oficina en Madrid",
+    "postalCode": "28001",
+    "website": "https://www.lucasfox.com",
+    "aliases": ["Lucas Fox Madrid", "LucasFox"]
+  },
+  {
+    "name": "donpiso",
+    "address": "Calle de Castelló 55",
+    "postalCode": "28001",
+    "website": "https://www.donpiso.com",
+    "aliases": ["Don Piso", "Donpiso Madrid", "donpiso Madrid"]
+  },
+  {
+    "name": "RE/MAX",
+    "address": "Oficina en Madrid",
+    "postalCode": "28001",
+    "website": "https://www.remax.es",
+    "aliases": ["Remax", "REMAX", "RE/MAX Madrid"]
+  },
+  {
+    "name": "Century 21",
+    "address": "Oficina en Madrid",
+    "postalCode": "28001",
+    "website": "https://www.century21.es",
+    "aliases": ["Century21", "C21", "Century 21 Madrid"]
+  },
+  {
+    "name": "Alfa Inmobiliaria",
+    "address": "Calle de Palos de la Frontera 4",
+    "postalCode": "28012",
+    "website": "https://www.alfainmo.com",
+    "aliases": ["Alfa Inmo", "Alfa Inmobiliaria Madrid"]
+  },
+  {
+    "name": "Redpiso",
+    "address": "Calle Eduardo Galeano 2, Rivas Vaciamadrid",
+    "postalCode": "28521",
+    "website": "https://www.redpiso.es",
+    "aliases": ["Red Piso", "Redpiso Madrid"]
+  },
+  {
+    "name": "iad España",
+    "address": "Oficina en Madrid",
+    "postalCode": "28001",
+    "website": "https://www.iadspain.es",
+    "aliases": ["iad", "IAD", "iad Spain"]
+  },
+  {
+    "name": "Comprarcasa",
+    "address": "Oficina en Madrid",
+    "postalCode": "28001",
+    "website": "https://www.comprarcasa.com",
+    "aliases": ["Comprar Casa", "Comprarcasa Madrid"]
+  },
+  {
+    "name": "Aproperties",
+    "address": "Oficina en Madrid",
+    "postalCode": "28001",
+    "website": "https://www.aproperties.es",
+    "aliases": ["A Properties", "Aproperties Madrid"]
+  },
+  {
+    "name": "Knight Frank",
+    "address": "Oficina en Madrid",
+    "postalCode": "28001",
+    "website": "https://www.knightfrank.es",
+    "aliases": ["Knight Frank Madrid", "KnightFrank"]
+  },
+  {
+    "name": "Savills",
+    "address": "Oficina en Madrid",
+    "postalCode": "28001",
+    "website": "https://www.savills.es",
+    "aliases": ["Savills Madrid", "Savills Aguirre Newman"]
+  },
+  {
+    "name": "Forcadell",
+    "address": "Oficina en Madrid",
+    "postalCode": "28001",
+    "website": "https://www.forcadell.com",
+    "aliases": ["Forcadell Madrid", "Inmobiliaria Forcadell"]
+  },
+  {
+    "name": "Sotheby's International Realty",
+    "address": "Oficina en Madrid",
+    "postalCode": "28001",
+    "website": "https://www.sothebysrealty.com",
+    "aliases": ["Sothebys", "Sotheby's", "Sotheby's Realty Madrid"]
+  },
+  {
+    "name": "Barnes",
+    "address": "Oficina en Madrid",
+    "postalCode": "28001",
+    "website": "https://www.barnes-madrid.com",
+    "aliases": ["Barnes Madrid", "BARNES"]
+  },
+  {
+    "name": "Keller Williams",
+    "address": "Oficina en Madrid",
+    "postalCode": "28001",
+    "website": "https://www.kwspain.com",
+    "aliases": ["KW", "Keller Williams Madrid", "KW Spain"]
+  },
+  {
+    "name": "Coldwell Banker",
+    "address": "Oficina en Madrid",
+    "postalCode": "28001",
+    "website": "https://www.coldwellbanker.es",
+    "aliases": ["Coldwell Banker Madrid", "CB Inmobiliaria"]
+  },
+  {
+    "name": "Madrid Easy",
+    "address": "Oficina en Madrid",
+    "postalCode": "28001",
+    "website": "https://www.madrideasy.com",
+    "aliases": ["MadridEasy", "Madrid Easy Rentals"]
+  },
+  {
+    "name": "ERA Inmobiliaria",
+    "address": "Oficina en Madrid",
+    "postalCode": "28001",
+    "website": "https://www.era.es",
+    "aliases": ["ERA", "ERA Madrid"]
+  },
+  {
+    "name": "Winkworth",
+    "address": "Oficina en Madrid",
+    "postalCode": "28001",
+    "website": "https://www.winkworth.es",
+    "aliases": ["Winkworth Madrid", "Winkworth Spain"]
+  }
+]

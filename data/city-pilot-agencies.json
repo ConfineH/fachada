@@ -1,0 +1,246 @@
+[
+  {
+    "city": "Barcelona",
+    "postalCode": "08001",
+    "agencies": [
+      {
+        "name": "Tecnocasa",
+        "website": "https://www.tecnocasa.es",
+        "aliases": ["Grupo Tecnocasa", "Tecnocasa Barcelona", "Tecnocasa España"]
+      },
+      {
+        "name": "donpiso",
+        "website": "https://www.donpiso.com",
+        "aliases": ["Don Piso", "Donpiso Barcelona", "donpiso Barcelona"]
+      },
+      {
+        "name": "Engel & Völkers",
+        "website": "https://www.engelvoelkers.com",
+        "aliases": [
+          "Engel and Volkers",
+          "Engel Voelkers",
+          "Engel & Volkers Barcelona",
+          "E&V"
+        ]
+      },
+      {
+        "name": "Look & Find",
+        "website": "https://www.lookandfind.es",
+        "aliases": ["Look and Find", "Look&Find", "Look & Find Barcelona"]
+      },
+      {
+        "name": "Lucas Fox",
+        "website": "https://www.lucasfox.com",
+        "aliases": ["Lucas Fox Barcelona", "LucasFox"]
+      },
+      {
+        "name": "Aproperties",
+        "website": "https://www.aproperties.es",
+        "aliases": ["A Properties", "Aproperties Barcelona"]
+      },
+      {
+        "name": "Housfy",
+        "website": "https://housfy.com",
+        "aliases": ["Housfy Alquiler", "Housfy Barcelona"]
+      },
+      {
+        "name": "Forcadell",
+        "website": "https://www.forcadell.com",
+        "aliases": ["Forcadell Barcelona", "Inmobiliaria Forcadell"]
+      },
+      {
+        "name": "Alquiler Seguro",
+        "website": "https://www.alquilerseguro.es",
+        "aliases": ["AlquilerSeguro", "Alquiler Seguro S.A.", "Alquiler Seguro Barcelona"]
+      },
+      {
+        "name": "Vivendex",
+        "website": "https://www.vivendex.com",
+        "aliases": ["Vivendex Barcelona", "Inmobiliaria Vivendex"]
+      }
+    ]
+  },
+  {
+    "city": "Valencia",
+    "postalCode": "46001",
+    "agencies": [
+      {
+        "name": "Tecnocasa",
+        "website": "https://www.tecnocasa.es",
+        "aliases": ["Grupo Tecnocasa", "Tecnocasa Valencia", "Tecnocasa España"]
+      },
+      {
+        "name": "donpiso",
+        "website": "https://www.donpiso.com",
+        "aliases": ["Don Piso", "Donpiso Valencia", "donpiso Valencia"]
+      },
+      {
+        "name": "Engel & Völkers",
+        "website": "https://www.engelvoelkers.com",
+        "aliases": [
+          "Engel and Volkers",
+          "Engel Voelkers",
+          "Engel & Volkers Valencia",
+          "E&V"
+        ]
+      },
+      {
+        "name": "Look & Find",
+        "website": "https://www.lookandfind.es",
+        "aliases": ["Look and Find", "Look&Find", "Look & Find Valencia"]
+      },
+      {
+        "name": "RE/MAX",
+        "website": "https://www.remax.es",
+        "aliases": ["Remax", "REMAX", "RE/MAX Valencia"]
+      },
+      {
+        "name": "Century 21",
+        "website": "https://www.century21.es",
+        "aliases": ["Century21", "C21", "Century 21 Valencia"]
+      },
+      {
+        "name": "Alquiler Seguro",
+        "website": "https://www.alquilerseguro.es",
+        "aliases": ["AlquilerSeguro", "Alquiler Seguro Valencia"]
+      },
+      {
+        "name": "Housfy",
+        "website": "https://housfy.com",
+        "aliases": ["Housfy Alquiler", "Housfy Valencia"]
+      },
+      {
+        "name": "Alfa Inmobiliaria",
+        "website": "https://www.alfainmo.com",
+        "aliases": ["Alfa Inmo", "Alfa Inmobiliaria Valencia"]
+      },
+      {
+        "name": "Redpiso",
+        "website": "https://www.redpiso.es",
+        "aliases": ["Red Piso", "Redpiso Valencia"]
+      }
+    ]
+  },
+  {
+    "city": "Málaga",
+    "postalCode": "29001",
+    "agencies": [
+      {
+        "name": "Tecnocasa",
+        "website": "https://www.tecnocasa.es",
+        "aliases": ["Grupo Tecnocasa", "Tecnocasa Málaga", "Tecnocasa Malaga"]
+      },
+      {
+        "name": "Engel & Völkers",
+        "website": "https://www.engelvoelkers.com",
+        "aliases": [
+          "Engel and Volkers",
+          "Engel Voelkers",
+          "Engel & Volkers Málaga",
+          "E&V"
+        ]
+      },
+      {
+        "name": "donpiso",
+        "website": "https://www.donpiso.com",
+        "aliases": ["Don Piso", "Donpiso Málaga", "donpiso Malaga"]
+      },
+      {
+        "name": "Look & Find",
+        "website": "https://www.lookandfind.es",
+        "aliases": ["Look and Find", "Look&Find", "Look & Find Málaga"]
+      },
+      {
+        "name": "RE/MAX",
+        "website": "https://www.remax.es",
+        "aliases": ["Remax", "REMAX", "RE/MAX Málaga", "RE/MAX Malaga"]
+      },
+      {
+        "name": "Gilmar",
+        "website": "https://www.gilmar.es",
+        "aliases": ["Gilmar Málaga", "Gilmar Marbella", "Inmobiliaria Gilmar"]
+      },
+      {
+        "name": "Lucas Fox",
+        "website": "https://www.lucasfox.com",
+        "aliases": ["Lucas Fox Málaga", "Lucas Fox Marbella", "LucasFox"]
+      },
+      {
+        "name": "Alquiler Seguro",
+        "website": "https://www.alquilerseguro.es",
+        "aliases": ["AlquilerSeguro", "Alquiler Seguro Málaga"]
+      },
+      {
+        "name": "Century 21",
+        "website": "https://www.century21.es",
+        "aliases": ["Century21", "C21", "Century 21 Málaga"]
+      },
+      {
+        "name": "iad España",
+        "website": "https://www.iadspain.es",
+        "aliases": ["iad", "IAD", "iad Spain", "iad Málaga"]
+      }
+    ]
+  },
+  {
+    "city": "Sevilla",
+    "postalCode": "41001",
+    "agencies": [
+      {
+        "name": "Tecnocasa",
+        "website": "https://www.tecnocasa.es",
+        "aliases": ["Grupo Tecnocasa", "Tecnocasa Sevilla", "Tecnocasa España"]
+      },
+      {
+        "name": "donpiso",
+        "website": "https://www.donpiso.com",
+        "aliases": ["Don Piso", "Donpiso Sevilla", "donpiso Sevilla"]
+      },
+      {
+        "name": "Engel & Völkers",
+        "website": "https://www.engelvoelkers.com",
+        "aliases": [
+          "Engel and Volkers",
+          "Engel Voelkers",
+          "Engel & Volkers Sevilla",
+          "E&V"
+        ]
+      },
+      {
+        "name": "Look & Find",
+        "website": "https://www.lookandfind.es",
+        "aliases": ["Look and Find", "Look&Find", "Look & Find Sevilla"]
+      },
+      {
+        "name": "RE/MAX",
+        "website": "https://www.remax.es",
+        "aliases": ["Remax", "REMAX", "RE/MAX Sevilla"]
+      },
+      {
+        "name": "Alquiler Seguro",
+        "website": "https://www.alquilerseguro.es",
+        "aliases": ["AlquilerSeguro", "Alquiler Seguro Sevilla"]
+      },
+      {
+        "name": "Century 21",
+        "website": "https://www.century21.es",
+        "aliases": ["Century21", "C21", "Century 21 Sevilla"]
+      },
+      {
+        "name": "Alfa Inmobiliaria",
+        "website": "https://www.alfainmo.com",
+        "aliases": ["Alfa Inmo", "Alfa Inmobiliaria Sevilla"]
+      },
+      {
+        "name": "Redpiso",
+        "website": "https://www.redpiso.es",
+        "aliases": ["Red Piso", "Redpiso Sevilla"]
+      },
+      {
+        "name": "Housfy",
+        "website": "https://housfy.com",
+        "aliases": ["Housfy Alquiler", "Housfy Sevilla"]
+      }
+    ]
+  }
+]

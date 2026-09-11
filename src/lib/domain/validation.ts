@@ -113,6 +113,55 @@ export const agencySubmissionInputSchema = z
     }
   });
 
+export const adminCreateAgencySchema = agencySubmissionInputSchema.extend({
+  aliases: z
+    .array(z.string().trim().min(2).max(80))
+    .max(12)
+    .optional()
+    .default([]),
+});
+
+export const adminAddAliasSchema = z
+  .object({
+    agencyId: z.string().uuid().optional(),
+    slug: z.string().trim().min(1).max(160).optional(),
+    alias: z.string().trim().min(2).max(80),
+    kind: z.enum(["commercial", "legal", "former"]).optional().default("commercial"),
+    note: z.string().trim().max(200).optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (!data.agencyId && !data.slug) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["slug"],
+        message: "Indica el slug o el id de la ficha",
+      });
+    }
+  });
+
+export const agencyLocationInputSchema = z.object({
+  address: z.string().trim().min(5).max(200),
+  city: z.string().trim().min(2).max(80).default("Madrid"),
+  postalCode: z.string().trim().max(10).optional().default(""),
+  label: z.string().trim().max(80).optional(),
+  note: z.string().trim().max(300).optional(),
+  kind: z.enum(["branch", "reported"]).optional(),
+});
+
+export const adminCreateLocationSchema = agencyLocationInputSchema.extend({
+  agencyId: z.string().uuid().optional(),
+  slug: z.string().trim().min(1).max(160).optional(),
+  kind: z.enum(["branch", "reported"]).optional().default("reported"),
+}).superRefine((data, ctx) => {
+  if (!data.agencyId && !data.slug) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["slug"],
+      message: "Indica el slug o el id de la ficha",
+    });
+  }
+});
+
 export const claimInputSchema = z.object({
   agencyId: z.string().uuid(),
   contactName: z.string().trim().min(2).max(120),
@@ -144,6 +193,7 @@ export const agencyProfileUpdateSchema = z.object({
 });
 
 export type ReviewInput = z.infer<typeof reviewInputSchema>;
+export type AdminCreateAgencyInput = z.infer<typeof adminCreateAgencySchema>;
 export type AgencyProfileUpdate = z.infer<typeof agencyProfileUpdateSchema>;
 export type ClaimInput = z.infer<typeof claimInputSchema>;
 export type AgencyResponseInput = z.infer<typeof agencyResponseSchema>;

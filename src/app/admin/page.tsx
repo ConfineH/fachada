@@ -1,6 +1,12 @@
 import { cookies } from "next/headers";
 
 import { AdminDashboard } from "@/components/admin-dashboard";
+import {
+  AdminAddAliasForm,
+  AdminCreateAgencyForm,
+  AdminCreateLocationForm,
+  AdminMatchProbe,
+} from "@/components/admin-ops-tools";
 import { AdminLoginForm } from "@/components/admin-login-form";
 import { COOKIE_NAME, verifyAdminToken } from "@/lib/auth/admin-session";
 import { adminService, usingSupabase } from "@/lib/container";
@@ -23,10 +29,11 @@ export default async function AdminPage() {
     );
   }
 
-  const [claims, reviews, submissions] = await Promise.all([
+  const [claims, reviews, submissions, locations] = await Promise.all([
     adminService.listPendingClaims(),
     adminService.listReviewsForModeration(),
     adminService.listPendingAgencySubmissions(),
+    adminService.listPendingLocations(),
   ]);
 
   return (
@@ -55,11 +62,18 @@ export default async function AdminPage() {
               " Las sugerencias de inmobiliaria solo existen hasta que reinicies el servidor de desarrollo."}
           </p>
         )}
-        <AdminDashboard
-          initialClaims={claims}
-          initialReviews={reviews}
-          initialSubmissions={submissions}
-        />
+        <div className="space-y-10">
+          <AdminCreateAgencyForm />
+          <AdminMatchProbe />
+          <AdminAddAliasForm />
+          <AdminCreateLocationForm />
+          <AdminDashboard
+            initialClaims={claims}
+            initialReviews={reviews}
+            initialSubmissions={submissions}
+            initialLocations={locations}
+          />
+        </div>
       </main>
     </div>
   );

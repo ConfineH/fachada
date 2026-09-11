@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "seed:madrid-sql": "node scripts/print-madrid-seed-sql.mjs",
+    "seed:cities-sql": "node scripts/print-city-seed-sql.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.3",

@@ -63,7 +63,7 @@ export interface Agency {
   createdAt: Date;
 }
 
-export type AgencyAliasKind = "commercial" | "legal";
+export type AgencyAliasKind = "commercial" | "legal" | "former";
 
 export interface AgencyNameAlias {
   id: string;
@@ -73,6 +73,24 @@ export interface AgencyNameAlias {
   effectiveUntil?: Date;
   sourceUrl?: string;
   note?: string;
+}
+
+export type AgencyLocationKind = "branch" | "reported";
+
+export type AgencyLocationStatus = "pendiente" | "publicado";
+
+export interface AgencyLocation {
+  id: string;
+  agencyId: string;
+  kind: AgencyLocationKind;
+  status: AgencyLocationStatus;
+  label?: string;
+  address: string;
+  city: string;
+  postalCode: string;
+  note?: string;
+  sourceUrl?: string;
+  createdAt: Date;
 }
 
 export interface Review {

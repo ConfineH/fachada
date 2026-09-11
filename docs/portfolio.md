@@ -9,7 +9,7 @@ Documento de referencia para mantener coherencia entre proyectos. Misma lógica 
 | **Meant To B2C** | Producción | Slot 1 (fijo) | Live | Sí |
 | **Migajas** | Producción | Slot 2 (fijo) | Live | Sí |
 | **SiQuiero** | Beta cerrada | Sin slot — túnel local o Pro | Preview | 1 tester |
-| **Fachada** | MVP / exploración | Sin slot | Demo Vercel (efímera) | No |
+| **Fachada** | Piloto live (sin tracción) | Proyecto propio `embmicoogxrxsvchywis` | https://fachada-tau.vercel.app | Aún no |
 | **Meant To B2B** | Por empezar | Sin slot — local al inicio | — | No |
 | **Futuros MVPs** | Idea | Local / memoria | — | No |
 

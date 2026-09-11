@@ -316,6 +316,17 @@ export function ReviewForm({ agencySlug }: { agencySlug: string }) {
               })}
             </ul>
           </fieldset>
+          <p className="text-xs text-zinc-500">
+            Al publicar aceptas las{" "}
+            <a href="/legal/normas" className="underline">
+              normas de uso
+            </a>{" "}
+            y la{" "}
+            <a href="/legal/privacidad" className="underline">
+              privacidad
+            </a>
+            .
+          </p>
           <button
             type="submit"
             disabled={loading}

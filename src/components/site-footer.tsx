@@ -36,12 +36,22 @@ export function SiteFooter() {
             <ul className="mt-3 space-y-2 text-sm text-zinc-700">
               <li>
                 <Link href="/legal/aviso-legal" className="hover:text-brand">
-                  LSSI
+                  Aviso legal
                 </Link>
               </li>
               <li>
                 <Link href="/legal/privacidad" className="hover:text-brand">
                   Privacidad
+                </Link>
+              </li>
+              <li>
+                <Link href="/legal/cookies" className="hover:text-brand">
+                  Cookies
+                </Link>
+              </li>
+              <li>
+                <Link href="/legal/normas" className="hover:text-brand">
+                  Normas de uso
                 </Link>
               </li>
             </ul>

@@ -2,35 +2,29 @@
 
 ## Respuesta en una línea
 
-**Fachada ya tiene proyecto Supabase cloud propio y se opera como producto persistente; el código público sigue funcionando en memoria si faltan las env vars.**
+**Producto live (Vercel + Supabase). El cuello de botella es densidad en Madrid, no features. Plan de 30 días: [`roadmap.md`](./roadmap.md).**
 
 ## Situación actual (septiembre 2026)
 
 | Dimensión | Estado |
-|-----------|--------|
-| Código MVP | ✅ Búsqueda, reseñas, claims, respuestas, admin, tags de incidencia |
+|----------|--------|
+| Código MVP | ✅ Ficha dual, tags, Glassdoor-style, `/cuenta`, claim/panel, admin |
 | Tests | ✅ Vitest + build |
-| Deploy Vercel | ⚠️ https://fachada-tau.vercel.app — persistencia solo si Vercel tiene `SUPABASE_SERVICE_ROLE_KEY` |
-| Supabase cloud | ✅ Proyecto `fachada` (`embmicoogxrxsvchywis`) ACTIVE |
-| Datos | Seed inicial de agencias/reseñas en cloud; no hay usuarios reales aún |
-| SMS real (Twilio) | ❌ Mock si no hay credenciales |
+| Deploy | ✅ https://fachada-tau.vercel.app |
+| Supabase | ✅ `embmicoogxrxsvchywis` |
+| Auth reseñas | ✅ Google Sign-In + email OTP (no Twilio) |
+| Datos | Seed; **sin tracción** (reseñas reales ≈ 0) |
+| SMS ficha agencia | ❌ Twilio solo cuando haga falta línea de negocio |
 
-## Cómo conectar el server
+Sin env de Supabase, `MemoryStore` (tests). Auth de usuarios **no** es Supabase Auth.
 
-En `.env.local` y en Vercel:
+Env: `NEXT_PUBLIC_SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` (no la anon key; no commit). RLS revoke: el server usa `service_role`.
 
-- `NEXT_PUBLIC_SUPABASE_URL=https://embmicoogxrxsvchywis.supabase.co`
-- `SUPABASE_SERVICE_ROLE_KEY=` (Dashboard → API; **no** la anon key; **no** commit)
+## Dirección (no negociable hasta el gate)
 
-Las tablas tienen RLS revoke: el Next server habla con **service_role**. Auth de usuarios sigue siendo OTP SMS propio, no Supabase Auth.
+1. 25 fichas Madrid reales + 15 reseñas reales moderadas.
+2. Extensión unpacked: medir match Idealista (objetivo ≥ 7/10).
+3. `src/lib/legal.ts` con titular real. Rotar `ADMIN_PASSWORD`.
+4. Gate “Madrid usable”: 10 fichas con ≥ 2 reseñas; entonces testers. **No** Store / Stripe / Twilio / SEO nacional antes.
 
-Sin esas variables, `MemoryStore` (útil para tests).
-
-## Dirección
-
-1. Cablear env en local y Vercel.
-2. Twilio cuando haya tráfico real.
-3. Densidad en ciudad piloto + extensión Idealista.
-4. Premium agencia **después** de densidad.
-
-No mezclar datos con Meant To ni Migajas. No pausar esos proyectos para “liberar slot”: Fachada ya tiene el suyo.
+No mezclar datos con Meant To ni Migajas.

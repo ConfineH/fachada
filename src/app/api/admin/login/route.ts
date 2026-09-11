@@ -4,10 +4,17 @@ import { NextResponse } from "next/server";
 import {
   adminCookieOptions,
   createAdminToken,
+  isProductionAdminMisconfigured,
   verifyAdminPassword,
 } from "@/lib/auth/admin-session";
 
 export async function POST(request: Request) {
+  if (isProductionAdminMisconfigured()) {
+    return NextResponse.json(
+      { error: "ADMIN_PASSWORD no está configurado en producción" },
+      { status: 503 },
+    );
+  }
   const { password } = await request.json();
   if (!verifyAdminPassword(password)) {
     return NextResponse.json({ error: "Contraseña incorrecta" }, { status: 401 });

@@ -482,7 +482,7 @@ export class SupabaseRepository implements Repository {
       id: row.id as string,
       agencyId: row.agency_id as string,
       alias: row.alias as string,
-      kind: row.kind as "commercial" | "legal",
+      kind: row.kind as import("@/lib/domain/types").AgencyAliasKind,
       effectiveUntil: row.effective_until
         ? new Date(row.effective_until as string)
         : undefined,
@@ -498,7 +498,7 @@ export class SupabaseRepository implements Repository {
       id: row.id as string,
       agencyId: row.agency_id as string,
       alias: row.alias as string,
-      kind: row.kind as "commercial" | "legal",
+      kind: row.kind as import("@/lib/domain/types").AgencyAliasKind,
       effectiveUntil: row.effective_until
         ? new Date(row.effective_until as string)
         : undefined,
@@ -517,6 +517,91 @@ export class SupabaseRepository implements Repository {
       source_url: alias.sourceUrl ?? null,
       note: alias.note ?? null,
     });
+    throwIfError(error);
+  }
+
+  private mapLocation(row: Record<string, unknown>): import("@/lib/domain/types").AgencyLocation {
+    return {
+      id: row.id as string,
+      agencyId: row.agency_id as string,
+      kind: row.kind as import("@/lib/domain/types").AgencyLocationKind,
+      status: row.status as import("@/lib/domain/types").AgencyLocationStatus,
+      label: (row.label as string) ?? undefined,
+      address: row.address as string,
+      city: row.city as string,
+      postalCode: (row.postal_code as string) ?? "",
+      note: (row.note as string) ?? undefined,
+      sourceUrl: (row.source_url as string) ?? undefined,
+      createdAt: new Date(row.created_at as string),
+    };
+  }
+
+  async listLocationsByAgency(agencyId: string) {
+    const { data, error } = await this.client
+      .from("agency_locations")
+      .select("*")
+      .eq("agency_id", agencyId)
+      .order("created_at", { ascending: true });
+    throwIfError(error);
+    return (data ?? []).map((row) => this.mapLocation(row));
+  }
+
+  async listPendingLocations() {
+    const { data, error } = await this.client
+      .from("agency_locations")
+      .select("*")
+      .eq("status", "pendiente")
+      .order("created_at", { ascending: false });
+    throwIfError(error);
+    return (data ?? []).map((row) => this.mapLocation(row));
+  }
+
+  async createLocation(location: import("@/lib/domain/types").AgencyLocation) {
+    const { error } = await this.client.from("agency_locations").insert({
+      id: location.id,
+      agency_id: location.agencyId,
+      kind: location.kind,
+      status: location.status,
+      label: location.label ?? null,
+      address: location.address,
+      city: location.city,
+      postal_code: location.postalCode,
+      note: location.note ?? null,
+      source_url: location.sourceUrl ?? null,
+      created_at: location.createdAt.toISOString(),
+    });
+    throwIfError(error);
+  }
+
+  async updateLocation(location: import("@/lib/domain/types").AgencyLocation) {
+    const { error } = await this.client
+      .from("agency_locations")
+      .update({
+        kind: location.kind,
+        status: location.status,
+        label: location.label ?? null,
+        address: location.address,
+        city: location.city,
+        postal_code: location.postalCode,
+        note: location.note ?? null,
+        source_url: location.sourceUrl ?? null,
+      })
+      .eq("id", location.id);
+    throwIfError(error);
+  }
+
+  async findLocationById(id: string) {
+    const { data, error } = await this.client
+      .from("agency_locations")
+      .select("*")
+      .eq("id", id)
+      .maybeSingle();
+    throwIfError(error);
+    return data ? this.mapLocation(data) : null;
+  }
+
+  async deleteLocation(id: string) {
+    const { error } = await this.client.from("agency_locations").delete().eq("id", id);
     throwIfError(error);
   }
 

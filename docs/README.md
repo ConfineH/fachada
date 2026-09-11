@@ -1,18 +1,18 @@
 # Documentación Fachada
 
-**Estado actual:** MVP funcional en desarrollo local. **No hay producción live** con datos persistentes — los 2 slots de Supabase cloud están asignados a Meant To B2C y Migajas.
+**Estado actual:** Live en https://fachada-tau.vercel.app con Supabase propio. El siguiente trabajo es densidad (Madrid), no más producto. Plan: [Roadmap](./roadmap.md).
 
 ## Ruta rápida
 
 | Si quieres… | Lee esto |
 |-------------|----------|
 | **Definición de producto final + auditoría + backlog** | [Producto final](./producto-final.md) |
-| Entender por qué no está live y qué hacemos mientras tanto | [Estrategia y estado](./estrategia.md) |
+| Estado live y dirección hasta el gate de densidad | [Estrategia y estado](./estrategia.md) |
 | Ver cómo encaja Fachada con el resto de proyectos | [Portfolio y slots](./portfolio.md) |
 | Arquitectura técnica del código | [Arquitectura](./arquitectura.md) |
 | Decisiones tomadas (y por qué) | [Registro de decisiones](./decisiones.md) |
 | Cómo desarrollar, desplegar o cambiar de modo | [Infraestructura](./infraestructura.md) |
-| Qué está hecho y qué viene después | [Roadmap](./roadmap.md) |
+| Checklist de la semana 1 (password, LSSI, catálogo, extensión) | [Ops semana 1](./ops-semana-1.md) |
 | Visión Fase 2 (dashboard, roles, historial; features) | [Producto Fase 2](./producto-fase-2.md) |
 | Arrancar el proyecto en 5 minutos | [Guía de desarrollo](./desarrollo.md) |
 | **Brief diseño (Stitch / UI)** | [Brief Stitch](./brief-stitch.md) |
@@ -20,11 +20,11 @@
 
 ## Principios que guían este proyecto
 
-1. **Local-first** — desarrollo sin depender de cloud (como fase exploratoria de otros MVPs).
+1. **Densidad antes que features** — Madrid usable antes de Store, Stripe o Twilio.
 2. **Repository pattern** — mismo código sirve para memoria, Supabase local o cloud.
-3. **No competir por slots** — hasta liberar slot o pasar a Supabase Pro, Fachada no usa cloud.
+3. **Cloud propio** — no competir por slots de Meant To / Migajas; Fachada ya tiene proyecto.
 4. **SDD + TDD** — specs en `openspec/specs/`, tests en `test/`, cambios archivados en `openspec/changes/archive/`.
-5. **Coherencia con Meant To y Migajas** — mismo stack base (Next.js + Supabase-ready), distinta fase de madurez.
+5. **Coherencia de stack** — Next.js + Supabase, distinta fase de madurez que el resto del portfolio.
 
 ## Fuentes de verdad
 

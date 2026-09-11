@@ -1,5 +1,6 @@
 import type {
   Agency,
+  AgencyLocation,
   AgencyNameAlias,
   AgencyResponse,
   AgencySubmission,
@@ -92,4 +93,11 @@ export interface Repository {
   listAliasesByAgency(agencyId: string): Promise<AgencyNameAlias[]>;
   listAllAliases(): Promise<AgencyNameAlias[]>;
   createAlias(alias: AgencyNameAlias): Promise<void>;
+
+  listLocationsByAgency(agencyId: string): Promise<AgencyLocation[]>;
+  listPendingLocations(): Promise<AgencyLocation[]>;
+  createLocation(location: AgencyLocation): Promise<void>;
+  updateLocation(location: AgencyLocation): Promise<void>;
+  findLocationById(id: string): Promise<AgencyLocation | null>;
+  deleteLocation(id: string): Promise<void>;
 }

@@ -3,12 +3,15 @@ import { notFound } from "next/navigation";
 
 import { AgencyFichaTabs } from "@/components/agency-ficha-tabs";
 import { AgencyMetadataCard } from "@/components/agency-metadata-card";
+import { AgencyPresence } from "@/components/agency-presence";
 import { ClaimForm } from "@/components/claim-form";
 import { PublicShell } from "@/components/public-shell";
 import { ReviewForm } from "@/components/review-form";
 import { RoleRatingSummary } from "@/components/role-rating-summary";
 import { SaveAgencyButton } from "@/components/save-agency-button";
+import { SuggestLocationForm } from "@/components/suggest-location-form";
 import { agencyHasPublishedPhone, publicAgencyEmail } from "@/lib/domain/agency-contact";
+import { publicStreetLine } from "@/lib/domain/agency-presence";
 import {
   agencyTrustedDomains,
   maskSpanishPhone,
@@ -90,7 +93,7 @@ export default async function AgencyPage({
                 </p>
               )}
               <p className="mt-4 text-sm text-zinc-700">
-                {agency.address}, {agency.postalCode} {agency.city}
+                {publicStreetLine(agency)}
               </p>
               <div className="mt-3 flex flex-wrap gap-4 text-sm text-zinc-600">
                 {agencyHasPublishedPhone(agency) ? (
@@ -145,19 +148,14 @@ export default async function AgencyPage({
             </Link>
           </div>
 
-          {agency.aliases.length > 0 && (
-            <div className="mt-8 rounded-xl border border-stone-200 bg-zinc-50 p-4 text-sm">
-              <p className="font-medium text-zinc-800">También conocida como</p>
-              <ul className="mt-2 list-inside list-disc text-zinc-700">
-                {agency.aliases.map((alias) => (
-                  <li key={alias.id}>
-                    {alias.alias}
-                    {alias.note ? ` — ${alias.note}` : ""}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+          <AgencyPresence
+            agency={agency}
+            locations={agency.locations}
+            aliases={agency.aliases}
+          />
+          <div className="mt-4">
+            <SuggestLocationForm agencySlug={agency.slug} />
+          </div>
 
           <h2 className="mt-12 text-xl font-semibold tracking-tight">
             Registro de experiencias

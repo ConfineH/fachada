@@ -1,4 +1,5 @@
 import type { Agency, AgencyNameAlias } from "@/lib/domain/types";
+import { publicStreetLine } from "@/lib/domain/agency-presence";
 
 export function AgencyMetadataCard({
   agency,
@@ -7,12 +8,18 @@ export function AgencyMetadataCard({
   agency: Agency;
   aliases?: AgencyNameAlias[];
 }) {
+  const portalNames = aliases.filter((alias) => alias.kind === "commercial");
+
   return (
     <div className="card-raised p-5">
       <h2 className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
-        Metadatos operativos
+        Ficha
       </h2>
       <dl className="mt-4 space-y-3 text-sm">
+        <div>
+          <dt className="text-zinc-500">Oficina principal</dt>
+          <dd className="font-medium text-zinc-900">{publicStreetLine(agency)}</dd>
+        </div>
         {agency.legalName && (
           <div>
             <dt className="text-zinc-500">Razón social</dt>
@@ -25,17 +32,21 @@ export function AgencyMetadataCard({
             <dd className="font-mono text-sm text-zinc-900">{agency.cif}</dd>
           </div>
         )}
-        <div>
-          <dt className="text-zinc-500">Ciudad</dt>
-          <dd className="font-medium text-zinc-900">
-            {agency.city} {agency.postalCode}
-          </dd>
-        </div>
-        {aliases.length > 0 && (
+        {agency.website && (
           <div>
-            <dt className="text-zinc-500">Marcas secundarias</dt>
+            <dt className="text-zinc-500">Web</dt>
+            <dd>
+              <a href={agency.website} className="link-brand" target="_blank" rel="noreferrer">
+                {agency.website.replace(/^https?:\/\//, "")}
+              </a>
+            </dd>
+          </div>
+        )}
+        {portalNames.length > 0 && (
+          <div>
+            <dt className="text-zinc-500">Nombres en anuncios</dt>
             <dd className="mt-2 flex flex-wrap gap-2">
-              {aliases.map((alias) => (
+              {portalNames.map((alias) => (
                 <span
                   key={alias.id}
                   className="rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs text-zinc-700"
@@ -47,9 +58,6 @@ export function AgencyMetadataCard({
           </div>
         )}
       </dl>
-      <p className="mt-5 text-xs text-zinc-500">
-        Sin plano. La dirección está en la cabecera de la ficha.
-      </p>
     </div>
   );
 }

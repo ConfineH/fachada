@@ -134,9 +134,9 @@ Al escribir copy o auditar UI, leer primero `.agents/product-marketing.md` y est
 
 ---
 
-## 5. Backlog — sin Supabase cloud (ahora)
+## 5. Backlog — shaping (histórico; ya no es “ahora”)
 
-Objetivo: producto *shaped* y demoable en MemoryStore / local. **No** tracción real ni SMS de pago.
+Objetivo de entonces: producto *shaped* y demoable. Cloud ya está. El “ahora” operativo es [`roadmap.md`](./roadmap.md).
 
 | # | Item | Notas |
 |---|------|--------|
@@ -158,7 +158,7 @@ Objetivo: producto *shaped* y demoable en MemoryStore / local. **No** tracción 
 - Dual ratings + pestañas por rol (parcial; falta sync perspectiva)
 - API `match` + extensión Idealista MVP
 - Alias en ficha, panel responder, legal pages básicas
-- SupabaseRepository listo (sin cloud)
+- SupabaseRepository + cloud (`embmicoogxrxsvchywis`)
 
 ---
 
@@ -191,11 +191,11 @@ Sin cloud:
   → hub agencia (editar ficha)
   → seed + polish + extensión sideload
 
-Con cloud:
-  persistencia + Twilio
-  → piloto ciudad + ops
-  → SEO + /cuenta + extensión store
-  → impugnación + premium + puente Roomeo
+Con cloud (sep 2026):
+  ops Madrid + reseñas reales + match extensión
+  → gate densidad
+  → SEO + aviso a agencia + impugnación
+  → Store / Twilio / premium / Roomeo
 ```
 
 ---
