@@ -8,24 +8,29 @@ import type {
   LocationWithAgency,
   ReviewWithAgency,
   SubmissionWithMeta,
+  TipWithAgency,
 } from "@/lib/services/admin-service";
+import { AGENCY_TIP_KIND_LABELS } from "@/lib/domain/agency-tips";
 
 export function AdminDashboard({
   initialClaims,
   initialReviews,
   initialSubmissions,
   initialLocations,
+  initialTips,
 }: {
   initialClaims: ClaimWithAgency[];
   initialReviews: ReviewWithAgency[];
   initialSubmissions: SubmissionWithMeta[];
   initialLocations: LocationWithAgency[];
+  initialTips: Array<TipWithAgency & { evidenceUrl?: string }>;
 }) {
   const router = useRouter();
   const [claims, setClaims] = useState(initialClaims);
   const [reviews, setReviews] = useState(initialReviews);
   const [submissions, setSubmissions] = useState(initialSubmissions);
   const [locations, setLocations] = useState(initialLocations);
+  const [tips, setTips] = useState(initialTips);
   const [message, setMessage] = useState("");
 
   async function runAction(action: string, id: string) {
@@ -48,6 +53,9 @@ export function AdminDashboard({
     }
     if (action.endsWith("-location")) {
       setLocations((current) => current.filter((item) => item.id !== id));
+    }
+    if (action.endsWith("-tip")) {
+      setTips((current) => current.filter((item) => item.id !== id));
     }
     if (action.startsWith("moderate") || action.startsWith("flag")) {
       setReviews((current) => current.filter((r) => r.id !== id));
@@ -251,6 +259,87 @@ export function AdminDashboard({
                   </button>
                   <button
                     onClick={() => runAction("reject-location", location.id)}
+                    className="rounded-lg bg-red-700 px-3 py-2 text-sm text-white"
+                  >
+                    Descartar
+                  </button>
+                </div>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section>
+        <h2 className="text-lg font-medium">
+          Aportes a fichas ({tips.length})
+        </h2>
+        <ul className="mt-4 space-y-4">
+          {tips.length === 0 && (
+            <li className="rounded-xl border border-dashed border-stone-300 bg-white p-5 text-stone-600">
+              Nadie ha aportado oficinas ni historial.
+            </li>
+          )}
+          {tips.map((tip) => (
+            <li
+              key={tip.id}
+              className="rounded-xl border border-stone-200 bg-white p-5"
+            >
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                  <h3 className="font-semibold">
+                    {tip.agencyName} · {AGENCY_TIP_KIND_LABELS[tip.kind]}
+                  </h3>
+                  {tip.address ? (
+                    <p className="text-sm text-stone-600">
+                      {tip.address}
+                      {tip.postalCode ? `, ${tip.postalCode}` : ""}{" "}
+                      {tip.city}
+                    </p>
+                  ) : null}
+                  {tip.alias ? (
+                    <p className="text-sm text-stone-600">
+                      {tip.alias}
+                      {tip.year ? ` · hasta ${tip.year}` : ""}
+                    </p>
+                  ) : null}
+                  {tip.note ? (
+                    <p className="mt-1 text-sm text-stone-700">{tip.note}</p>
+                  ) : null}
+                  {tip.sourceUrl ? (
+                    <p className="mt-1 text-sm">
+                      <a
+                        href={tip.sourceUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-amber-800 underline"
+                      >
+                        {tip.sourceUrl}
+                      </a>
+                    </p>
+                  ) : null}
+                  {tip.evidenceUrl ? (
+                    <p className="mt-2">
+                      <a
+                        href={tip.evidenceUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-sm text-amber-800 underline"
+                      >
+                        Ver captura
+                      </a>
+                    </p>
+                  ) : null}
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => runAction("approve-tip", tip.id)}
+                    className="rounded-lg bg-emerald-700 px-3 py-2 text-sm text-white"
+                  >
+                    Publicar
+                  </button>
+                  <button
+                    onClick={() => runAction("reject-tip", tip.id)}
                     className="rounded-lg bg-red-700 px-3 py-2 text-sm text-white"
                   >
                     Descartar

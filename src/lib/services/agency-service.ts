@@ -8,10 +8,14 @@ import type {
   Agency,
   AgencyLocation,
   AgencyNameAlias,
+  AgencyTip,
   Review,
   User,
 } from "@/lib/domain/types";
-import { agencyLocationInputSchema } from "@/lib/domain/validation";
+import {
+  agencyLocationInputSchema,
+  agencyTipInputSchema,
+} from "@/lib/domain/validation";
 import type { Repository } from "@/lib/repositories/types";
 
 export class AgencyError extends Error {
@@ -188,6 +192,7 @@ export class AgencyService {
       postalCode: string;
       label?: string;
       note?: string;
+      sourceUrl?: string;
     },
   ) {
     const location: AgencyLocation = {
@@ -200,6 +205,7 @@ export class AgencyService {
       postalCode: input.postalCode.trim(),
       label: input.label?.trim() || undefined,
       note: input.note?.trim() || undefined,
+      sourceUrl: input.sourceUrl?.trim() || undefined,
       createdAt: new Date(),
     };
     await this.repo.createLocation(location);
@@ -224,20 +230,114 @@ export class AgencyService {
     });
   }
 
+  async submitTip(
+    user: User | undefined,
+    slug: string,
+    input: unknown,
+    options?: { publishNow?: boolean },
+  ) {
+    if (!isAccountVerified(user)) {
+      throw new AgencyError("Account verification required");
+    }
+    const agency = await this.repo.findAgencyBySlug(slug);
+    if (!agency) throw new AgencyError("Agency not found");
+    const data = agencyTipInputSchema.parse(input);
+
+    if (!options?.publishNow) {
+      const pending = await this.repo.countPendingTips(user.id, agency.id);
+      if (pending >= 8) {
+        throw new AgencyError(
+          "Ya tienes varios aportes pendientes en esta ficha. Espera a que los revisemos.",
+        );
+      }
+    }
+
+    const tip: AgencyTip = {
+      id: randomUUID(),
+      agencyId: agency.id,
+      userId: user.id,
+      kind: data.kind,
+      status: options?.publishNow ? "aprobado" : "pendiente",
+      address: data.address,
+      city: data.city,
+      postalCode: data.postalCode,
+      label: data.label,
+      alias: data.alias,
+      year: data.year,
+      note: data.note,
+      sourceUrl: data.sourceUrl,
+      evidencePath: data.evidencePath,
+      createdAt: new Date(),
+      resolvedAt: options?.publishNow ? new Date() : undefined,
+    };
+    await this.repo.createTip(tip);
+    if (options?.publishNow) {
+      await this.applyTip(tip);
+    }
+    return tip;
+  }
+
+  async applyTip(tip: AgencyTip) {
+    const agency = await this.repo.findAgencyById(tip.agencyId);
+    if (!agency) throw new AgencyError("Agency not found");
+
+    if (tip.kind === "principal" && tip.address && tip.city) {
+      agency.address = tip.address;
+      agency.city = tip.city;
+      agency.postalCode = tip.postalCode ?? agency.postalCode;
+      await this.repo.updateAgency(agency);
+      return;
+    }
+
+    if (tip.kind === "branch" && tip.address && tip.city) {
+      await this.addLocation(agency.id, {
+        kind: "branch",
+        status: "publicado",
+        address: tip.address,
+        city: tip.city,
+        postalCode: tip.postalCode ?? "",
+        label: tip.label,
+        note: tip.note,
+        sourceUrl: tip.sourceUrl,
+      });
+      return;
+    }
+
+    if ((tip.kind === "former_name" || tip.kind === "legal_name") && tip.alias) {
+      const alias: AgencyNameAlias = {
+        id: randomUUID(),
+        agencyId: agency.id,
+        alias: tip.alias,
+        kind: tip.kind === "legal_name" ? "legal" : "former",
+        note: tip.note,
+        sourceUrl: tip.sourceUrl,
+        effectiveUntil:
+          tip.kind === "former_name" && tip.year
+            ? new Date(Date.UTC(tip.year, 11, 31))
+            : undefined,
+      };
+      await this.repo.createAlias(alias);
+      if (tip.kind === "legal_name") {
+        agency.legalName = tip.alias;
+        await this.repo.updateAgency(agency);
+      }
+    }
+  }
+
   async getBySlug(slug: string, options?: { publicOnly?: boolean }) {
     const agency = await this.repo.findAgencyBySlug(slug);
     if (!agency) return undefined;
 
-    const aliases = await this.repo.listAliasesByAgency(agency.id);
-    const locations = await this.repo.listLocationsByAgency(agency.id);
+    const [aliases, locations, rawReviews] = await Promise.all([
+      this.repo.listAliasesByAgency(agency.id),
+      this.repo.listLocationsByAgency(agency.id),
+      this.repo.listReviewsByAgency(agency.id),
+    ]);
     const visibleLocations =
       options?.publicOnly === false
         ? locations
         : locations.filter((location) => location.status === "publicado");
-    const reviews = await this.filterReviews(
-      await this.repo.listReviewsByAgency(agency.id),
-      options,
-    );
+    const reviews = await this.filterReviews(rawReviews, options);
 
     const reviewsWithResponses = await Promise.all(
       reviews.map(async (review) => ({

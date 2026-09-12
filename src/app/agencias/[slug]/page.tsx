@@ -4,14 +4,16 @@ import { notFound } from "next/navigation";
 import { AgencyFichaTabs } from "@/components/agency-ficha-tabs";
 import { AgencyMetadataCard } from "@/components/agency-metadata-card";
 import { AgencyPresence } from "@/components/agency-presence";
+import { AgencyReviewPatterns } from "@/components/agency-review-patterns";
 import { ClaimForm } from "@/components/claim-form";
 import { PublicShell } from "@/components/public-shell";
 import { ReviewForm } from "@/components/review-form";
 import { RoleRatingSummary } from "@/components/role-rating-summary";
 import { SaveAgencyButton } from "@/components/save-agency-button";
-import { SuggestLocationForm } from "@/components/suggest-location-form";
+import { SuggestFichaTipForm } from "@/components/suggest-ficha-tip-form";
 import { agencyHasPublishedPhone, publicAgencyEmail } from "@/lib/domain/agency-contact";
 import { publicStreetLine } from "@/lib/domain/agency-presence";
+import { summarizeReviewPatterns } from "@/lib/domain/review-patterns";
 import {
   agencyTrustedDomains,
   maskSpanishPhone,
@@ -68,6 +70,7 @@ export default async function AgencyPage({
   }));
 
   const totalReviews = agency.reviews.length;
+  const patterns = summarizeReviewPatterns(agency.reviews);
 
   return (
     <PublicShell storage={usingSupabase() ? "supabase" : "memory"}>
@@ -148,13 +151,18 @@ export default async function AgencyPage({
             </Link>
           </div>
 
+          <AgencyReviewPatterns summary={patterns} />
+
           <AgencyPresence
             agency={agency}
             locations={agency.locations}
             aliases={agency.aliases}
           />
           <div className="mt-4">
-            <SuggestLocationForm agencySlug={agency.slug} />
+            <SuggestFichaTipForm
+              agencySlug={agency.slug}
+              agencyCity={agency.city}
+            />
           </div>
 
           <h2 className="mt-12 text-xl font-semibold tracking-tight">

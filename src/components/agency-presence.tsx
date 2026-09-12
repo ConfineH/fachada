@@ -109,7 +109,18 @@ export function AgencyPresence({
             ))}
           </ul>
         </section>
-      ) : null}
+      ) : (
+        <section className="rounded-xl border border-dashed border-stone-300 bg-zinc-50 p-5">
+          <h2 className="text-lg font-semibold tracking-tight">Historial</h2>
+          <p className="mt-1 text-sm text-zinc-600">
+            Si se llamaban de otra forma, o la razón social no es este nombre,{" "}
+            <a href="#aportar-dato" className="underline">
+              apórtalo abajo
+            </a>
+            .
+          </p>
+        </section>
+      )}
 
       {portalNames.length > 0 ? (
         <p className="text-xs text-zinc-500">

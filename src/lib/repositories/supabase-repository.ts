@@ -605,6 +605,91 @@ export class SupabaseRepository implements Repository {
     throwIfError(error);
   }
 
+  private mapTip(row: Record<string, unknown>): import("@/lib/domain/types").AgencyTip {
+    return {
+      id: row.id as string,
+      agencyId: row.agency_id as string,
+      userId: row.user_id as string,
+      kind: row.kind as import("@/lib/domain/types").AgencyTipKind,
+      status: row.status as import("@/lib/domain/types").AgencyTipStatus,
+      address: (row.address as string) ?? undefined,
+      city: (row.city as string) ?? undefined,
+      postalCode: (row.postal_code as string) ?? undefined,
+      label: (row.label as string) ?? undefined,
+      alias: (row.alias as string) ?? undefined,
+      year: typeof row.year === "number" ? row.year : undefined,
+      note: (row.note as string) ?? undefined,
+      sourceUrl: (row.source_url as string) ?? undefined,
+      evidencePath: (row.evidence_path as string) ?? undefined,
+      createdAt: new Date(row.created_at as string),
+      resolvedAt: row.resolved_at ? new Date(row.resolved_at as string) : undefined,
+    };
+  }
+
+  async createTip(tip: import("@/lib/domain/types").AgencyTip) {
+    const { error } = await this.client.from("agency_tips").insert({
+      id: tip.id,
+      agency_id: tip.agencyId,
+      user_id: tip.userId,
+      kind: tip.kind,
+      status: tip.status,
+      address: tip.address ?? null,
+      city: tip.city ?? null,
+      postal_code: tip.postalCode ?? null,
+      label: tip.label ?? null,
+      alias: tip.alias ?? null,
+      year: tip.year ?? null,
+      note: tip.note ?? null,
+      source_url: tip.sourceUrl ?? null,
+      evidence_path: tip.evidencePath ?? null,
+      created_at: tip.createdAt.toISOString(),
+      resolved_at: tip.resolvedAt?.toISOString() ?? null,
+    });
+    throwIfError(error);
+  }
+
+  async listPendingTips() {
+    const { data, error } = await this.client
+      .from("agency_tips")
+      .select("*")
+      .eq("status", "pendiente")
+      .order("created_at", { ascending: false });
+    throwIfError(error);
+    return (data ?? []).map((row) => this.mapTip(row));
+  }
+
+  async findTipById(id: string) {
+    const { data, error } = await this.client
+      .from("agency_tips")
+      .select("*")
+      .eq("id", id)
+      .maybeSingle();
+    throwIfError(error);
+    return data ? this.mapTip(data) : null;
+  }
+
+  async updateTip(tip: import("@/lib/domain/types").AgencyTip) {
+    const { error } = await this.client
+      .from("agency_tips")
+      .update({
+        status: tip.status,
+        resolved_at: tip.resolvedAt?.toISOString() ?? null,
+      })
+      .eq("id", tip.id);
+    throwIfError(error);
+  }
+
+  async countPendingTips(userId: string, agencyId: string) {
+    const { count, error } = await this.client
+      .from("agency_tips")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .eq("agency_id", agencyId)
+      .eq("status", "pendiente");
+    throwIfError(error);
+    return count ?? 0;
+  }
+
   async savePendingBusinessLineVerification(
     userId: string,
     agencyId: string,

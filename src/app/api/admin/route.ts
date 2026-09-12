@@ -9,14 +9,15 @@ export async function GET() {
   const unauthorized = await requireAdmin();
   if (unauthorized) return unauthorized;
 
-  const [claims, reviews, submissions, locations] = await Promise.all([
+  const [claims, reviews, submissions, locations, tips] = await Promise.all([
     adminService.listPendingClaims(),
     adminService.listReviewsForModeration(),
     adminService.listPendingAgencySubmissions(),
     adminService.listPendingLocations(),
+    adminService.listPendingTips(),
   ]);
 
-  return NextResponse.json({ claims, reviews, submissions, locations });
+  return NextResponse.json({ claims, reviews, submissions, locations, tips });
 }
 
 export async function POST(request: Request) {
@@ -67,6 +68,8 @@ export async function POST(request: Request) {
       case "reject-agency-submission":
       case "publish-location":
       case "reject-location":
+      case "approve-tip":
+      case "reject-tip":
         if (!id) {
           return NextResponse.json({ error: "id required" }, { status: 400 });
         }
@@ -100,6 +103,10 @@ export async function POST(request: Request) {
         return NextResponse.json({
           location: await adminService.rejectLocation(id!),
         });
+      case "approve-tip":
+        return NextResponse.json({ tip: await adminService.approveTip(id!) });
+      case "reject-tip":
+        return NextResponse.json({ tip: await adminService.rejectTip(id!) });
       default:
         return NextResponse.json({ error: "Unknown action" }, { status: 400 });
     }

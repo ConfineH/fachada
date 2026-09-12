@@ -148,6 +148,58 @@ export const agencyLocationInputSchema = z.object({
   kind: z.enum(["branch", "reported"]).optional(),
 });
 
+const optionalHttpUrl = z
+  .string()
+  .trim()
+  .max(500)
+  .optional()
+  .transform((value) => (value ? value : undefined))
+  .pipe(z.string().url().optional());
+
+export const agencyTipInputSchema = z
+  .object({
+    kind: z.enum(["principal", "branch", "former_name", "legal_name"]),
+    address: z.string().trim().max(200).optional(),
+    city: z.string().trim().max(80).optional(),
+    postalCode: z.string().trim().max(10).optional(),
+    label: z.string().trim().max(80).optional(),
+    alias: z.string().trim().max(120).optional(),
+    year: z.preprocess(
+      (value) => (value === "" || value === undefined || value === null ? undefined : value),
+      z.coerce.number().int().min(1900).max(2035).optional(),
+    ),
+    note: z.string().trim().max(500).optional(),
+    sourceUrl: optionalHttpUrl,
+    evidencePath: z.string().trim().max(400).optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.kind === "principal" || data.kind === "branch") {
+      if (!data.address || data.address.length < 5) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["address"],
+          message: "Indica la calle y el número",
+        });
+      }
+      if (!data.city || data.city.length < 2) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["city"],
+          message: "Indica la ciudad",
+        });
+      }
+    }
+    if (data.kind === "former_name" || data.kind === "legal_name") {
+      if (!data.alias || data.alias.length < 2) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["alias"],
+          message: "Indica el nombre",
+        });
+      }
+    }
+  });
+
 export const adminCreateLocationSchema = agencyLocationInputSchema.extend({
   agencyId: z.string().uuid().optional(),
   slug: z.string().trim().min(1).max(160).optional(),
@@ -193,6 +245,7 @@ export const agencyProfileUpdateSchema = z.object({
 });
 
 export type ReviewInput = z.infer<typeof reviewInputSchema>;
+export type AgencyTipInput = z.infer<typeof agencyTipInputSchema>;
 export type AdminCreateAgencyInput = z.infer<typeof adminCreateAgencySchema>;
 export type AgencyProfileUpdate = z.infer<typeof agencyProfileUpdateSchema>;
 export type ClaimInput = z.infer<typeof claimInputSchema>;

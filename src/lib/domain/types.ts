@@ -75,6 +75,33 @@ export interface AgencyNameAlias {
   note?: string;
 }
 
+export type AgencyTipKind =
+  | "principal"
+  | "branch"
+  | "former_name"
+  | "legal_name";
+
+export type AgencyTipStatus = "pendiente" | "aprobado" | "rechazado";
+
+export interface AgencyTip {
+  id: string;
+  agencyId: string;
+  userId: string;
+  kind: AgencyTipKind;
+  status: AgencyTipStatus;
+  address?: string;
+  city?: string;
+  postalCode?: string;
+  label?: string;
+  alias?: string;
+  year?: number;
+  note?: string;
+  sourceUrl?: string;
+  evidencePath?: string;
+  createdAt: Date;
+  resolvedAt?: Date;
+}
+
 export type AgencyLocationKind = "branch" | "reported";
 
 export type AgencyLocationStatus = "pendiente" | "publicado";

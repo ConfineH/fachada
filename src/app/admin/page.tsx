@@ -10,6 +10,7 @@ import {
 import { AdminLoginForm } from "@/components/admin-login-form";
 import { COOKIE_NAME, verifyAdminToken } from "@/lib/auth/admin-session";
 import { adminService, usingSupabase } from "@/lib/container";
+import { resolveTipEvidenceUrl } from "@/lib/ops/tip-evidence";
 
 export default async function AdminPage() {
   const cookieStore = await cookies();
@@ -29,12 +30,20 @@ export default async function AdminPage() {
     );
   }
 
-  const [claims, reviews, submissions, locations] = await Promise.all([
+  const [claims, reviews, submissions, locations, tips] = await Promise.all([
     adminService.listPendingClaims(),
     adminService.listReviewsForModeration(),
     adminService.listPendingAgencySubmissions(),
     adminService.listPendingLocations(),
+    adminService.listPendingTips(),
   ]);
+
+  const tipsWithEvidence = await Promise.all(
+    tips.map(async (tip) => ({
+      ...tip,
+      evidenceUrl: await resolveTipEvidenceUrl(tip.evidencePath),
+    })),
+  );
 
   return (
     <div className="min-h-screen bg-stone-100">
@@ -72,6 +81,7 @@ export default async function AdminPage() {
             initialReviews={reviews}
             initialSubmissions={submissions}
             initialLocations={locations}
+            initialTips={tipsWithEvidence}
           />
         </div>
       </main>

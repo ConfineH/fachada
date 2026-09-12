@@ -1,15 +1,16 @@
 import { randomUUID } from "node:crypto";
 
 import { buildAgencySlug } from "@/lib/domain/agency-slug";
-import type { Agency, AgencyLocation, AgencySubmission, Claim, Review } from "@/lib/domain/types";
+import type { Agency, AgencyLocation, AgencySubmission, AgencyTip, Claim, Review } from "@/lib/domain/types";
 import {
   adminAddAliasSchema,
   adminCreateAgencySchema,
   adminCreateLocationSchema,
 } from "@/lib/domain/validation";
 import type { AgencySubmissionService } from "@/lib/services/agency-submission-service";
-import type { Repository } from "@/lib/repositories/types";
 import type { ClaimService } from "@/lib/services/claim-service";
+import type { Repository } from "@/lib/repositories/types";
+import { AgencyService } from "@/lib/services/agency-service";
 
 export class AdminError extends Error {
   constructor(message: string) {
@@ -23,6 +24,11 @@ export type ReviewWithAgency = Review & { agencyName: string };
 
 export type SubmissionWithMeta = AgencySubmission;
 export type LocationWithAgency = AgencyLocation & {
+  agencyName: string;
+  agencySlug: string;
+};
+
+export type TipWithAgency = AgencyTip & {
   agencyName: string;
   agencySlug: string;
 };
@@ -235,5 +241,41 @@ export class AdminService {
     if (!location) throw new AdminError("Location not found");
     await this.repo.deleteLocation(id);
     return location;
+  }
+
+  async listPendingTips(): Promise<TipWithAgency[]> {
+    const pending = await this.repo.listPendingTips();
+    return Promise.all(
+      pending.map(async (tip) => {
+        const agency = await this.repo.findAgencyById(tip.agencyId);
+        return {
+          ...tip,
+          agencyName: agency?.name ?? "Desconocida",
+          agencySlug: agency?.slug ?? "",
+        };
+      }),
+    );
+  }
+
+  async approveTip(id: string) {
+    const tip = await this.repo.findTipById(id);
+    if (!tip) throw new AdminError("Tip not found");
+    if (tip.status !== "pendiente") {
+      throw new AdminError("Este aporte ya está resuelto");
+    }
+    await new AgencyService(this.repo).applyTip(tip);
+    tip.status = "aprobado";
+    tip.resolvedAt = new Date();
+    await this.repo.updateTip(tip);
+    return tip;
+  }
+
+  async rejectTip(id: string) {
+    const tip = await this.repo.findTipById(id);
+    if (!tip) throw new AdminError("Tip not found");
+    tip.status = "rechazado";
+    tip.resolvedAt = new Date();
+    await this.repo.updateTip(tip);
+    return tip;
   }
 }

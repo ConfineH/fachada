@@ -4,6 +4,7 @@ import type {
   AgencyNameAlias,
   AgencyResponse,
   AgencySubmission,
+  AgencyTip,
   Claim,
   PendingEmailVerification,
   PendingVerification,
@@ -100,4 +101,10 @@ export interface Repository {
   updateLocation(location: AgencyLocation): Promise<void>;
   findLocationById(id: string): Promise<AgencyLocation | null>;
   deleteLocation(id: string): Promise<void>;
+
+  createTip(tip: AgencyTip): Promise<void>;
+  listPendingTips(): Promise<AgencyTip[]>;
+  findTipById(id: string): Promise<AgencyTip | null>;
+  updateTip(tip: AgencyTip): Promise<void>;
+  countPendingTips(userId: string, agencyId: string): Promise<number>;
 }

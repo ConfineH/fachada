@@ -6,6 +6,7 @@ import type {
   AgencyNameAlias,
   AgencyResponse,
   AgencySubmission,
+  AgencyTip,
   Claim,
   PendingEmailVerification,
   PendingVerification,
@@ -98,6 +99,7 @@ export class MemoryStore implements Repository {
   private responses = new Map<string, AgencyResponse>();
   private aliases: AgencyNameAlias[] = [];
   private locations: AgencyLocation[] = [];
+  private tips: AgencyTip[] = [];
   private submissions: AgencySubmission[] = [];
   private pendingBusinessLine = new Map<string, PendingVerification>();
   private businessLineVerified = new Map<string, Date>();
@@ -140,6 +142,7 @@ export class MemoryStore implements Repository {
     this.responses.clear();
     this.aliases = [];
     this.locations = [];
+    this.tips = [];
     this.submissions = [];
     this.pendingBusinessLine.clear();
     this.businessLineVerified.clear();
@@ -453,6 +456,32 @@ export class MemoryStore implements Repository {
 
   async deleteLocation(id: string) {
     this.locations = this.locations.filter((location) => location.id !== id);
+  }
+
+  async createTip(tip: AgencyTip) {
+    this.tips.push(tip);
+  }
+
+  async listPendingTips() {
+    return this.tips.filter((tip) => tip.status === "pendiente");
+  }
+
+  async findTipById(id: string) {
+    return this.tips.find((tip) => tip.id === id) ?? null;
+  }
+
+  async updateTip(tip: AgencyTip) {
+    const index = this.tips.findIndex((item) => item.id === tip.id);
+    if (index >= 0) this.tips[index] = tip;
+  }
+
+  async countPendingTips(userId: string, agencyId: string) {
+    return this.tips.filter(
+      (tip) =>
+        tip.userId === userId &&
+        tip.agencyId === agencyId &&
+        tip.status === "pendiente",
+    ).length;
   }
 
   async savePendingBusinessLineVerification(
