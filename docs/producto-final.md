@@ -1,7 +1,8 @@
 # Fachada — Producto final
 
-**Fecha:** 2026-09-06  
+**Fecha:** 2026-09-06 · **Revisión:** 2026-09-12  
 **Estado:** Definición de producto vigente; Supabase cloud de Fachada activo.  
+**Hecho desde la auditoría de agosto:** metodología pública, acceso agencias real, taxonomía de incidencias, copy sin «reseña verificada» ni anonimato absoluto, SEO on-page. La tabla de hallazgos UX más abajo es histórica: varios huecos ya están cerrados.  
 **Contexto marketing corto:** [`.agents/product-marketing.md`](../.agents/product-marketing.md)  
 **Visión original (archivo):** [`docs-extracted.txt`](./docs-extracted.txt) · Fase 2 features: [`producto-fase-2.md`](./producto-fase-2.md)
 
@@ -9,7 +10,7 @@
 
 ## 1. Qué es el producto final
 
-**Una frase:** Archivo público de reputación de **gestión** de inmobiliarias en España, con doble lente inquilino/propietario, reseñas verificadas por SMS y moderadas, taxonomía de incidencias alineada al dolor post–Ley de Vivienda, y presencia en el momento Idealista; gratuito para ciudadanos; portal ligero para agencias; puente opcional a Roomeo cuando exista.
+**Una frase:** Archivo público de reputación de **gestión** de inmobiliarias en España, con doble lente inquilino/propietario, cuenta identificada y reseñas moderadas, taxonomía de incidencias alineada al dolor post–Ley de Vivienda y, solo si existe autorización o un diseño compatible, contexto durante la búsqueda en portales; gratuito para ciudadanos; portal ligero para agencias; puente opcional a Roomeo cuando exista.
 
 ### Qué no es
 
@@ -26,7 +27,7 @@
 | Superficie | Job | Must-have |
 |------------|-----|-----------|
 | Público / SEO | Decidir antes de firmar o encargar gestión | Explorar ciudad, ficha dual, tags de incidencias, metodología, ranking por densidad + nota |
-| Escritura | Dejar evidencia útil | SMS, rol, rating, checklist incidencias, moderación, `/cuenta` |
+| Escritura | Dejar evidencia útil | Google o correo, rol, rating, checklist incidencias, moderación, `/cuenta` |
 | Idealista-time | Confiar sin salir del anuncio | Extensión + API match; Fotocasa después |
 | Inmobiliaria | Defender y mantener ficha | Acceso real, claim, responder, editar portales/alias/contacto, stats por rol, impugnar reseña |
 | Admin / ops | Calidad del archivo | Colas claim / reseñas / submissions; proceso documentado |

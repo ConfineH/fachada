@@ -6,8 +6,24 @@ import { CityDirectoryCard } from "@/components/city-directory-card";
 import { PublicShell } from "@/components/public-shell";
 import { Reveal } from "@/components/reveal";
 import { SearchForm } from "@/components/search-form";
+import { JsonLd } from "@/components/json-ld";
 import { homeDocumentedAgencies } from "@/lib/domain/agency-browse";
 import { agencyService, usingSupabase } from "@/lib/container";
+import {
+  DEFAULT_DESCRIPTION,
+  DEFAULT_TITLE,
+  HOME_FAQS,
+  SITE_NAME,
+  faqJsonLd,
+  organizationJsonLd,
+  pageMeta,
+  websiteJsonLd,
+} from "@/lib/seo";
+
+export const metadata = {
+  ...pageMeta(DEFAULT_TITLE, DEFAULT_DESCRIPTION, "/"),
+  title: { absolute: `${DEFAULT_TITLE} · ${SITE_NAME}` },
+};
 
 export default async function Home({
   searchParams,
@@ -51,6 +67,9 @@ export default async function Home({
 
   return (
     <PublicShell storage={usingSupabase() ? "supabase" : "memory"}>
+      <JsonLd data={organizationJsonLd()} />
+      <JsonLd data={websiteJsonLd()} />
+      <JsonLd data={faqJsonLd([...HOME_FAQS])} />
       <section className="border-b border-stone-200 bg-white">
         <div className="mx-auto max-w-6xl px-6 py-14 lg:py-20">
           <div className="grid gap-10 lg:grid-cols-2 lg:items-end">
@@ -59,17 +78,20 @@ export default async function Home({
                 Archivo público independiente
               </p>
               <h1 className="mt-4 text-4xl font-semibold tracking-tight text-zinc-900 sm:text-5xl">
-                Reseñas reales de inmobiliarias en España
+                Antes de firmar, mira cómo trata esa inmobiliaria
               </h1>
               <p className="mt-4 max-w-xl text-lg leading-relaxed text-zinc-600">
-                Consulta cómo gestionan fianzas, reparaciones y la relación con
-                inquilinos y propietarios. Valoraciones separadas por
-                perspectiva.
+                Opiniones de inquilinos y propietarios sobre la gestión:
+                fianzas, reparaciones, honorarios y comunicación. No es Google
+                ni un portal de pisos.
               </p>
               <p className="mt-6 text-xs font-medium uppercase tracking-wide text-zinc-500">
-                {totalAgencies.toLocaleString("es-ES")} agencias evaluadas ·{" "}
-                {totalReviews.toLocaleString("es-ES")} reseñas publicadas ·
-                actualización continua
+                {totalAgencies.toLocaleString("es-ES")}{" "}
+                {totalAgencies === 1 ? "ficha" : "fichas"} en el archivo ·{" "}
+                {totalReviews.toLocaleString("es-ES")}{" "}
+                {totalReviews === 1
+                  ? "experiencia publicada"
+                  : "experiencias publicadas"}
               </p>
             </div>
             <div className="motion-fade-rise" style={{ animationDelay: "80ms" }}>
@@ -115,18 +137,21 @@ export default async function Home({
           <section className="grid gap-10 lg:grid-cols-2 lg:items-center">
             <div>
               <h2 className="text-2xl font-semibold tracking-tight">
-                Datos contrastados, no opiniones al azar
+                Experiencias identificadas, no un muro anónimo
               </h2>
               <p className="mt-4 text-zinc-600">
-                Cada reseña pasa por moderación. Separamos la voz de quien
-                alquila de quien delega la gestión, porque los criterios no son
-                los mismos.
+                Cada autor confirma su correo y declara una experiencia propia;
+                después moderamos el contenido. La inmobiliaria puede responder
+                y cualquier persona puede denunciar una reseña concreta.
               </p>
               <ul className="mt-6 space-y-3 text-sm text-zinc-700">
                 <li className="flex gap-2">
                   <span className="font-semibold text-brand">—</span>
-                  Cuenta identificada (Google o email); en la ficha no sale tu
-                  correo
+                  Cuenta identificada (Google o correo). En la ficha no aparece
+                </li>
+                <li className="flex gap-2">
+                  <span className="font-semibold text-brand">—</span>
+                  Notas separadas de inquilino y de propietario
                 </li>
                 <li className="flex gap-2">
                   <span className="font-semibold text-brand">—</span>
@@ -137,7 +162,7 @@ export default async function Home({
                 href="/metodologia"
                 className="link-brand mt-6 inline-block text-sm"
               >
-                Leer sobre nuestra metodología
+                Cómo publicamos una reseña
               </Link>
             </div>
             <div className="card-raised relative overflow-hidden p-8">
@@ -161,6 +186,24 @@ export default async function Home({
                 ))}
               </div>
             </div>
+          </section>
+        </Reveal>
+
+        <Reveal className="mt-20">
+          <section>
+            <h2 className="text-2xl font-semibold tracking-tight">
+              Preguntas frecuentes
+            </h2>
+            <dl className="mt-8 space-y-6">
+              {HOME_FAQS.map((item) => (
+                <div key={item.question}>
+                  <dt className="font-semibold text-zinc-900">{item.question}</dt>
+                  <dd className="mt-2 text-sm leading-relaxed text-zinc-600">
+                    {item.answer}
+                  </dd>
+                </div>
+              ))}
+            </dl>
           </section>
         </Reveal>
 
@@ -194,18 +237,19 @@ export default async function Home({
       <section className="bg-brand text-white">
         <div className="mx-auto max-w-6xl px-6 py-16 text-center">
           <h2 className="text-2xl font-semibold tracking-tight">
-            ¿Has tratado con una inmobiliaria?
+            ¿Has alquilado o encargado la gestión?
           </h2>
           <p className="mx-auto mt-3 max-w-xl text-sm text-zinc-300">
-            Busca la ficha y deja una reseña verificada. Si falta en el archivo,
-            puedes sugerir el alta.
+            Publica tu experiencia. Te pedimos un correo para identificar la
+            cuenta; no se muestra en la ficha.
+            Si la ficha no existe, sugiere el alta.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Link
               href="/agencias"
               className="btn-primary inline-flex min-h-11 items-center bg-white px-6 text-zinc-900 hover:bg-zinc-100"
             >
-              Buscar y reseñar
+              Buscar una inmobiliaria
             </Link>
             <Link
               href="/agregar-inmobiliaria"

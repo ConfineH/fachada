@@ -36,6 +36,8 @@
     wrap.style.cssText =
       "display:inline-flex;margin-left:8px;align-items:center;gap:4px;font-size:12px;font-weight:600;color:#92400e;background:#fef3c7;padding:2px 8px;border-radius:999px;";
     wrap.textContent = "Fachada…";
+    wrap.title =
+      "Información independiente de Fachada. No afiliada, autorizada ni respaldada por Idealista.";
     nameEl.appendChild(wrap);
 
     try {

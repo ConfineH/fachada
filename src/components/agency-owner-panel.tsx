@@ -43,7 +43,7 @@ export function AgencyOwnerPanel({
   if (!agencyVerified) {
     return (
       <div className="rounded-xl border border-dashed border-stone-300 bg-white p-6">
-        <h3 className="font-medium">Esta ficha aún no está verificada</h3>
+        <h3 className="font-medium">Esta reclamación aún no está aprobada</h3>
         <p className="mt-2 text-sm text-zinc-600">
           Cuando un moderador apruebe la reclamación, podrás responder reseñas
           y editar enlaces públicos.
@@ -109,8 +109,8 @@ export function AgencyOwnerPanel({
     <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-5">
       <h3 className="font-medium text-emerald-950">Gestión de reseñas</h3>
       <p className="mt-1 text-sm text-emerald-900">
-        Si eres el representante verificado de esta inmobiliaria, puedes responder
-        a las reseñas publicadas.
+        Si tienes el acceso de gestión aprobado para esta inmobiliaria, puedes
+        responder a las reseñas publicadas.
       </p>
 
       {error && (

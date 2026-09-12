@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { Breadcrumbs } from "@/components/breadcrumbs";
 import { AgencyBrowseControls } from "@/components/agency-browse-controls";
 import { AgencyResultList } from "@/components/agency-result-list";
 import { CityPhoto } from "@/components/city-photo";
@@ -8,6 +9,7 @@ import { PublicShell } from "@/components/public-shell";
 import { parseAgencySort } from "@/lib/domain/agency-browse";
 import { slugToCityLabel } from "@/lib/domain/city";
 import { agencyService, usingSupabase } from "@/lib/container";
+import { pageMeta } from "@/lib/seo";
 
 export async function generateMetadata({
   params,
@@ -16,10 +18,11 @@ export async function generateMetadata({
 }) {
   const { city } = await params;
   const label = slugToCityLabel(city);
-  return {
-    title: `Inmobiliarias en ${label} — reseñas Fachada`,
-    description: `Opiniones de inquilinos y propietarios sobre inmobiliarias en ${label}.`,
-  };
+  return pageMeta(
+    `Inmobiliarias en ${label}: gestión de alquiler`,
+    `Fichas de inmobiliarias en ${label} y experiencias de inquilinos y propietarios sobre fianzas, reparaciones y honorarios.`,
+    `/ciudades/${city}`,
+  );
 }
 
 export default async function CityPage({
@@ -55,16 +58,21 @@ export default async function CityPage({
           aria-hidden
         />
         <div className="relative mx-auto max-w-6xl px-6 py-16 text-white">
-          <Link href="/explorar" className="text-sm text-white/80 underline-offset-2 hover:underline">
-            ← Explorar ciudades
-          </Link>
+          <div className="text-white/80 [&_a]:text-white/80 [&_a:hover]:text-white [&_span]:text-white">
+            <Breadcrumbs
+              items={[
+                { name: "Ciudades", href: "/explorar" },
+                { name: label, href: `/ciudades/${city}` },
+              ]}
+            />
+          </div>
           <h1 className="motion-fade-rise mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">
             Inmobiliarias en {label}
           </h1>
           <p className="mt-2 text-white/80">
             {listed.length}{" "}
-            {listed.length === 1 ? "agencia" : "agencias"} en el registro de
-            esta ciudad.
+            {listed.length === 1 ? "ficha" : "fichas"} en el archivo de esta
+            ciudad. Las notas van en cada inmobiliaria.
           </p>
         </div>
       </header>

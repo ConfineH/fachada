@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Fachada — reseñas en Idealista",
+  "name": "Fachada — capa independiente",
   "version": "0.1.0",
-  "description": "Muestra valoraciones de Fachada junto al nombre de la inmobiliaria en Idealista.",
+  "description": "Prototipo local independiente y no afiliado que consulta valoraciones de Fachada.",
   "permissions": [],
   "host_permissions": [
     "https://www.idealista.com/*",

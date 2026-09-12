@@ -72,8 +72,8 @@ export function SuggestAgencyForm() {
         <div key="verify" className="motion-scale-in card-raised p-6">
           <h2 className="text-lg font-semibold text-zinc-900">Verificación</h2>
           <p className="mt-2 text-sm text-zinc-600">
-            Identifícate para enviar el alta. Evita spam; tu email no se
-            publica en la ficha.
+            Identifícate para enviar el alta. Evita envíos automáticos; tu
+            correo no se publica en la ficha.
           </p>
           <div className="mt-6">
           <AccountVerification
@@ -158,7 +158,7 @@ export function SuggestAgencyForm() {
           )}
           {noPhoneOnline && (
             <p className="text-xs text-stone-500">
-              La ficha se publicará con aviso de contacto no verificado. Las
+              La ficha se publicará indicando que no hay teléfono público. Las
               reseñas sí estarán disponibles.
             </p>
           )}

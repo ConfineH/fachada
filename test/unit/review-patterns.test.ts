@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { summarizeReviewPatterns } from "@/lib/domain/review-patterns";
 
 describe("summarizeReviewPatterns", () => {
-  it("hides the summary until there are at least two reviews", () => {
+  it("hides the summary until there are at least three reviews", () => {
     const summary = summarizeReviewPatterns([
       {
         rating: 2,
@@ -16,6 +16,26 @@ describe("summarizeReviewPatterns", () => {
     ]);
     expect(summary.positives).toEqual([]);
     expect(summary.negatives).toEqual([]);
+    const twoReviews = summarizeReviewPatterns([
+      {
+        rating: 2,
+        pros: "El contrato estaba claro.",
+        cons: "Tardaron semanas en enviar al fontanero.",
+        body: "",
+        incidentTags: ["reparaciones"],
+        wouldRecommend: false,
+      },
+      {
+        rating: 3,
+        pros: "La visita fue puntual.",
+        cons: "Tardaron semanas en enviar al fontanero.",
+        body: "",
+        incidentTags: ["reparaciones"],
+        wouldRecommend: false,
+      },
+    ]);
+    expect(twoReviews.positives).toEqual([]);
+    expect(twoReviews.negatives).toEqual([]);
   });
 
   it("surfaces repeated incident tags and recommend count", () => {

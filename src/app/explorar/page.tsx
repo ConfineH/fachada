@@ -1,16 +1,18 @@
 import Link from "next/link";
 
+import { Breadcrumbs } from "@/components/breadcrumbs";
 import { CityDirectoryCard } from "@/components/city-directory-card";
 import { PublicShell } from "@/components/public-shell";
 import { SearchForm } from "@/components/search-form";
 import { groupCitiesByLetter } from "@/lib/domain/explore";
 import { agencyService, usingSupabase } from "@/lib/container";
+import { pageMeta } from "@/lib/seo";
 
-export const metadata = {
-  title: "Explorar inmobiliarias por ciudad — Fachada",
-  description:
-    "Directorio de inmobiliarias por ciudad en España. Las valoraciones están en cada ficha.",
-};
+export const metadata = pageMeta(
+  "Inmobiliarias por ciudad",
+  "Directorio de inmobiliarias en España por ciudad. Las notas de inquilinos y propietarios están en cada ficha, no en la ciudad.",
+  "/explorar",
+);
 
 export default async function ExplorarPage({
   searchParams,
@@ -39,15 +41,18 @@ export default async function ExplorarPage({
         <div className="mx-auto max-w-6xl px-6 py-12">
           <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-2xl motion-fade-rise">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">
-                Directorio nacional
+              <Breadcrumbs
+                items={[{ name: "Ciudades", href: "/explorar" }]}
+              />
+              <p className="mt-6 text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">
+                Directorio por ciudad
               </p>
               <h1 className="mt-3 text-4xl font-semibold tracking-tight text-zinc-900">
                 Explorar inmobiliarias por ciudad
               </h1>
               <p className="mt-3 text-zinc-600">
-                Registro público de inmobiliarias por ciudad. Las notas van en
-                la ficha de cada agencia, no en la ciudad.
+                Fichas públicas agrupadas por ciudad. Las notas de inquilinos y
+                propietarios van en cada inmobiliaria, no en la ciudad.
               </p>
             </div>
             <SearchForm variant="explore" initialQuery={q ?? ""} />
@@ -63,7 +68,7 @@ export default async function ExplorarPage({
                 {totalAgencies.toLocaleString("es-ES")}
               </p>
               <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
-                Agencias listadas
+                Fichas en el archivo
               </p>
             </div>
             <div>

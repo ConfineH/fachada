@@ -18,7 +18,7 @@ export function SiteNav() {
             Inmobiliarias
           </Link>
           <Link href="/agregar-inmobiliaria" className="nav-link">
-            Añadir inmobiliaria
+            Sugerir inmobiliaria
           </Link>
         </div>
         <div className="flex items-center justify-end gap-3 lg:col-start-3">

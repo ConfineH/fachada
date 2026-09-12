@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 
+import { REVIEW_TERMS_VERSION } from "@/lib/domain/review-authenticity";
 import type {
   Agency,
   AgencyLocation,
@@ -8,6 +9,7 @@ import type {
   AgencySubmission,
   AgencyTip,
   Claim,
+  ContentNotice,
   PendingEmailVerification,
   PendingVerification,
   Review,
@@ -95,6 +97,7 @@ export class MemoryStore implements Repository {
   private agencies = new Map<string, Agency>();
   private agenciesBySlug = new Map<string, string>();
   private reviews: Review[] = [];
+  private contentNotices: ContentNotice[] = [];
   private claims: Claim[] = [];
   private responses = new Map<string, AgencyResponse>();
   private aliases: AgencyNameAlias[] = [];
@@ -138,6 +141,7 @@ export class MemoryStore implements Repository {
     this.agencies.clear();
     this.agenciesBySlug.clear();
     this.reviews = [];
+    this.contentNotices = [];
     this.claims = [];
     this.responses.clear();
     this.aliases = [];
@@ -172,6 +176,15 @@ export class MemoryStore implements Repository {
         wouldRecommend: seed.wouldRecommend,
         helpfulCount: seed.helpfulCount,
         incidentTags: seed.incidentTags,
+        experienceDate: new Date(),
+        experienceType: "alquiler",
+        firstHandAttested: true,
+        noIncentiveAttested: true,
+        noConflictAttested: true,
+        verificationLevel: "declarada",
+        identityVerification: "email",
+        termsVersion: REVIEW_TERMS_VERSION,
+        termsAcceptedAt: new Date(),
         createdAt: new Date(),
         moderated: seed.moderated,
         flagged: seed.flagged,
@@ -365,6 +378,25 @@ export class MemoryStore implements Repository {
     this.reviewHelpful.add(key);
     review.helpfulCount += 1;
     return { added: true, helpfulCount: review.helpfulCount };
+  }
+
+  async createContentNotice(notice: ContentNotice) {
+    this.contentNotices.push(notice);
+  }
+
+  async listContentNotices() {
+    return [...this.contentNotices].sort(
+      (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
+    );
+  }
+
+  async findContentNoticeById(id: string) {
+    return this.contentNotices.find((notice) => notice.id === id) ?? null;
+  }
+
+  async updateContentNotice(notice: ContentNotice) {
+    const index = this.contentNotices.findIndex((item) => item.id === notice.id);
+    if (index >= 0) this.contentNotices[index] = notice;
   }
 
   async listSavedAgencies(userId: string) {

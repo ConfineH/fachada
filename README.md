@@ -1,6 +1,6 @@
 # Fachada
 
-Plataforma web para buscar inmobiliarias en España y leer/escribir reseñas verificadas de inquilinos y propietarios.
+Plataforma web para buscar inmobiliarias en España y leer/escribir experiencias de inquilinos y propietarios con cuenta identificada y moderación.
 
 > **Estado:** MVP funcional en desarrollo local. **No hay producción live** con datos persistentes — los slots Supabase cloud están asignados a Meant To B2C y Migajas.  
 > **Documentación completa:** [`docs/`](./docs/README.md)

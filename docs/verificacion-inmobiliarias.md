@@ -2,11 +2,16 @@
 
 Alineado con prácticas de **Google Business Profile** y **Glassdoor Employer Center**: varias señales independientes + revisión humana.
 
+**Actualizado 12 sep 2026:** quien escribe una reseña se identifica con
+Google o un código al correo. El SMS queda para la línea de negocio de la
+ficha (reclamación), no para publicar reseñas. «Email verificado» no
+significa experiencia acreditada.
+
 ## Capas de verificación
 
 | Capa | Qué demuestra | Implementación Fachada |
 |------|----------------|------------------------|
-| Móvil personal | Persona real detrás de la solicitud | SMS OTP (cuenta usuario) |
+| Correo o Google | Persona real detrás de la solicitud | Código al correo o Google Identity (cuenta usuario) |
 | Teléfono de la ficha | Acceso a la línea pública del negocio | OTP al `agency.phone` si `phonePublished` |
 | Sin teléfono online | Agencias opacas | Checkbox al dar de alta; badge **Contacto no verificado**; reclamo solo documental |
 | Email corporativo | Empleado/representante de la marca | Dominio = web o email de ficha; no Gmail/Outlook |

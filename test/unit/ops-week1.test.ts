@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { isProductionAdminMisconfigured } from "@/lib/auth/admin-session";
 import { getLegal, isLegalIdentityComplete } from "@/lib/legal";
@@ -10,7 +10,6 @@ const keys = [
   "LEGAL_CONTACT_EMAIL",
   "LEGAL_PRIVACY_EMAIL",
   "ADMIN_PASSWORD",
-  "NODE_ENV",
 ] as const;
 
 const previous = new Map<string, string | undefined>();
@@ -27,6 +26,7 @@ function restoreEnv() {
     if (value === undefined) delete process.env[key];
     else process.env[key] = value;
   }
+  vi.unstubAllEnvs();
 }
 
 describe("legal identity env", () => {
@@ -58,14 +58,14 @@ describe("production admin password", () => {
 
   it("flags the default password in production", () => {
     snapshotEnv();
-    process.env.NODE_ENV = "production";
+    vi.stubEnv("NODE_ENV", "production");
     process.env.ADMIN_PASSWORD = "fachada-admin-dev";
     expect(isProductionAdminMisconfigured()).toBe(true);
   });
 
   it("accepts a rotated secret in production", () => {
     snapshotEnv();
-    process.env.NODE_ENV = "production";
+    vi.stubEnv("NODE_ENV", "production");
     process.env.ADMIN_PASSWORD = "un-secreto-largo";
     expect(isProductionAdminMisconfigured()).toBe(false);
   });

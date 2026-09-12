@@ -18,7 +18,11 @@ export class ReviewError extends Error {
 export class ReviewService {
   constructor(private readonly repo: Repository) {}
 
-  async create(user: User | undefined, input: unknown): Promise<Review> {
+  async create(
+    user: User | undefined,
+    input: unknown,
+    options: { evidencePath?: string } = {},
+  ): Promise<Review> {
     if (!isAccountVerified(user)) {
       throw new ReviewError("Account verification required");
     }
@@ -65,6 +69,19 @@ export class ReviewService {
       wouldRecommend: data.wouldRecommend,
       helpfulCount: 0,
       incidentTags: data.incidentTags ?? [],
+      experienceDate: data.experienceDate,
+      experienceType: data.experienceType,
+      firstHandAttested: data.firstHandAttested,
+      noIncentiveAttested: data.noIncentiveAttested,
+      noConflictAttested: data.noConflictAttested,
+      verificationLevel: "declarada",
+      identityVerification: user.emailVerified ? "email" : "phone",
+      evidencePath: options.evidencePath,
+      evidenceDeleteAfter: options.evidencePath
+        ? new Date(Date.now() + 90 * 24 * 60 * 60 * 1000)
+        : undefined,
+      termsVersion: data.termsVersion,
+      termsAcceptedAt: new Date(),
       createdAt: new Date(),
       moderated: false,
       flagged: false,

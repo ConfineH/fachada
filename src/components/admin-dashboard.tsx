@@ -11,6 +11,7 @@ import type {
   TipWithAgency,
 } from "@/lib/services/admin-service";
 import { AGENCY_TIP_KIND_LABELS } from "@/lib/domain/agency-tips";
+import type { ContentNotice } from "@/lib/domain/types";
 
 export function AdminDashboard({
   initialClaims,
@@ -18,12 +19,14 @@ export function AdminDashboard({
   initialSubmissions,
   initialLocations,
   initialTips,
+  initialContentNotices,
 }: {
   initialClaims: ClaimWithAgency[];
   initialReviews: ReviewWithAgency[];
   initialSubmissions: SubmissionWithMeta[];
   initialLocations: LocationWithAgency[];
   initialTips: Array<TipWithAgency & { evidenceUrl?: string }>;
+  initialContentNotices: ContentNotice[];
 }) {
   const router = useRouter();
   const [claims, setClaims] = useState(initialClaims);
@@ -31,14 +34,25 @@ export function AdminDashboard({
   const [submissions, setSubmissions] = useState(initialSubmissions);
   const [locations, setLocations] = useState(initialLocations);
   const [tips, setTips] = useState(initialTips);
+  const [contentNotices, setContentNotices] = useState(initialContentNotices);
+  const [noticeRules, setNoticeRules] = useState<Record<string, string>>({});
+  const [noticeReasons, setNoticeReasons] = useState<Record<string, string>>({});
+  const [reviewReasons, setReviewReasons] = useState<Record<string, string>>({});
+  const [reviewAccredited, setReviewAccredited] = useState<
+    Record<string, boolean>
+  >({});
   const [message, setMessage] = useState("");
 
-  async function runAction(action: string, id: string) {
+  async function runAction(
+    action: string,
+    id: string,
+    extra: Record<string, unknown> = {},
+  ) {
     setMessage("");
     const res = await fetch("/api/admin", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action, id }),
+      body: JSON.stringify({ action, id, ...extra }),
     });
 
     if (!res.ok) {
@@ -60,6 +74,9 @@ export function AdminDashboard({
     if (action.startsWith("moderate") || action.startsWith("flag")) {
       setReviews((current) => current.filter((r) => r.id !== id));
     }
+    if (action === "decide-content-notice") {
+      setContentNotices((current) => current.filter((notice) => notice.id !== id));
+    }
     setMessage("Acción completada");
     router.refresh();
   }
@@ -71,6 +88,112 @@ export function AdminDashboard({
           {message}
         </p>
       )}
+      <button
+        type="button"
+        onClick={() => runAction("cleanup-review-evidence", "")}
+        className="rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm"
+      >
+        Ejecutar borrado de evidencias vencidas
+      </button>
+
+      <section>
+        <h2 className="text-lg font-medium">
+          Denuncias de contenido ({contentNotices.length})
+        </h2>
+        <ul className="mt-4 space-y-4">
+          {contentNotices.length === 0 && (
+            <li className="rounded-xl border border-dashed border-stone-300 bg-white p-5 text-stone-600">
+              No hay denuncias pendientes.
+            </li>
+          )}
+          {contentNotices.map((notice) => (
+            <li
+              key={notice.id}
+              className="rounded-xl border border-amber-200 bg-white p-5"
+            >
+              <p className="text-xs font-medium uppercase tracking-wide text-amber-800">
+                {notice.category} · expediente {notice.id}
+              </p>
+              <h3 className="mt-2 font-semibold">
+                Fragmento: «{notice.exactExcerpt}»
+              </h3>
+              <p className="mt-2 text-sm text-zinc-700">{notice.legalReason}</p>
+              <p className="mt-2 text-xs text-stone-500">
+                {notice.reporterName} · {notice.reporterEmail}
+                {notice.relationship ? ` · ${notice.relationship}` : ""}
+              </p>
+              {notice.evidenceUrl ? (
+                <a
+                  href={notice.evidenceUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-2 block text-sm text-amber-800 underline"
+                >
+                  Ver evidencia aportada
+                </a>
+              ) : null}
+              {notice.appealReason ? (
+                <p className="mt-3 rounded-lg bg-sky-50 p-3 text-sm text-sky-900">
+                  Revisión solicitada por el autor: {notice.appealReason}
+                </p>
+              ) : null}
+              <div className="mt-4 grid gap-3">
+                <input
+                  value={noticeRules[notice.id] ?? ""}
+                  onChange={(event) =>
+                    setNoticeRules((current) => ({
+                      ...current,
+                      [notice.id]: event.target.value,
+                    }))
+                  }
+                  placeholder="Regla aplicada (p. ej. Normas: datos personales)"
+                  className="input-field"
+                />
+                <textarea
+                  value={noticeReasons[notice.id] ?? ""}
+                  onChange={(event) =>
+                    setNoticeReasons((current) => ({
+                      ...current,
+                      [notice.id]: event.target.value,
+                    }))
+                  }
+                  placeholder="Motivación individual (mínimo 20 caracteres)"
+                  rows={3}
+                  className="input-field"
+                />
+                <div className="flex flex-wrap gap-2">
+                  {(
+                    [
+                      ["retirado", "Retirar", "bg-red-700"],
+                      ["mantenido", "Mantener", "bg-emerald-700"],
+                      [
+                        "informacion_requerida",
+                        "Pedir información",
+                        "bg-amber-700",
+                      ],
+                    ] as const
+                  ).map(([status, label, color]) => (
+                    <button
+                      key={status}
+                      type="button"
+                      onClick={() =>
+                        runAction("decide-content-notice", notice.id, {
+                          status,
+                          decisionRule: noticeRules[notice.id],
+                          decisionReason: noticeReasons[notice.id],
+                        })
+                      }
+                      className={`rounded-lg px-3 py-2 text-sm text-white ${color}`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </section>
 
       <section>
         <h2 className="text-lg font-medium">
@@ -375,16 +498,63 @@ export function AdminDashboard({
                     {review.role} · {review.rating}/5 ·{" "}
                     {review.flagged ? "Reportada" : "Sin moderar"}
                   </p>
+                  {review.evidenceUrl ? (
+                    <div className="mt-3 flex flex-wrap items-center gap-3">
+                      <a
+                        href={review.evidenceUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-sm text-amber-800 underline"
+                      >
+                        Revisar evidencia privada
+                      </a>
+                      <label className="flex items-center gap-2 text-xs text-zinc-700">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(reviewAccredited[review.id])}
+                          onChange={(event) =>
+                            setReviewAccredited((current) => ({
+                              ...current,
+                              [review.id]: event.target.checked,
+                            }))
+                          }
+                        />
+                        Evidencia suficiente para acreditar la experiencia
+                      </label>
+                    </div>
+                  ) : null}
+                  <input
+                    value={reviewReasons[review.id] ?? ""}
+                    onChange={(event) =>
+                      setReviewReasons((current) => ({
+                        ...current,
+                        [review.id]: event.target.value,
+                      }))
+                    }
+                    placeholder="Motivo de la decisión"
+                    className="input-field mt-3"
+                  />
                 </div>
                 <div className="flex gap-2">
                   <button
-                    onClick={() => runAction("moderate-review", review.id)}
+                    onClick={() =>
+                      runAction("moderate-review", review.id, {
+                        reason: reviewReasons[review.id],
+                        accreditExperience: Boolean(
+                          reviewAccredited[review.id],
+                        ),
+                      })
+                    }
                     className="rounded-lg bg-emerald-700 px-3 py-2 text-sm text-white"
                   >
                     Aprobar
                   </button>
                   <button
-                    onClick={() => runAction("flag-review", review.id)}
+                    onClick={() =>
+                      runAction("flag-review", review.id, {
+                        reason: reviewReasons[review.id],
+                      })
+                    }
                     className="rounded-lg bg-amber-700 px-3 py-2 text-sm text-white"
                   >
                     Marcar

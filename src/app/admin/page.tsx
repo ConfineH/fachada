@@ -11,6 +11,12 @@ import { AdminLoginForm } from "@/components/admin-login-form";
 import { COOKIE_NAME, verifyAdminToken } from "@/lib/auth/admin-session";
 import { adminService, usingSupabase } from "@/lib/container";
 import { resolveTipEvidenceUrl } from "@/lib/ops/tip-evidence";
+import { resolveReviewEvidenceUrl } from "@/lib/ops/review-evidence";
+
+export const metadata = {
+  title: "Administración",
+  robots: { index: false, follow: false },
+};
 
 export default async function AdminPage() {
   const cookieStore = await cookies();
@@ -30,18 +36,26 @@ export default async function AdminPage() {
     );
   }
 
-  const [claims, reviews, submissions, locations, tips] = await Promise.all([
-    adminService.listPendingClaims(),
-    adminService.listReviewsForModeration(),
-    adminService.listPendingAgencySubmissions(),
-    adminService.listPendingLocations(),
-    adminService.listPendingTips(),
-  ]);
+  const [claims, reviews, submissions, locations, tips, contentNotices] =
+    await Promise.all([
+      adminService.listPendingClaims(),
+      adminService.listReviewsForModeration(),
+      adminService.listPendingAgencySubmissions(),
+      adminService.listPendingLocations(),
+      adminService.listPendingTips(),
+      adminService.listPendingContentNotices(),
+    ]);
 
   const tipsWithEvidence = await Promise.all(
     tips.map(async (tip) => ({
       ...tip,
       evidenceUrl: await resolveTipEvidenceUrl(tip.evidencePath),
+    })),
+  );
+  const reviewsWithEvidence = await Promise.all(
+    reviews.map(async (review) => ({
+      ...review,
+      evidenceUrl: await resolveReviewEvidenceUrl(review.evidencePath),
     })),
   );
 
@@ -78,10 +92,11 @@ export default async function AdminPage() {
           <AdminCreateLocationForm />
           <AdminDashboard
             initialClaims={claims}
-            initialReviews={reviews}
+            initialReviews={reviewsWithEvidence}
             initialSubmissions={submissions}
             initialLocations={locations}
             initialTips={tipsWithEvidence}
+            initialContentNotices={contentNotices}
           />
         </div>
       </main>

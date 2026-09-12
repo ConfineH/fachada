@@ -3,7 +3,26 @@ import { randomUUID } from "node:crypto";
 import { composeReviewBody } from "@/lib/domain/review-copy";
 import type { AgencyLocation, AgencyNameAlias, Review } from "@/lib/domain/types";
 
-type SeedReview = Omit<Review, "id" | "userId" | "agencyId" | "createdAt"> & {
+type SeedReview = Omit<
+  Review,
+  | "id"
+  | "userId"
+  | "agencyId"
+  | "createdAt"
+  | "experienceDate"
+  | "experienceType"
+  | "firstHandAttested"
+  | "noIncentiveAttested"
+  | "noConflictAttested"
+  | "verificationLevel"
+  | "identityVerification"
+  | "evidencePath"
+  | "evidenceDeleteAfter"
+  | "termsVersion"
+  | "termsAcceptedAt"
+  | "moderationReason"
+  | "moderatedAt"
+> & {
   agencySlug: string;
 };
 

@@ -1,8 +1,11 @@
 import { LegalDoc } from "@/components/legal-doc";
+import { pageMeta } from "@/lib/seo";
 
-export const metadata = {
-  title: "Cookies — Fachada",
-};
+export const metadata = pageMeta(
+  "Política de cookies",
+  "Cookies y almacenamiento local que usa Fachada: sesión, preferencias y acceso de administración.",
+  "/legal/cookies",
+);
 
 export default function CookiesPage() {
   return (

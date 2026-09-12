@@ -3,6 +3,19 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { MemoryStore } from "@/lib/repositories/memory-store";
 import { AgencyService } from "@/lib/services/agency-service";
 import { GET } from "@/app/api/agencies/match/route";
+import { REVIEW_TERMS_VERSION } from "@/lib/domain/review-authenticity";
+
+const AUTHENTICITY_FIELDS = {
+  experienceDate: new Date(),
+  experienceType: "alquiler" as const,
+  firstHandAttested: true,
+  noIncentiveAttested: true,
+  noConflictAttested: true,
+  verificationLevel: "declarada" as const,
+  identityVerification: "email" as const,
+  termsVersion: REVIEW_TERMS_VERSION,
+  termsAcceptedAt: new Date(),
+};
 
 describe("AgencyService.search", () => {
   let store: MemoryStore;
@@ -31,6 +44,7 @@ describe("AgencyService.search", () => {
     const other = agencies.find((a) => a.name === "Gestión Urbana")!;
 
     await store.createReview({
+      ...AUTHENTICITY_FIELDS,
       id: crypto.randomUUID(),
       userId: crypto.randomUUID(),
       agencyId: madrid.id,
@@ -47,6 +61,7 @@ describe("AgencyService.search", () => {
     });
 
     await store.createReview({
+      ...AUTHENTICITY_FIELDS,
       id: crypto.randomUUID(),
       userId: crypto.randomUUID(),
       agencyId: other.id,

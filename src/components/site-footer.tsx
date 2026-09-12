@@ -8,8 +8,8 @@ export function SiteFooter() {
           <div>
             <p className="text-lg font-bold tracking-tight">FACHADA</p>
             <p className="mt-3 max-w-sm text-sm text-zinc-600">
-              Archivo independiente de reputación inmobiliaria. Transparencia
-              pública y verificación sistemática.
+              Archivo independiente de cómo gestionan las inmobiliarias el
+              alquiler. Cuentas identificadas y moderación humana.
             </p>
           </div>
           <div>
@@ -24,7 +24,7 @@ export function SiteFooter() {
               </li>
               <li>
                 <Link href="/metodologia" className="hover:text-brand">
-                  Metodología de verificación
+                  Cómo publicamos una reseña
                 </Link>
               </li>
             </ul>
@@ -58,9 +58,9 @@ export function SiteFooter() {
           </div>
         </div>
         <div className="mt-10 flex flex-wrap items-center justify-between gap-2 border-t border-stone-100 pt-6 text-xs text-zinc-500">
-          <p>© {new Date().getFullYear()} Fachada. Todos los derechos reservados.</p>
+            <p>© {new Date().getFullYear()} Fachada. Todos los derechos reservados.</p>
           <p className="font-semibold uppercase tracking-wider text-zinc-400">
-            Repositorio público
+            Sin afiliación a portales
           </p>
         </div>
       </div>

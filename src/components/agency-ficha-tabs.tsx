@@ -50,8 +50,8 @@ export function AgencyFichaTabs({
           <h3 className="text-lg font-semibold">Anuncios, más adelante</h3>
           <p className="mt-2 text-sm text-zinc-700">
             Cuando se monte, serán anuncios propios de inmobiliarias que hayan
-            reclamado la ficha y tengan reseñas contrastadas. No un compilador
-            de Idealista ni un portal de pisos.
+            reclamado la ficha y tengan experiencias publicadas. No un
+            compilador de Idealista ni un portal de pisos.
           </p>
           {(portalLinks.idealistaUrl || portalLinks.fotocasaUrl) && (
             <p className="mt-4 text-sm text-zinc-600">

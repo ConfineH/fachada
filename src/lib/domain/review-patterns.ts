@@ -16,6 +16,8 @@ export type ReviewPatternSummary = {
   reviewCount: number;
 };
 
+export const MIN_REVIEWS_FOR_PATTERN_SUMMARY = 3;
+
 const STOPWORDS = new Set(
   [
     "el",
@@ -171,7 +173,7 @@ export function summarizeReviewPatterns(
   reviews: PatternReview[],
 ): ReviewPatternSummary {
   const reviewCount = reviews.length;
-  if (reviewCount < 2) {
+  if (reviewCount < MIN_REVIEWS_FOR_PATTERN_SUMMARY) {
     return { positives: [], negatives: [], reviewCount };
   }
 

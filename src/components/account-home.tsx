@@ -24,12 +24,21 @@ type Dashboard = {
   }[];
   saved: { id: string; name: string; slug: string; city: string }[];
   claimedAgencies: { name: string; slug: string }[];
+  moderationDecisions: {
+    id: string;
+    reviewId: string;
+    status: string;
+    decisionRule?: string;
+    decisionReason?: string;
+    appealedAt?: string;
+  }[];
 };
 
-export function AccountHome() {
+export function AccountHome({ privacyEmail }: { privacyEmail: string }) {
   const [token, setToken] = useState("");
   const [dashboard, setDashboard] = useState<Dashboard | null>(null);
   const [error, setError] = useState("");
+  const [appealReasons, setAppealReasons] = useState<Record<string, string>>({});
 
   async function load(sessionToken: string) {
     const res = await fetch("/api/me", { headers: authHeaders(sessionToken) });
@@ -68,12 +77,46 @@ export function AccountHome() {
     if (res.ok) void load(token);
   }
 
+  async function exportData() {
+    const res = await fetch("/api/me/export", {
+      headers: authHeaders(token),
+    });
+    if (!res.ok) {
+      setError("No se pudo preparar la exportación.");
+      return;
+    }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "fachada-datos.json";
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function appeal(noticeId: string) {
+    const res = await fetch(`/api/content-notices/${noticeId}/appeal`, {
+      method: "POST",
+      headers: {
+        ...authHeaders(token),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ appealReason: appealReasons[noticeId] }),
+    });
+    const data = (await res.json()) as { error?: string };
+    if (!res.ok) {
+      setError(data.error ?? "No se pudo solicitar la revisión.");
+      return;
+    }
+    await load(token);
+  }
+
   if (!token) {
     return (
       <div className="rounded-xl border border-stone-200 bg-white p-6">
         <h1 className="text-2xl font-semibold tracking-tight">Tu cuenta</h1>
         <p className="mt-2 text-sm text-zinc-600">
-          Entra con Google o un código al email para ver tus reseñas y las
+          Entra con Google o un código al correo para ver tus reseñas y las
           inmobiliarias guardadas.
         </p>
         <div className="mt-4">
@@ -147,9 +190,79 @@ export function AccountHome() {
                     ? "publicada"
                     : "pendiente de moderación"}
               </p>
+              {dashboard.moderationDecisions
+                .filter((decision) => decision.reviewId === review.id)
+                .map((decision) => (
+                  <div
+                    key={decision.id}
+                    className="mt-3 rounded-lg bg-stone-50 p-3 text-sm"
+                  >
+                    <p className="font-medium">
+                      Decisión: {decision.status}
+                    </p>
+                    <p className="mt-1 text-zinc-700">
+                      {decision.decisionRule}: {decision.decisionReason}
+                    </p>
+                    {decision.appealedAt ? (
+                      <p className="mt-2 text-xs text-sky-800">
+                        Revisión solicitada.
+                      </p>
+                    ) : (
+                      <div className="mt-3">
+                        <textarea
+                          value={appealReasons[decision.id] ?? ""}
+                          onChange={(event) =>
+                            setAppealReasons((current) => ({
+                              ...current,
+                              [decision.id]: event.target.value,
+                            }))
+                          }
+                          minLength={20}
+                          maxLength={2000}
+                          rows={3}
+                          placeholder="Explica por qué debería revisarse"
+                          className="input-field"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => appeal(decision.id)}
+                          className="mt-2 rounded-lg border border-stone-300 px-3 py-2 text-xs"
+                        >
+                          Solicitar revisión humana
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
             </li>
           ))}
         </ul>
+      </section>
+
+      <section className="rounded-xl border border-stone-200 bg-white p-5">
+        <h2 className="font-medium">Tus datos y derechos</h2>
+        <p className="mt-2 text-sm text-zinc-600">
+          Descarga una copia estructurada o solicita acceso, rectificación,
+          supresión, oposición, limitación o portabilidad. La supresión se
+          evalúa caso por caso cuando afecte a contenido publicado.
+        </p>
+        <div className="mt-3 flex flex-wrap gap-3">
+          <button
+            type="button"
+            onClick={exportData}
+            className="rounded-lg border border-stone-300 px-3 py-2 text-sm"
+          >
+            Exportar mis datos
+          </button>
+          <a
+            href={`mailto:${privacyEmail}?subject=${encodeURIComponent(
+              "Ejercicio de derechos RGPD",
+            )}`}
+            className="rounded-lg border border-stone-300 px-3 py-2 text-sm"
+          >
+            Solicitar un derecho
+          </a>
+        </div>
       </section>
 
       <section className="rounded-xl border border-stone-200 bg-white p-5">

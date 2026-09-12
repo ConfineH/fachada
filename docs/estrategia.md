@@ -8,12 +8,13 @@
 
 | Dimensión | Estado |
 |----------|--------|
-| Código MVP | ✅ Ficha dual, tags, Glassdoor-style, `/cuenta`, claim/panel, admin |
+| Código MVP | ✅ Ficha dual, tags, `/cuenta`, claim/panel, admin, DSA, copy/SEO on-page |
 | Tests | ✅ Vitest + build |
 | Deploy | ✅ https://fachada-tau.vercel.app |
 | Supabase | ✅ `embmicoogxrxsvchywis` |
 | Auth reseñas | ✅ Google Sign-In + email OTP (no Twilio) |
-| Datos | Seed; **sin tracción** (reseñas reales ≈ 0) |
+| Datos | Seed; **sin tracción** (1 reseña pública a 12 sep 2026) |
+| Legal producto | ✅ En código; ⚠️ `LEGAL_*` + SQL `012` + abogado + SL pendientes |
 | SMS ficha agencia | ❌ Twilio solo cuando haga falta línea de negocio |
 
 Sin env de Supabase, `MemoryStore` (tests). Auth de usuarios **no** es Supabase Auth.

@@ -8,7 +8,8 @@ import { SiteNav } from "@/components/site-nav";
 import { agencyService, usingSupabase } from "@/lib/container";
 
 export const metadata = {
-  title: "Panel inmobiliaria — Fachada",
+  title: "Panel inmobiliaria",
+  robots: { index: false, follow: false },
 };
 
 export default async function AgencyPanelPage({

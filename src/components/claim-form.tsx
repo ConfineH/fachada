@@ -56,7 +56,8 @@ export function ClaimForm({
       <div className="rounded-xl border border-stone-200 bg-white p-5 text-sm text-stone-600">
         <h3 className="font-medium text-stone-900">Perfil reclamado</h3>
         <p className="mt-2">
-          Esta inmobiliaria ya tiene un perfil verificado.
+          Un representante ya reclamó esta ficha. Eso no acredita las reseñas
+          publicadas.
         </p>
       </div>
     );
@@ -114,8 +115,8 @@ export function ClaimForm({
       <h3 className="font-medium">Reclamar perfil</h3>
       <p className="mt-1 text-sm text-stone-600">
         {needsBusinessPhone
-          ? "Pedimos cuenta identificada, teléfono de la ficha, email corporativo y documentos."
-          : "Esta ficha se reclama con cuenta identificada, email corporativo y documentación. Un moderador lo revisa a mano."}
+          ? "Pedimos cuenta identificada, teléfono de la ficha, correo corporativo y documentos."
+          : "Esta ficha se reclama con cuenta identificada, correo corporativo y documentación. Un moderador lo revisa a mano."}
       </p>
 
       {error && (
@@ -130,7 +131,7 @@ export function ClaimForm({
             Paso 1 — Tu cuenta
           </p>
           <p className="mb-3 text-sm text-stone-600">
-            Entra con Google o un código al email. No sale en la ficha pública.
+            Entra con Google o un código al correo. No sale en la ficha pública.
           </p>
           <AccountVerification
             onVerified={(sessionToken) => {
@@ -282,8 +283,8 @@ export function ClaimForm({
 
       {step === "done" && (
         <p className="mt-4 text-sm text-emerald-700">
-          Solicitud enviada. Un administrador validará email, documentos y
-          coincidencia con la ficha antes de activar el panel.
+          Solicitud enviada. Un administrador validará el correo, los documentos
+          y la coincidencia con la ficha antes de activar el panel.
         </p>
       )}
     </div>

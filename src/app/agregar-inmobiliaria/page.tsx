@@ -3,12 +3,13 @@ import Link from "next/link";
 import { PublicShell } from "@/components/public-shell";
 import { SuggestAgencyForm } from "@/components/suggest-agency-form";
 import { usingSupabase } from "@/lib/container";
+import { pageMeta } from "@/lib/seo";
 
-export const metadata = {
-  title: "Añadir inmobiliaria — Fachada",
-  description:
-    "Sugiere una inmobiliaria que no aparece en Fachada. La publicamos tras revisar los datos.",
-};
+export const metadata = pageMeta(
+  "Sugerir una inmobiliaria",
+  "Sugiere una inmobiliaria que no está en Fachada. Un moderador revisa los datos antes de publicar la ficha.",
+  "/agregar-inmobiliaria",
+);
 
 export default function AgregarInmobiliariaPage() {
   return (
@@ -24,14 +25,14 @@ export default function AgregarInmobiliariaPage() {
           <div className="motion-fade-rise flex flex-wrap items-start justify-between gap-4">
             <div>
               <h1 className="text-4xl font-semibold tracking-tight text-zinc-900">
-                Añadir inmobiliaria
+                Sugerir una inmobiliaria
               </h1>
               <p className="mt-3 max-w-2xl text-zinc-600">
-                Ayúdanos a mantener el registro actualizado. Los datos serán
-                revisados por un moderador antes de publicarse.
+                Si no está en el archivo, proponla. Un moderador revisa nombre,
+                ciudad y contacto antes de publicar la ficha.
               </p>
             </div>
-            <span className="badge-trust shrink-0">Proceso seguro</span>
+            <span className="badge-trust shrink-0">Revisión manual</span>
           </div>
         </div>
       </section>

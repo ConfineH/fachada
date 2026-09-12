@@ -3,6 +3,13 @@
 Norte de producto: [`producto-final.md`](./producto-final.md).  
 Plan operativo (sep 2026): densidad Madrid, no más features.
 
+**Hecho en código (12 sep 2026), no despliega el norte:**
+blindaje de reseñas (fecha, declaraciones, evidencia privada), flujo DSA
+(denuncia / decisión / apelación), exportación de datos, copy y SEO on-page
+(títulos, canonical, OG, sitemap, JSON-LD, metodología). **No** implica
+campaña nacional ni Store. Sigue pendiente: `LEGAL_*` en Vercel, SQL `012`
+en el proyecto live, abogado, SL y permiso de Idealista.
+
 ## Veredicto
 
 | Pregunta | Respuesta |

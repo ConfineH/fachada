@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { Breadcrumbs } from "@/components/breadcrumbs";
+import { JsonLd } from "@/components/json-ld";
 import { AgencyFichaTabs } from "@/components/agency-ficha-tabs";
 import { AgencyMetadataCard } from "@/components/agency-metadata-card";
 import { AgencyPresence } from "@/components/agency-presence";
@@ -19,6 +21,8 @@ import {
   maskSpanishPhone,
 } from "@/lib/domain/claim-verification";
 import { agencyService, usingSupabase } from "@/lib/container";
+import { cityToSlug } from "@/lib/domain/city";
+import { agencyJsonLd, pageMeta } from "@/lib/seo";
 import { isTwilioConfigured } from "@/lib/services/sms-provider";
 
 export async function generateMetadata({
@@ -28,11 +32,14 @@ export async function generateMetadata({
 }) {
   const { slug } = await params;
   const agency = await agencyService.getBySlug(slug, { publicOnly: true });
-  if (!agency) return { title: "Inmobiliaria — Fachada" };
-  return {
-    title: `${agency.name} en ${agency.city} — reseñas Fachada`,
-    description: `Opiniones de inquilinos y propietarios sobre ${agency.name} en ${agency.city}.`,
-  };
+  if (!agency) return { title: "Inmobiliaria no encontrada" };
+  const reviewHint =
+    agency.reviewCount > 0
+      ? `${agency.reviewCount} experiencias publicadas`
+      : "aún sin experiencias publicadas";
+  const title = `${agency.name} en ${agency.city}`;
+  const description = `Cómo gestionan el alquiler en ${agency.name} (${agency.city}): fianzas, reparaciones y comunicación. ${reviewHint}.`;
+  return pageMeta(title, description, `/agencias/${agency.slug}`);
 }
 
 export default async function AgencyPage({
@@ -59,7 +66,22 @@ export default async function AgencyPage({
   const emailDomainHint = trustedDomains[0] ?? "tudominio.es";
 
   const reviewsForClient = agency.reviews.map((review) => ({
-    ...review,
+    id: review.id,
+    role: review.role,
+    rating: review.rating,
+    title: review.title,
+    body: review.body,
+    pros: review.pros,
+    cons: review.cons,
+    anonymous: review.anonymous,
+    publicName: review.publicName,
+    wouldRecommend: review.wouldRecommend,
+    helpfulCount: review.helpfulCount,
+    incidentTags: review.incidentTags,
+    experienceDate: review.experienceDate.toISOString(),
+    experienceType: review.experienceType,
+    verificationLevel: review.verificationLevel,
+    identityVerification: review.identityVerification,
     createdAt: review.createdAt.toISOString(),
     response: review.response
       ? {
@@ -74,19 +96,37 @@ export default async function AgencyPage({
 
   return (
     <PublicShell storage={usingSupabase() ? "supabase" : "memory"}>
+      <JsonLd
+        data={agencyJsonLd({
+          name: agency.name,
+          slug: agency.slug,
+          city: agency.city,
+          address: agency.address,
+          postalCode: agency.postalCode,
+          reviewCount: totalReviews,
+          averageRating: agency.averageRating,
+        })}
+      />
       <header className="border-b border-stone-200 bg-white">
         <div className="mx-auto max-w-6xl px-6 py-10">
-          <Link href="/explorar" className="link-brand text-sm">
-            ← Explorar ciudades
-          </Link>
+          <Breadcrumbs
+            items={[
+              { name: "Ciudades", href: "/explorar" },
+              {
+                name: agency.city,
+                href: `/ciudades/${cityToSlug(agency.city)}`,
+              },
+              { name: agency.name, href: `/agencias/${agency.slug}` },
+            ]}
+          />
           <div className="motion-fade-rise mt-6 flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
             <div>
               <div className="flex flex-wrap items-center gap-3">
                 <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-                  {agency.name}
+                  {agency.name} en {agency.city}
                 </h1>
                 {agency.verified && (
-                  <span className="badge-trust">Identidad verificada</span>
+                  <span className="badge-trust">Ficha reclamada</span>
                 )}
               </div>
               {agency.legalName && (
@@ -103,7 +143,7 @@ export default async function AgencyPage({
                   <span>Tel. {agency.phone}</span>
                 ) : (
                   <span className="badge-warning">
-                    Contacto no verificado (sin teléfono público)
+                    Teléfono no publicado
                   </span>
                 )}
                 {publicEmail ? <span>{publicEmail}</span> : null}
@@ -115,7 +155,7 @@ export default async function AgencyPage({
                 href="#dejar-resena"
                 className="btn-primary inline-flex min-h-11 shrink-0 items-center justify-center px-6"
               >
-                Añadir reseña
+                Dejar una reseña
               </a>
             </div>
           </div>
@@ -125,7 +165,7 @@ export default async function AgencyPage({
       <main className="mx-auto grid max-w-6xl gap-10 px-6 py-10 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         <section>
           <h2 className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
-            Índice de reputación
+            Notas de inquilinos y propietarios
           </h2>
           <div className="mt-4">
             <RoleRatingSummary
@@ -169,7 +209,10 @@ export default async function AgencyPage({
             Registro de experiencias
           </h2>
           <p className="mt-1 text-sm text-zinc-600">
-            {totalReviews} reseñas publicadas tras moderación.
+            {totalReviews}{" "}
+            {totalReviews === 1
+              ? "reseña publicada tras moderación."
+              : "reseñas publicadas tras moderación."}
           </p>
           <div className="mt-6">
             <AgencyFichaTabs

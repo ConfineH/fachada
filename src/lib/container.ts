@@ -7,6 +7,7 @@ import { AdminService } from "@/lib/services/admin-service";
 import { AuthService } from "@/lib/services/auth-service";
 import { AccountService } from "@/lib/services/account-service";
 import { ClaimService } from "@/lib/services/claim-service";
+import { ContentNoticeService } from "@/lib/services/content-notice-service";
 import { ReviewService } from "@/lib/services/review-service";
 import { createEmailProvider, isResendConfigured } from "@/lib/services/email-provider";
 import {
@@ -25,6 +26,7 @@ function createRepository(): Repository {
 const repo = createRepository();
 const sms = createSmsProvider();
 const email = createEmailProvider();
+export const contentNoticeService = new ContentNoticeService(repo, email);
 const exposeDevCode =
   !isTwilioConfigured() && process.env.NODE_ENV !== "production";
 const exposeEmailDevCode =
@@ -42,7 +44,13 @@ export const agencySubmissionService = new AgencySubmissionService(repo);
 export const reviewService = new ReviewService(repo);
 export const accountService = new AccountService(repo);
 export const claimService = new ClaimService(repo, isTwilioConfigured());
-export const adminService = new AdminService(repo, claimService, agencySubmissionService);
+export const adminService = new AdminService(
+  repo,
+  claimService,
+  agencySubmissionService,
+  contentNoticeService,
+  email,
+);
 
 export function usingSupabase() {
   return isSupabaseConfigured();

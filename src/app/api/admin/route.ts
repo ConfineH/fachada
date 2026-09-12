@@ -4,20 +4,30 @@ import { NextResponse } from "next/server";
 import { COOKIE_NAME } from "@/lib/auth/admin-session";
 import { adminService } from "@/lib/container";
 import { requireAdmin } from "@/lib/auth/require-admin";
+import { purgeExpiredReviewEvidence } from "@/lib/ops/review-evidence";
 
 export async function GET() {
   const unauthorized = await requireAdmin();
   if (unauthorized) return unauthorized;
 
-  const [claims, reviews, submissions, locations, tips] = await Promise.all([
-    adminService.listPendingClaims(),
-    adminService.listReviewsForModeration(),
-    adminService.listPendingAgencySubmissions(),
-    adminService.listPendingLocations(),
-    adminService.listPendingTips(),
-  ]);
+  const [claims, reviews, submissions, locations, tips, contentNotices] =
+    await Promise.all([
+      adminService.listPendingClaims(),
+      adminService.listReviewsForModeration(),
+      adminService.listPendingAgencySubmissions(),
+      adminService.listPendingLocations(),
+      adminService.listPendingTips(),
+      adminService.listPendingContentNotices(),
+    ]);
 
-  return NextResponse.json({ claims, reviews, submissions, locations, tips });
+  return NextResponse.json({
+    claims,
+    reviews,
+    submissions,
+    locations,
+    tips,
+    contentNotices,
+  });
 }
 
 export async function POST(request: Request) {
@@ -42,6 +52,10 @@ export async function POST(request: Request) {
 
   try {
     switch (action) {
+      case "cleanup-review-evidence":
+        return NextResponse.json({
+          deleted: await purgeExpiredReviewEvidence(),
+        });
       case "create-agency":
         return NextResponse.json({
           agency: await adminService.createAgency(body.agency),
@@ -70,6 +84,7 @@ export async function POST(request: Request) {
       case "reject-location":
       case "approve-tip":
       case "reject-tip":
+      case "decide-content-notice":
         if (!id) {
           return NextResponse.json({ error: "id required" }, { status: 400 });
         }
@@ -84,9 +99,18 @@ export async function POST(request: Request) {
       case "reject-claim":
         return NextResponse.json({ claim: await adminService.rejectClaim(id!) });
       case "moderate-review":
-        return NextResponse.json({ review: await adminService.moderateReview(id!) });
+        return NextResponse.json({
+          review: await adminService.moderateReview(
+            id!,
+            String(body.reason ?? ""),
+            true,
+            body.accreditExperience === true,
+          ),
+        });
       case "flag-review":
-        return NextResponse.json({ review: await adminService.flagReview(id!) });
+        return NextResponse.json({
+          review: await adminService.flagReview(id!, String(body.reason ?? "")),
+        });
       case "approve-agency-submission": {
         const agency = await adminService.approveAgencySubmission(id!);
         return NextResponse.json({ agency });
@@ -107,6 +131,14 @@ export async function POST(request: Request) {
         return NextResponse.json({ tip: await adminService.approveTip(id!) });
       case "reject-tip":
         return NextResponse.json({ tip: await adminService.rejectTip(id!) });
+      case "decide-content-notice":
+        return NextResponse.json({
+          notice: await adminService.decideContentNotice(id!, {
+            status: body.status,
+            decisionRule: body.decisionRule,
+            decisionReason: body.decisionReason,
+          }),
+        });
       default:
         return NextResponse.json({ error: "Unknown action" }, { status: 400 });
     }

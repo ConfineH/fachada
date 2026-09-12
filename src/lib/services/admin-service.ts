@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 
 import { buildAgencySlug } from "@/lib/domain/agency-slug";
-import type { Agency, AgencyLocation, AgencySubmission, AgencyTip, Claim, Review } from "@/lib/domain/types";
+import type { Agency, AgencyLocation, AgencySubmission, AgencyTip, Claim, ContentNotice, Review } from "@/lib/domain/types";
 import {
   adminAddAliasSchema,
   adminCreateAgencySchema,
@@ -11,6 +11,8 @@ import type { AgencySubmissionService } from "@/lib/services/agency-submission-s
 import type { ClaimService } from "@/lib/services/claim-service";
 import type { Repository } from "@/lib/repositories/types";
 import { AgencyService } from "@/lib/services/agency-service";
+import type { ContentNoticeService } from "@/lib/services/content-notice-service";
+import type { EmailProvider } from "@/lib/services/email-provider";
 
 export class AdminError extends Error {
   constructor(message: string) {
@@ -20,7 +22,10 @@ export class AdminError extends Error {
 }
 
 export type ClaimWithAgency = Claim & { agencyName: string };
-export type ReviewWithAgency = Review & { agencyName: string };
+export type ReviewWithAgency = Review & {
+  agencyName: string;
+  evidenceUrl?: string;
+};
 
 export type SubmissionWithMeta = AgencySubmission;
 export type LocationWithAgency = AgencyLocation & {
@@ -38,7 +43,26 @@ export class AdminService {
     private readonly repo: Repository,
     private readonly claimService: ClaimService,
     private readonly agencySubmissionService: AgencySubmissionService,
+    private readonly contentNoticeService?: ContentNoticeService,
+    private readonly email?: EmailProvider,
   ) {}
+
+  async listPendingContentNotices(): Promise<ContentNotice[]> {
+    const notices = await this.repo.listContentNotices();
+    return notices.filter(
+      (notice) =>
+        notice.status === "pendiente" ||
+        notice.status === "informacion_requerida" ||
+        Boolean(notice.appealedAt && !notice.appealDecidedAt),
+    );
+  }
+
+  async decideContentNotice(id: string, input: unknown) {
+    if (!this.contentNoticeService) {
+      throw new AdminError("Content notice service unavailable");
+    }
+    return this.contentNoticeService.decide(id, input);
+  }
 
   async listPendingClaims(): Promise<ClaimWithAgency[]> {
     const claims = await this.repo.listClaims();
@@ -91,22 +115,59 @@ export class AdminService {
     return this.claimService.reject(claimId);
   }
 
-  async moderateReview(reviewId: string, moderated = true) {
+  async moderateReview(
+    reviewId: string,
+    reason: string,
+    moderated = true,
+    accreditExperience = false,
+  ) {
     const review = await this.repo.findReviewById(reviewId);
     if (!review) throw new AdminError("Review not found");
+    if (reason.trim().length < 10) {
+      throw new AdminError("Motiva la decisión con al menos 10 caracteres");
+    }
 
     review.moderated = moderated;
     if (moderated) review.flagged = false;
+    review.moderationReason = reason.trim();
+    review.moderatedAt = new Date();
+    review.verificationLevel =
+      accreditExperience && review.evidencePath ? "acreditada" : "declarada";
     await this.repo.updateReview(review);
+    const author = await this.repo.findUserById(review.userId);
+    if (author?.email && this.email) {
+      await Promise.allSettled([
+        this.email.sendMessage(
+          author.email,
+          "Decisión sobre tu reseña en Fachada",
+          `Resultado: publicada\n\nMotivo: ${review.moderationReason}`,
+        ),
+      ]);
+    }
     return review;
   }
 
-  async flagReview(reviewId: string, flagged = true) {
+  async flagReview(reviewId: string, reason: string, flagged = true) {
     const review = await this.repo.findReviewById(reviewId);
     if (!review) throw new AdminError("Review not found");
+    if (reason.trim().length < 10) {
+      throw new AdminError("Motiva la decisión con al menos 10 caracteres");
+    }
 
     review.flagged = flagged;
+    review.moderationReason = reason.trim();
+    review.moderatedAt = new Date();
     await this.repo.updateReview(review);
+    const author = await this.repo.findUserById(review.userId);
+    if (author?.email && this.email) {
+      await Promise.allSettled([
+        this.email.sendMessage(
+          author.email,
+          "Decisión sobre tu reseña en Fachada",
+          `Resultado: restringida\n\nMotivo: ${review.moderationReason}`,
+        ),
+      ]);
+    }
     return review;
   }
 

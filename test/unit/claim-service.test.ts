@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
+import { REVIEW_TERMS_VERSION } from "@/lib/domain/review-authenticity";
 
 import { MemoryStore } from "@/lib/repositories/memory-store";
 import { AgencySubmissionService } from "@/lib/services/agency-submission-service";
@@ -77,6 +78,13 @@ describe("ClaimService and AdminService", () => {
       title: "Buena experiencia",
       pros: "La gestión fue rápida y clara en todo momento.",
       cons: "Mejoraría la velocidad al contestar emails.",
+      experienceDate: new Date().toISOString().slice(0, 10),
+      experienceType: "alquiler",
+      firstHandAttested: true,
+      noIncentiveAttested: true,
+      noConflictAttested: true,
+      termsAccepted: true,
+      termsVersion: REVIEW_TERMS_VERSION,
     });
   }
 

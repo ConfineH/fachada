@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { DEFAULT_DESCRIPTION, DEFAULT_TITLE, SITE_NAME } from "@/lib/seo";
 import { getSiteUrl } from "@/lib/site-url";
 
 const geistSans = Geist({
@@ -15,9 +16,29 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL(getSiteUrl()),
-  title: "Fachada — Reseñas de inmobiliarias en España",
-  description:
-    "Busca inmobiliarias, lee reseñas verificadas de inquilinos y propietarios, y comparte tu experiencia.",
+  title: {
+    default: `${DEFAULT_TITLE} · ${SITE_NAME}`,
+    template: `%s · ${SITE_NAME}`,
+  },
+  description: DEFAULT_DESCRIPTION,
+  applicationName: SITE_NAME,
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    locale: "es_ES",
+    siteName: SITE_NAME,
+    title: DEFAULT_TITLE,
+    description: DEFAULT_DESCRIPTION,
+  },
+  twitter: {
+    card: "summary",
+    title: DEFAULT_TITLE,
+    description: DEFAULT_DESCRIPTION,
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({
@@ -27,7 +48,7 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="es"
+      lang="es-ES"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>

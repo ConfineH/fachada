@@ -179,7 +179,7 @@ export function AccountVerification({
         setStep("email");
         setError("");
         setNotice(
-          "El código anterior ya no vale. Pide uno nuevo al mismo email.",
+          "El código anterior ya no vale. Pide uno nuevo al mismo correo.",
         );
         return;
       }
@@ -214,7 +214,7 @@ export function AccountVerification({
       {noAuthReady && (
         <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-950">
           En este sitio aún no se puede identificar una cuenta: falta Google o
-          el envío de email. En local el código sale en pantalla, sin Resend.
+          el envío de correo. En local el código sale en pantalla, sin Resend.
         </p>
       )}
 
@@ -233,7 +233,7 @@ export function AccountVerification({
           )}
           {emailEnabled ? (
             <p className="mt-3 text-center text-xs text-zinc-500">
-              o con un código al email
+              o con un código al correo
             </p>
           ) : null}
         </div>
@@ -246,7 +246,7 @@ export function AccountVerification({
           className="motion-scale-in space-y-3"
         >
           <label className="block text-sm text-zinc-700">
-            Email
+            Correo
             <input
               type="email"
               value={email}
@@ -314,7 +314,7 @@ export function AccountVerification({
               }}
               className="text-zinc-600 hover:text-zinc-900"
             >
-              Cambiar email
+              Cambiar correo
             </button>
           </div>
         </form>

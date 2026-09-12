@@ -133,6 +133,27 @@ Inspirado en cómo documentamos decisiones en Meant To y Migajas para no re-deba
 
 ---
 
+## ADR-009: Blindaje legal conservador y copy sin overclaim
+
+**Fecha:** 2026-09-12  
+**Estado:** Aceptada
+
+**Contexto:** El plan de blindaje exige art. 20.4 TRLGDCU, DSA y etiquetas
+honestas antes de crecer. El titular LSSI y el dictamen siguen pendientes.
+
+**Decisión:** Aplicar en código la lectura conservadora (30 días, declaraciones,
+evidencia privada, denuncia/apelación, exportación). En público: experiencia
+declarada vs acreditada; nunca «reseña verificada» ni anonimato absoluto.
+SEO on-page (títulos, sitemap, JSON-LD) sí; campaña nacional no.
+
+**Consecuencias:**
+- ✅ Producto alineado con el brief legal mientras llega el abogado
+- ⚠️ Sin `LEGAL_*` el aviso legal sigue en borrador
+- ⚠️ Migración `012` debe aplicarse en el Supabase live
+- 📁 `docs/legal-release-checklist.md`, `src/lib/seo.ts`, `012_legal_hardening.sql`
+
+---
+
 ## Plantilla para nuevas decisiones
 
 ```markdown

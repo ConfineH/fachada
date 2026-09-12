@@ -4,6 +4,7 @@ import { MemoryStore } from "@/lib/repositories/memory-store";
 import { AuthService } from "@/lib/services/auth-service";
 import { ReviewError, ReviewService } from "@/lib/services/review-service";
 import { MockSmsProvider } from "@/lib/services/sms-provider";
+import { REVIEW_TERMS_VERSION } from "@/lib/domain/review-authenticity";
 
 const PROS = "La gestión fue rápida y clara en todo momento.";
 const CONS = "Algún retraso menor contestando correos por la tarde.";
@@ -38,6 +39,13 @@ describe("ReviewService", () => {
       title: "Buena experiencia",
       pros: PROS,
       cons: CONS,
+      experienceDate: new Date().toISOString().slice(0, 10),
+      experienceType: "alquiler",
+      firstHandAttested: true,
+      noIncentiveAttested: true,
+      noConflictAttested: true,
+      termsAccepted: true,
+      termsVersion: REVIEW_TERMS_VERSION,
       ...overrides,
     };
   }
@@ -111,6 +119,18 @@ describe("ReviewService", () => {
     await expect(
       service.create(user, payload({ rating: 0, title: "Mala" })),
     ).rejects.toThrow();
+  });
+
+  it("rejects an experience older than 30 days", async () => {
+    const user = await verifiedUser();
+    const oldDate = new Date();
+    oldDate.setUTCDate(oldDate.getUTCDate() - 31);
+    await expect(
+      service.create(
+        user,
+        payload({ experienceDate: oldDate.toISOString().slice(0, 10) }),
+      ),
+    ).rejects.toThrow(/últimos 30 días/);
   });
 
   it("marks a published review as helpful once", async () => {

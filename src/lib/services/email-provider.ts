@@ -1,9 +1,11 @@
 export interface EmailProvider {
   sendCode(email: string, code: string): Promise<void>;
+  sendMessage(email: string, subject: string, text: string): Promise<void>;
 }
 
 export class MockEmailProvider implements EmailProvider {
   sent: Array<{ email: string; code: string }> = [];
+  messages: Array<{ email: string; subject: string; text: string }> = [];
 
   async sendCode(email: string, code: string) {
     this.sent.push({ email, code });
@@ -11,6 +13,10 @@ export class MockEmailProvider implements EmailProvider {
 
   lastCodeFor(email: string) {
     return [...this.sent].reverse().find((s) => s.email === email)?.code;
+  }
+
+  async sendMessage(email: string, subject: string, text: string) {
+    this.messages.push({ email, subject, text });
   }
 }
 
@@ -21,6 +27,14 @@ export class ResendEmailProvider implements EmailProvider {
   ) {}
 
   async sendCode(email: string, code: string) {
+    return this.sendMessage(
+      email,
+      "Tu código de Fachada",
+      `Tu código de verificación Fachada es ${code}. Caduca en 10 minutos.`,
+    );
+  }
+
+  async sendMessage(email: string, subject: string, text: string) {
     const response = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
@@ -30,8 +44,8 @@ export class ResendEmailProvider implements EmailProvider {
       body: JSON.stringify({
         from: this.from,
         to: [email],
-        subject: "Tu código de Fachada",
-        text: `Tu código de verificación Fachada es ${code}. Caduca en 10 minutos.`,
+        subject,
+        text,
       }),
     });
     if (!response.ok) {

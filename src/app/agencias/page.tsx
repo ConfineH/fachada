@@ -5,12 +5,13 @@ import { AgencyResultList } from "@/components/agency-result-list";
 import { PublicShell } from "@/components/public-shell";
 import { parseAgencySort } from "@/lib/domain/agency-browse";
 import { agencyService, usingSupabase } from "@/lib/container";
+import { pageMeta } from "@/lib/seo";
 
-export const metadata = {
-  title: "Registro de inmobiliarias — Fachada",
-  description:
-    "Busca inmobiliarias en España y ordénalas por reseñas o por la nota de inquilinos y propietarios.",
-};
+export const metadata = pageMeta(
+  "Registro de inmobiliarias",
+  "Busca inmobiliarias en España y ordénalas por número de experiencias o por la nota de inquilinos y propietarios.",
+  "/agencias",
+);
 
 export default async function AgencyRegistryPage({
   searchParams,
@@ -33,7 +34,7 @@ export default async function AgencyRegistryPage({
             Registro público
           </p>
           <h1 className="mt-3 text-4xl font-semibold tracking-tight">
-            Inmobiliarias
+            Registro de inmobiliarias
           </h1>
           <p className="mt-3 max-w-2xl text-zinc-600">
             Orden por defecto: las que más reseñas tienen. Una nota alta con una

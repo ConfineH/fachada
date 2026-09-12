@@ -1,7 +1,7 @@
 # Product marketing context — Fachada
 
-**Document version:** 1.1  
-**Last updated:** 2026-09-07  
+**Document version:** 1.2  
+**Last updated:** 2026-09-12  
 
 Canonical detail: [`docs/producto-final.md`](../docs/producto-final.md).  
 Original vision archive: [`docs/docs-extracted.txt`](../docs/docs-extracted.txt).
@@ -10,6 +10,7 @@ Original vision archive: [`docs/docs-extracted.txt`](../docs/docs-extracted.txt)
 
 | Version | Date | Change |
 |---------|------|--------|
+| 1.2 | 2026-09-12 | Copy rules: no «reseña verificada»; correo ≠ experiencia; alta = «sugerir» |
 | 1.1 | 2026-09-07 | Reviewer identity: Google/email OTP; SMS only for agency business line |
 | 1.0 | 2026-08-13 | Initial context from audit + product-final definition |
 
@@ -63,8 +64,9 @@ Agencies that want to claim profiles, respond to reviews, and later pay for prem
 
 **Copy rules:**
 - Never claim absolute anonymity (email identified in backend; public display is non-identifying).
-- Never promise antifraud for Idealista ads.
-- CTAs: prefer “buscar / leer / reseñar” over “añadir agencia” as primary.
+- Never promise antifraud for Idealista ads, fact-checking, or a “reseña verificada” seal.
+- Email/teléfono verificado ≠ experiencia verificada. Use **experiencia declarada** vs **acreditada**.
+- CTAs: prefer “buscar / leer / reseñar” over “añadir agencia” as primary. Alta de ficha = “sugerir”.
 - Agency nav must lead to real Acceso, not `/explorar`.
 
 **Hero / acquisition line (Idealista extension):**  

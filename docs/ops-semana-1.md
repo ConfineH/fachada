@@ -2,6 +2,11 @@
 
 El código ya no es el bloqueo. Esta lista sí.
 
+**Añadido 12 sep 2026:** además del titular LSSI, aplica en el SQL editor
+del proyecto live `supabase/migrations/012_legal_hardening.sql` (columnas
+de autenticidad de reseña, `content_notices`, bucket `review-evidence`).
+Sin esa migración, los flujos nuevos fallan o no persisten.
+
 ## 1. Rotar `ADMIN_PASSWORD`
 
 1. Vercel → Fachada → Settings → Environment Variables.

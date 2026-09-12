@@ -5,6 +5,7 @@ import type {
   AgencyResponse,
   AgencySubmission,
   Claim,
+  ContentNotice,
   PendingVerification,
   Review,
   Session,
@@ -15,6 +16,7 @@ import {
   mapAgency,
   mapAgencyResponse,
   mapClaim,
+  mapContentNotice,
   mapPendingVerification,
   mapReview,
   mapSession,
@@ -22,6 +24,7 @@ import {
   type AgencyRow,
   type AgencyResponseRow,
   type ClaimRow,
+  type ContentNoticeRow,
   type PendingVerificationRow,
   type ReviewRow,
   type SessionRow,
@@ -303,6 +306,9 @@ export class SupabaseRepository implements Repository {
         moderated: review.moderated,
         flagged: review.flagged,
         helpful_count: review.helpfulCount,
+        moderation_reason: review.moderationReason ?? null,
+        moderated_at: review.moderatedAt?.toISOString() ?? null,
+        verification_level: review.verificationLevel,
       })
       .eq("id", review.id);
     throwIfError(error);
@@ -324,9 +330,22 @@ export class SupabaseRepository implements Repository {
       would_recommend: review.wouldRecommend ?? null,
       helpful_count: review.helpfulCount,
       incident_tags: review.incidentTags,
+      experience_date: review.experienceDate.toISOString().slice(0, 10),
+      experience_type: review.experienceType,
+      first_hand_attested: review.firstHandAttested,
+      no_incentive_attested: review.noIncentiveAttested,
+      no_conflict_attested: review.noConflictAttested,
+      verification_level: review.verificationLevel,
+      identity_verification: review.identityVerification,
+      evidence_path: review.evidencePath ?? null,
+      evidence_delete_after: review.evidenceDeleteAfter?.toISOString() ?? null,
+      terms_version: review.termsVersion,
+      terms_accepted_at: review.termsAcceptedAt.toISOString(),
       created_at: review.createdAt.toISOString(),
       moderated: review.moderated,
       flagged: review.flagged,
+      moderation_reason: review.moderationReason ?? null,
+      moderated_at: review.moderatedAt?.toISOString() ?? null,
     });
     throwIfError(error);
   }
@@ -354,6 +373,74 @@ export class SupabaseRepository implements Repository {
       .eq("id", reviewId);
     throwIfError(updateError);
     return { added: true, helpfulCount };
+  }
+
+  async createContentNotice(notice: ContentNotice) {
+    const review = await this.findReviewById(notice.reviewId);
+    if (!review) throw new Error("Review not found");
+    const { error } = await this.client.from("content_notices").insert({
+      id: notice.id,
+      review_id: notice.reviewId,
+      reporter_name: notice.reporterName,
+      reporter_email: notice.reporterEmail,
+      relationship: notice.relationship ?? null,
+      category: notice.category,
+      exact_excerpt: notice.exactExcerpt,
+      legal_reason: notice.legalReason,
+      evidence_url: notice.evidenceUrl ?? null,
+      good_faith_attested: notice.goodFaithAttested,
+      status: notice.status,
+      review_snapshot: {
+        title: review.title,
+        body: review.body,
+        pros: review.pros,
+        cons: review.cons,
+        agencyId: review.agencyId,
+        authorId: review.userId,
+      },
+      created_at: notice.createdAt.toISOString(),
+      acknowledged_at: notice.acknowledgedAt.toISOString(),
+    });
+    throwIfError(error);
+  }
+
+  async listContentNotices() {
+    const { data, error } = await this.client
+      .from("content_notices")
+      .select("*")
+      .order("created_at", { ascending: false });
+    throwIfError(error);
+    return (data as ContentNoticeRow[]).map(mapContentNotice);
+  }
+
+  async findContentNoticeById(id: string) {
+    const { data, error } = await this.client
+      .from("content_notices")
+      .select("*")
+      .eq("id", id)
+      .maybeSingle();
+    throwIfError(error);
+    return data ? mapContentNotice(data as ContentNoticeRow) : null;
+  }
+
+  async updateContentNotice(notice: ContentNotice) {
+    const { error } = await this.client
+      .from("content_notices")
+      .update({
+        status: notice.status,
+        decided_at: notice.decidedAt?.toISOString() ?? null,
+        decision_reason: notice.decisionReason ?? null,
+        decision_rule: notice.decisionRule ?? null,
+        author_notified_at: notice.authorNotifiedAt?.toISOString() ?? null,
+        reporter_notified_at: notice.reporterNotifiedAt?.toISOString() ?? null,
+        appealed_at: notice.appealedAt?.toISOString() ?? null,
+        appeal_reason: notice.appealReason ?? null,
+        appeal_decided_at: notice.appealDecidedAt?.toISOString() ?? null,
+        appeal_decision: notice.appealDecision ?? null,
+        appeal_decision_reason: notice.appealDecisionReason ?? null,
+      })
+      .eq("id", notice.id);
+    throwIfError(error);
   }
 
   async listSavedAgencies(userId: string) {

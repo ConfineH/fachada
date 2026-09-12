@@ -13,6 +13,8 @@ import {
   INCIDENT_TAGS,
   type IncidentTag,
 } from "@/lib/domain/incidents";
+import { REVIEW_TERMS_VERSION } from "@/lib/domain/review-authenticity";
+import type { ReviewExperienceType } from "@/lib/domain/types";
 
 type Step = "verify" | "review" | "done";
 
@@ -29,6 +31,14 @@ export function ReviewForm({ agencySlug }: { agencySlug: string }) {
   const [wouldRecommend, setWouldRecommend] = useState<"yes" | "no" | "skip">(
     "skip",
   );
+  const [experienceDate, setExperienceDate] = useState("");
+  const [experienceType, setExperienceType] =
+    useState<ReviewExperienceType>("alquiler");
+  const [firstHandAttested, setFirstHandAttested] = useState(false);
+  const [noIncentiveAttested, setNoIncentiveAttested] = useState(false);
+  const [noConflictAttested, setNoConflictAttested] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [evidence, setEvidence] = useState<File | null>(null);
   const [incidentTags, setIncidentTags] = useState<IncidentTag[]>([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -63,7 +73,7 @@ export function ReviewForm({ agencySlug }: { agencySlug: string }) {
     event.preventDefault();
     if (!token) {
       setError(
-        "Identifícate otra vez. Pide un código al email (o entra con Google) y publica sin recargar.",
+        "Identifícate otra vez. Pide un código al correo (o entra con Google) y publica sin recargar.",
       );
       clearSession();
       scrollToFeedback();
@@ -98,29 +108,58 @@ export function ReviewForm({ agencySlug }: { agencySlug: string }) {
       scrollToFeedback();
       return;
     }
+    if (!experienceDate) {
+      setError("Indica la fecha de tu última interacción.");
+      scrollToFeedback();
+      return;
+    }
+    if (
+      !firstHandAttested ||
+      !noIncentiveAttested ||
+      !noConflictAttested ||
+      !termsAccepted
+    ) {
+      setError("Confirma las declaraciones de autenticidad y las normas.");
+      scrollToFeedback();
+      return;
+    }
 
     setLoading(true);
     setError("");
     try {
+      const formData = new FormData();
+      const fields = {
+        agencySlug,
+        role,
+        rating: String(rating),
+        title: trimmedTitle,
+        pros: trimmedPros,
+        cons: trimmedCons,
+        anonymous: String(anonymous),
+        publicName: anonymous ? "" : publicName.trim(),
+        wouldRecommend:
+          wouldRecommend === "skip"
+            ? "undefined"
+            : String(wouldRecommend === "yes"),
+        incidentTags: JSON.stringify(incidentTags),
+        experienceDate,
+        experienceType,
+        firstHandAttested: String(firstHandAttested),
+        noIncentiveAttested: String(noIncentiveAttested),
+        noConflictAttested: String(noConflictAttested),
+        termsAccepted: String(termsAccepted),
+        termsVersion: REVIEW_TERMS_VERSION,
+      };
+      for (const [key, value] of Object.entries(fields)) {
+        formData.set(key, value);
+      }
+      if (evidence) formData.set("evidence", evidence);
       const res = await fetch("/api/reviews", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          agencySlug,
-          role,
-          rating,
-          title: trimmedTitle,
-          pros: trimmedPros,
-          cons: trimmedCons,
-          anonymous,
-          publicName: anonymous ? undefined : publicName.trim(),
-          wouldRecommend:
-            wouldRecommend === "skip" ? undefined : wouldRecommend === "yes",
-          incidentTags,
-        }),
+        body: formData,
       });
 
       let data: { error?: string } = {};
@@ -159,8 +198,8 @@ export function ReviewForm({ agencySlug }: { agencySlug: string }) {
     >
       <h3 className="font-medium">Escribir reseña</h3>
       <p className="mt-1 text-sm text-stone-600">
-        Identifícate con Google o un código al email. En la ficha no sale tu
-        correo; queda en backend para moderación.
+        Identifícate con Google o un código al correo. En la ficha no sale tu
+        correo; queda en nuestros registros para moderación.
       </p>
 
       {error && (
@@ -195,6 +234,41 @@ export function ReviewForm({ agencySlug }: { agencySlug: string }) {
             <option value="inquilino">Inquilino</option>
             <option value="propietario">Propietario</option>
           </select>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="block text-xs font-medium text-zinc-600">
+              Última interacción
+              <input
+                type="date"
+                required
+                max={new Date().toISOString().slice(0, 10)}
+                value={experienceDate}
+                onChange={(event) => setExperienceDate(event.target.value)}
+                className="input-field mt-1"
+              />
+            </label>
+            <label className="block text-xs font-medium text-zinc-600">
+              Tipo de experiencia
+              <select
+                value={experienceType}
+                onChange={(event) =>
+                  setExperienceType(
+                    event.target.value as ReviewExperienceType,
+                  )
+                }
+                className="input-field mt-1"
+              >
+                <option value="visita">Visita o contacto sustancial</option>
+                <option value="negociacion">Negociación o reserva</option>
+                <option value="alquiler">Alquiler</option>
+                <option value="incidencia">Incidencia o reparación</option>
+                <option value="gestion">Mandato de gestión</option>
+              </select>
+            </label>
+          </div>
+          <p className="text-xs text-zinc-500">
+            La fecha debe corresponder a una interacción de los últimos 30
+            días. Si la relación continúa, indica el último contacto relevante.
+          </p>
           <label className="block text-xs text-zinc-500">
             Valoración (1–5)
             <input
@@ -210,7 +284,7 @@ export function ReviewForm({ agencySlug }: { agencySlug: string }) {
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="Título"
+            placeholder="Ej. La fianza tardó semanas en volver"
             required
             maxLength={100}
             className="input-field"
@@ -273,13 +347,13 @@ export function ReviewForm({ agencySlug }: { agencySlug: string }) {
               onChange={(e) => setAnonymous(e.target.checked)}
             />
             Publicar solo como {role} (recomendado). Fachada sigue identificando
-            la cuenta en backend.
+            la cuenta en sus registros.
           </label>
           {!anonymous && (
             <input
               value={publicName}
               onChange={(e) => setPublicName(e.target.value)}
-              placeholder="Nombre público (no uses email)"
+              placeholder="Nombre público (no uses un correo)"
               maxLength={40}
               className="input-field"
             />
@@ -316,17 +390,79 @@ export function ReviewForm({ agencySlug }: { agencySlug: string }) {
               })}
             </ul>
           </fieldset>
-          <p className="text-xs text-zinc-500">
-            Al publicar aceptas las{" "}
-            <a href="/legal/normas" className="underline">
-              normas de uso
-            </a>{" "}
-            y la{" "}
-            <a href="/legal/privacidad" className="underline">
-              privacidad
-            </a>
-            .
-          </p>
+          <fieldset className="space-y-2 rounded-lg border border-stone-200 p-3">
+            <legend className="px-1 text-xs font-semibold text-zinc-700">
+              Declaraciones de autenticidad
+            </legend>
+            <label className="flex items-start gap-2 text-xs text-zinc-700">
+              <input
+                type="checkbox"
+                checked={firstHandAttested}
+                onChange={(event) =>
+                  setFirstHandAttested(event.target.checked)
+                }
+                className="mt-0.5"
+              />
+              Es una experiencia propia y lo escrito distingue hechos de
+              opiniones.
+            </label>
+            <label className="flex items-start gap-2 text-xs text-zinc-700">
+              <input
+                type="checkbox"
+                checked={noIncentiveAttested}
+                onChange={(event) =>
+                  setNoIncentiveAttested(event.target.checked)
+                }
+                className="mt-0.5"
+              />
+              No he recibido dinero, descuento ni otro incentivo por publicarla.
+            </label>
+            <label className="flex items-start gap-2 text-xs text-zinc-700">
+              <input
+                type="checkbox"
+                checked={noConflictAttested}
+                onChange={(event) =>
+                  setNoConflictAttested(event.target.checked)
+                }
+                className="mt-0.5"
+              />
+              No soy competidor, empleado, familiar ni proveedor con un
+              conflicto de interés.
+            </label>
+            <label className="flex items-start gap-2 text-xs text-zinc-700">
+              <input
+                type="checkbox"
+                checked={termsAccepted}
+                onChange={(event) => setTermsAccepted(event.target.checked)}
+                className="mt-0.5"
+              />
+              Acepto las{" "}
+              <a href="/legal/normas" className="underline">
+                normas de uso y contenidos
+              </a>{" "}
+              y he leído la{" "}
+              <a href="/legal/privacidad" className="underline">
+                política de privacidad
+              </a>
+              .
+            </label>
+          </fieldset>
+          <label className="block text-xs font-medium text-zinc-600">
+            Evidencia privada (opcional)
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp,application/pdf"
+              onChange={(event) =>
+                setEvidence(event.target.files?.[0] ?? null)
+              }
+              className="mt-1 block w-full text-xs"
+            />
+            <span className="mt-1 block font-normal text-zinc-500">
+              Contrato, recibo o conversación, máximo 3 MB. Oculta datos ajenos.
+              Solo la revisará moderación; aportar un archivo no lo convierte
+              automáticamente en experiencia acreditada.
+            </span>
+          </label>
           <button
             type="submit"
             disabled={loading}

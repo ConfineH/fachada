@@ -13,10 +13,11 @@ export class AccountService {
   constructor(private readonly repo: Repository) {}
 
   async dashboard(user: User) {
-    const [reviews, saved, claims] = await Promise.all([
+    const [reviews, saved, claims, notices] = await Promise.all([
       this.repo.listReviewsByUser(user.id),
       this.repo.listSavedAgencies(user.id),
       this.repo.listClaims(),
+      this.repo.listContentNotices(),
     ]);
 
     const reviewsWithAgency = await Promise.all(
@@ -65,6 +66,72 @@ export class AccountService {
         city: agency.city,
       })),
       claimedAgencies,
+      moderationDecisions: notices
+        .filter(
+          (notice) =>
+            reviews.some((review) => review.id === notice.reviewId) &&
+            Boolean(notice.decidedAt),
+        )
+        .map((notice) => ({
+          id: notice.id,
+          reviewId: notice.reviewId,
+          status: notice.status,
+          decisionRule: notice.decisionRule,
+          decisionReason: notice.decisionReason,
+          appealedAt: notice.appealedAt,
+        })),
+    };
+  }
+
+  async exportData(user: User) {
+    const [reviews, saved, claims, notices] = await Promise.all([
+      this.repo.listReviewsByUser(user.id),
+      this.repo.listSavedAgencies(user.id),
+      this.repo.listClaims(),
+      this.repo.listContentNotices(),
+    ]);
+    return {
+      exportedAt: new Date().toISOString(),
+      account: {
+        id: user.id,
+        email: user.email,
+        phone: user.phone,
+        emailVerified: user.emailVerified,
+        phoneVerified: user.phoneVerified,
+        createdAt: user.createdAt.toISOString(),
+        lastActivityAt: user.lastActivityAt.toISOString(),
+      },
+      reviews: reviews.map((review) => ({
+        ...review,
+        evidencePath: review.evidencePath ? "evidencia privada conservada" : undefined,
+        createdAt: review.createdAt.toISOString(),
+        experienceDate: review.experienceDate.toISOString(),
+        evidenceDeleteAfter: review.evidenceDeleteAfter?.toISOString(),
+        termsAcceptedAt: review.termsAcceptedAt.toISOString(),
+        moderatedAt: review.moderatedAt?.toISOString(),
+      })),
+      savedAgencies: saved.map((agency) => ({
+        id: agency.id,
+        name: agency.name,
+        slug: agency.slug,
+      })),
+      claims: claims
+        .filter((claim) => claim.userId === user.id)
+        .map((claim) => ({
+          ...claim,
+          requestedAt: claim.requestedAt.toISOString(),
+          resolvedAt: claim.resolvedAt?.toISOString(),
+        })),
+      contentNotices: user.email
+        ? notices
+            .filter((notice) => notice.reporterEmail === user.email)
+            .map((notice) => ({
+              ...notice,
+              createdAt: notice.createdAt.toISOString(),
+              acknowledgedAt: notice.acknowledgedAt.toISOString(),
+              decidedAt: notice.decidedAt?.toISOString(),
+            }))
+        : [],
     };
   }
 

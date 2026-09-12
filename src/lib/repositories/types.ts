@@ -6,6 +6,7 @@ import type {
   AgencySubmission,
   AgencyTip,
   Claim,
+  ContentNotice,
   PendingEmailVerification,
   PendingVerification,
   Review,
@@ -77,6 +78,11 @@ export interface Repository {
     userId: string,
     reviewId: string,
   ): Promise<{ added: boolean; helpfulCount: number }>;
+
+  createContentNotice(notice: ContentNotice): Promise<void>;
+  listContentNotices(): Promise<ContentNotice[]>;
+  findContentNoticeById(id: string): Promise<ContentNotice | null>;
+  updateContentNotice(notice: ContentNotice): Promise<void>;
 
   listSavedAgencies(userId: string): Promise<Agency[]>;
   saveAgency(userId: string, agencyId: string): Promise<void>;

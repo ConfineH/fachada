@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { DevBanner } from "@/components/dev-banner";
+import { SiteFooter } from "@/components/site-footer";
 import { SiteNav } from "@/components/site-nav";
 import { usingSupabase } from "@/lib/container";
 
@@ -26,6 +27,7 @@ export function LegalDoc({
           <Link href="/">Volver al inicio</Link>
         </p>
       </main>
+      <SiteFooter />
     </div>
   );
 }

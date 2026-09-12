@@ -1,9 +1,11 @@
 import { parseIncidentTags } from "@/lib/domain/incidents";
+import { REVIEW_TERMS_VERSION } from "@/lib/domain/review-authenticity";
 import type {
   Agency,
   AgencyResponse,
   Claim,
   ClaimEvidenceItem,
+  ContentNotice,
   PendingVerification,
   Review,
   RepresentativeRole,
@@ -59,9 +61,22 @@ type ReviewRow = {
   would_recommend: boolean | null;
   helpful_count: number | null;
   incident_tags: string[] | null;
+  experience_date: string | null;
+  experience_type: Review["experienceType"] | null;
+  first_hand_attested: boolean | null;
+  no_incentive_attested: boolean | null;
+  no_conflict_attested: boolean | null;
+  verification_level: Review["verificationLevel"] | null;
+  identity_verification: Review["identityVerification"] | null;
+  evidence_path: string | null;
+  evidence_delete_after: string | null;
+  terms_version: string | null;
+  terms_accepted_at: string | null;
   created_at: string;
   moderated: boolean;
   flagged: boolean;
+  moderation_reason: string | null;
+  moderated_at: string | null;
 };
 
 type ClaimRow = {
@@ -90,6 +105,32 @@ type AgencyResponseRow = {
   agency_id: string;
   body: string;
   created_at: string;
+};
+
+type ContentNoticeRow = {
+  id: string;
+  review_id: string;
+  reporter_name: string;
+  reporter_email: string;
+  relationship: string | null;
+  category: ContentNotice["category"];
+  exact_excerpt: string;
+  legal_reason: string;
+  evidence_url: string | null;
+  good_faith_attested: boolean;
+  status: ContentNotice["status"];
+  created_at: string;
+  acknowledged_at: string;
+  decided_at: string | null;
+  decision_reason: string | null;
+  decision_rule: string | null;
+  author_notified_at: string | null;
+  reporter_notified_at: string | null;
+  appealed_at: string | null;
+  appeal_reason: string | null;
+  appeal_decided_at: string | null;
+  appeal_decision: ContentNotice["appealDecision"] | null;
+  appeal_decision_reason: string | null;
 };
 
 type PendingVerificationRow = {
@@ -157,9 +198,24 @@ export function mapReview(row: ReviewRow): Review {
     wouldRecommend: row.would_recommend ?? undefined,
     helpfulCount: row.helpful_count ?? 0,
     incidentTags: parseIncidentTags(row.incident_tags),
+    experienceDate: new Date(row.experience_date ?? row.created_at),
+    experienceType: row.experience_type ?? "alquiler",
+    firstHandAttested: row.first_hand_attested ?? false,
+    noIncentiveAttested: row.no_incentive_attested ?? false,
+    noConflictAttested: row.no_conflict_attested ?? false,
+    verificationLevel: row.verification_level ?? "declarada",
+    identityVerification: row.identity_verification ?? "email",
+    evidencePath: row.evidence_path ?? undefined,
+    evidenceDeleteAfter: row.evidence_delete_after
+      ? new Date(row.evidence_delete_after)
+      : undefined,
+    termsVersion: row.terms_version ?? REVIEW_TERMS_VERSION,
+    termsAcceptedAt: new Date(row.terms_accepted_at ?? row.created_at),
     createdAt: new Date(row.created_at),
     moderated: row.moderated,
     flagged: row.flagged,
+    moderationReason: row.moderation_reason ?? undefined,
+    moderatedAt: row.moderated_at ? new Date(row.moderated_at) : undefined,
   };
 }
 
@@ -201,6 +257,40 @@ export function mapAgencyResponse(row: AgencyResponseRow): AgencyResponse {
   };
 }
 
+export function mapContentNotice(row: ContentNoticeRow): ContentNotice {
+  return {
+    id: row.id,
+    reviewId: row.review_id,
+    reporterName: row.reporter_name,
+    reporterEmail: row.reporter_email,
+    relationship: row.relationship ?? undefined,
+    category: row.category,
+    exactExcerpt: row.exact_excerpt,
+    legalReason: row.legal_reason,
+    evidenceUrl: row.evidence_url ?? undefined,
+    goodFaithAttested: row.good_faith_attested,
+    status: row.status,
+    createdAt: new Date(row.created_at),
+    acknowledgedAt: new Date(row.acknowledged_at),
+    decidedAt: row.decided_at ? new Date(row.decided_at) : undefined,
+    decisionReason: row.decision_reason ?? undefined,
+    decisionRule: row.decision_rule ?? undefined,
+    authorNotifiedAt: row.author_notified_at
+      ? new Date(row.author_notified_at)
+      : undefined,
+    reporterNotifiedAt: row.reporter_notified_at
+      ? new Date(row.reporter_notified_at)
+      : undefined,
+    appealedAt: row.appealed_at ? new Date(row.appealed_at) : undefined,
+    appealReason: row.appeal_reason ?? undefined,
+    appealDecidedAt: row.appeal_decided_at
+      ? new Date(row.appeal_decided_at)
+      : undefined,
+    appealDecision: row.appeal_decision ?? undefined,
+    appealDecisionReason: row.appeal_decision_reason ?? undefined,
+  };
+}
+
 export function mapPendingVerification(
   row: PendingVerificationRow,
 ): PendingVerification {
@@ -225,6 +315,7 @@ export type {
   ReviewRow,
   ClaimRow,
   AgencyResponseRow,
+  ContentNoticeRow,
   PendingVerificationRow,
   SessionRow,
 };

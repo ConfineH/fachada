@@ -1,7 +1,16 @@
 import { z } from "zod";
 
 import { INCIDENT_TAGS } from "@/lib/domain/incidents";
-import type { ClaimEvidenceType, RepresentativeRole } from "@/lib/domain/types";
+import {
+  experienceDateError,
+  REVIEW_TERMS_VERSION,
+} from "@/lib/domain/review-authenticity";
+import type {
+  ClaimEvidenceType,
+  ContentNoticeCategory,
+  RepresentativeRole,
+  ReviewExperienceType,
+} from "@/lib/domain/types";
 
 const claimEvidenceTypes = [
   "cif_document",
@@ -19,6 +28,24 @@ const representativeRoles = [
   "rrhh",
   "otro",
 ] as const satisfies readonly RepresentativeRole[];
+
+const reviewExperienceTypes = [
+  "visita",
+  "negociacion",
+  "alquiler",
+  "incidencia",
+  "gestion",
+] as const satisfies readonly ReviewExperienceType[];
+
+const contentNoticeCategories = [
+  "honor",
+  "privacy",
+  "personal_data",
+  "threat",
+  "intellectual_property",
+  "fake_experience",
+  "other_illegal",
+] as const satisfies readonly ContentNoticeCategory[];
 
 export const claimEvidenceSchema = z.object({
   type: z.enum(claimEvidenceTypes),
@@ -69,6 +96,21 @@ export const reviewInputSchema = z
     publicName: z.string().trim().max(40).optional(),
     wouldRecommend: z.boolean().optional(),
     incidentTags: z.array(z.enum(INCIDENT_TAGS)).max(7).optional().default([]),
+    experienceDate: z.coerce.date(),
+    experienceType: z.enum(reviewExperienceTypes),
+    firstHandAttested: z.literal(true, {
+      error: "Confirma que la experiencia es propia",
+    }),
+    noIncentiveAttested: z.literal(true, {
+      error: "Confirma que no has recibido incentivos",
+    }),
+    noConflictAttested: z.literal(true, {
+      error: "Confirma que no existe un conflicto de interés",
+    }),
+    termsAccepted: z.literal(true, {
+      error: "Acepta las normas de uso y contenidos",
+    }),
+    termsVersion: z.literal(REVIEW_TERMS_VERSION),
   })
   .superRefine((data, ctx) => {
     if (!data.agencyId && !data.agencySlug) {
@@ -85,7 +127,39 @@ export const reviewInputSchema = z
         message: "Indica un nombre público o publica de forma anónima",
       });
     }
+    const dateError = experienceDateError(data.experienceDate);
+    if (dateError) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["experienceDate"],
+        message: dateError,
+      });
+    }
   });
+
+export const contentNoticeInputSchema = z.object({
+  reviewId: z.string().uuid(),
+  reporterName: z.string().trim().min(2).max(120),
+  reporterEmail: accountEmailSchema,
+  relationship: z.string().trim().max(120).optional(),
+  category: z.enum(contentNoticeCategories),
+  exactExcerpt: z.string().trim().min(3).max(500),
+  legalReason: z.string().trim().min(20).max(2_000),
+  evidenceUrl: z.string().url().max(500).optional(),
+  goodFaithAttested: z.literal(true, {
+    error: "Confirma de buena fe que la notificación es exacta",
+  }),
+});
+
+export const contentNoticeDecisionSchema = z.object({
+  status: z.enum(["retirado", "mantenido", "informacion_requerida"]),
+  decisionRule: z.string().trim().min(3).max(200),
+  decisionReason: z.string().trim().min(20).max(2_000),
+});
+
+export const contentNoticeAppealSchema = z.object({
+  appealReason: z.string().trim().min(20).max(2_000),
+});
 
 export const agencySubmissionInputSchema = z
   .object({
@@ -245,6 +319,13 @@ export const agencyProfileUpdateSchema = z.object({
 });
 
 export type ReviewInput = z.infer<typeof reviewInputSchema>;
+export type ContentNoticeInput = z.infer<typeof contentNoticeInputSchema>;
+export type ContentNoticeDecisionInput = z.infer<
+  typeof contentNoticeDecisionSchema
+>;
+export type ContentNoticeAppealInput = z.infer<
+  typeof contentNoticeAppealSchema
+>;
 export type AgencyTipInput = z.infer<typeof agencyTipInputSchema>;
 export type AdminCreateAgencyInput = z.infer<typeof adminCreateAgencySchema>;
 export type AgencyProfileUpdate = z.infer<typeof agencyProfileUpdateSchema>;

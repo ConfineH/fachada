@@ -3,6 +3,15 @@ import type { AgencyRoleRatings } from "@/lib/domain/ratings";
 
 export type UserRole = "inquilino" | "propietario";
 
+export type ReviewExperienceType =
+  | "visita"
+  | "negociacion"
+  | "alquiler"
+  | "incidencia"
+  | "gestion";
+
+export type ReviewVerificationLevel = "declarada" | "acreditada";
+
 export type ClaimStatus = "pendiente" | "aprobado" | "rechazado";
 
 export type AgencySubmissionStatus = "pendiente" | "aprobado" | "rechazado";
@@ -135,9 +144,63 @@ export interface Review {
   wouldRecommend?: boolean;
   helpfulCount: number;
   incidentTags: IncidentTag[];
+  experienceDate: Date;
+  experienceType: ReviewExperienceType;
+  firstHandAttested: boolean;
+  noIncentiveAttested: boolean;
+  noConflictAttested: boolean;
+  verificationLevel: ReviewVerificationLevel;
+  identityVerification: "email" | "phone";
+  evidencePath?: string;
+  evidenceDeleteAfter?: Date;
+  termsVersion: string;
+  termsAcceptedAt: Date;
   createdAt: Date;
   moderated: boolean;
   flagged: boolean;
+  moderationReason?: string;
+  moderatedAt?: Date;
+}
+
+export type ContentNoticeCategory =
+  | "honor"
+  | "privacy"
+  | "personal_data"
+  | "threat"
+  | "intellectual_property"
+  | "fake_experience"
+  | "other_illegal";
+
+export type ContentNoticeStatus =
+  | "pendiente"
+  | "retirado"
+  | "mantenido"
+  | "informacion_requerida";
+
+export interface ContentNotice {
+  id: string;
+  reviewId: string;
+  reporterName: string;
+  reporterEmail: string;
+  relationship?: string;
+  category: ContentNoticeCategory;
+  exactExcerpt: string;
+  legalReason: string;
+  evidenceUrl?: string;
+  goodFaithAttested: boolean;
+  status: ContentNoticeStatus;
+  createdAt: Date;
+  acknowledgedAt: Date;
+  decidedAt?: Date;
+  decisionReason?: string;
+  decisionRule?: string;
+  authorNotifiedAt?: Date;
+  reporterNotifiedAt?: Date;
+  appealedAt?: Date;
+  appealReason?: string;
+  appealDecidedAt?: Date;
+  appealDecision?: "confirmada" | "revocada";
+  appealDecisionReason?: string;
 }
 
 export interface AgencySubmission {

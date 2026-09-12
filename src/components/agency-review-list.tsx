@@ -3,13 +3,18 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 
+import { ReviewReportForm } from "@/components/review-report-form";
 import { authHeaders, readSessionToken } from "@/lib/auth/session-client";
 import { INCIDENT_TAG_LABELS, type IncidentTag } from "@/lib/domain/incidents";
 import {
   reviewProsCons,
   reviewPublicByline,
 } from "@/lib/domain/review-copy";
-import type { UserRole } from "@/lib/domain/types";
+import type {
+  ReviewExperienceType,
+  ReviewVerificationLevel,
+  UserRole,
+} from "@/lib/domain/types";
 
 type Filter = "all" | UserRole;
 
@@ -26,6 +31,10 @@ type PublicReview = {
   wouldRecommend?: boolean;
   helpfulCount: number;
   incidentTags: IncidentTag[];
+  experienceDate: string;
+  experienceType: ReviewExperienceType;
+  verificationLevel: ReviewVerificationLevel;
+  identityVerification: "email" | "phone";
   createdAt: string;
   response?: { body: string; createdAt: string };
 };
@@ -140,6 +149,16 @@ export function AgencyReviewList({
                   {review.rating}/5
                 </p>
               </div>
+              <p className="mt-1 text-xs text-stone-500">
+                {review.identityVerification === "email"
+                  ? "Correo verificado"
+                  : "Teléfono verificado"}{" "}
+                · Experiencia{" "}
+                {review.verificationLevel === "acreditada"
+                  ? "acreditada"
+                  : "declarada"}{" "}
+                · {new Date(review.experienceDate).toLocaleDateString("es-ES")}
+              </p>
               <h3 className="mt-2 text-lg font-semibold">{review.title}</h3>
               {review.wouldRecommend !== undefined && (
                 <p className="mt-2 text-sm text-zinc-700">
@@ -192,14 +211,17 @@ export function AgencyReviewList({
                 <p className="text-xs text-stone-500">
                   {new Date(review.createdAt).toLocaleDateString("es-ES")}
                 </p>
-                <button
-                  type="button"
-                  onClick={() => markHelpful(review.id)}
-                  disabled={Boolean(voted[review.id])}
-                  className="rounded-full border border-stone-300 px-3 py-1 text-sm text-zinc-700 transition hover:border-zinc-400 disabled:opacity-60"
-                >
-                  Útil ({helpful[review.id] ?? review.helpfulCount})
-                </button>
+                <div className="flex items-center gap-3">
+                  <ReviewReportForm reviewId={review.id} />
+                  <button
+                    type="button"
+                    onClick={() => markHelpful(review.id)}
+                    disabled={Boolean(voted[review.id])}
+                    className="rounded-full border border-stone-300 px-3 py-1 text-sm text-zinc-700 transition hover:border-zinc-400 disabled:opacity-60"
+                  >
+                    Útil ({helpful[review.id] ?? review.helpfulCount})
+                  </button>
+                </div>
               </div>
             </li>
           );
