@@ -19,7 +19,7 @@ export const AGENCY_SORT_OPTIONS: { id: AgencySort; label: string }[] = [
   { id: "name", label: "Nombre" },
 ];
 
-export const HOME_DOCUMENTED_LIMIT = 6;
+export const HOME_DOCUMENTED_PREVIEW = 8;
 
 const SORT_SET = new Set<string>(AGENCY_SORTS);
 
@@ -69,12 +69,18 @@ export function sortAgencies(
   });
 }
 
-export function documentedAgencies(
-  agencies: AgencyWithStats[],
-  limit = HOME_DOCUMENTED_LIMIT,
-) {
-  return sortAgencies(
+export function homeDocumentedAgencies(agencies: AgencyWithStats[]) {
+  const documented = sortAgencies(
     agencies.filter((agency) => agency.reviewCount > 0),
     "reviews",
-  ).slice(0, limit);
+  );
+  const total = documented.length;
+  if (total <= HOME_DOCUMENTED_PREVIEW) {
+    return { preview: documented, total, hidden: 0 };
+  }
+  return {
+    preview: documented.slice(0, HOME_DOCUMENTED_PREVIEW),
+    total,
+    hidden: total - HOME_DOCUMENTED_PREVIEW,
+  };
 }

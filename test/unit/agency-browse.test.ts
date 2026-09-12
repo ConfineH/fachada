@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  documentedAgencies,
+  HOME_DOCUMENTED_PREVIEW,
+  homeDocumentedAgencies,
   parseAgencySort,
   sortAgencies,
 } from "@/lib/domain/agency-browse";
@@ -67,13 +68,24 @@ describe("sortAgencies", () => {
   });
 });
 
-describe("documentedAgencies", () => {
-  it("only returns fichas with published reviews", () => {
-    const featured = documentedAgencies([
+describe("homeDocumentedAgencies", () => {
+  it("shows every ficha that has reviews while the set still fits the home", () => {
+    const featured = homeDocumentedAgencies([
       agency("Vacía", { averageRating: 0, reviewCount: 0 }),
       agency("Sol", { averageRating: 2, reviewCount: 1 }),
       agency("Urbana", { averageRating: 4, reviewCount: 3 }),
     ]);
-    expect(featured.map((item) => item.name)).toEqual(["Urbana", "Sol"]);
+    expect(featured.preview.map((item) => item.name)).toEqual(["Urbana", "Sol"]);
+    expect(featured.hidden).toBe(0);
+  });
+
+  it("keeps the home as a preview once many fichas have reviews", () => {
+    const many = Array.from({ length: HOME_DOCUMENTED_PREVIEW + 3 }, (_, index) =>
+      agency(`Agencia ${index}`, { averageRating: 4, reviewCount: index + 1 }),
+    );
+    const featured = homeDocumentedAgencies(many);
+    expect(featured.preview).toHaveLength(HOME_DOCUMENTED_PREVIEW);
+    expect(featured.total).toBe(HOME_DOCUMENTED_PREVIEW + 3);
+    expect(featured.hidden).toBe(3);
   });
 });

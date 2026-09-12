@@ -6,7 +6,7 @@ import { CityDirectoryCard } from "@/components/city-directory-card";
 import { PublicShell } from "@/components/public-shell";
 import { Reveal } from "@/components/reveal";
 import { SearchForm } from "@/components/search-form";
-import { documentedAgencies } from "@/lib/domain/agency-browse";
+import { homeDocumentedAgencies } from "@/lib/domain/agency-browse";
 import { agencyService, usingSupabase } from "@/lib/container";
 
 export default async function Home({
@@ -30,8 +30,8 @@ export default async function Home({
   const featuredCities = [...cities]
     .sort((a, b) => b.agencyCount - a.agencyCount)
     .slice(0, 5);
-  const documented = documentedAgencies(agencies);
-  const sampleAgencies = documented.slice(0, 3);
+  const documented = homeDocumentedAgencies(agencies);
+  const sampleAgencies = documented.preview.slice(0, 3);
   const sampleReviews = (
     await Promise.all(
       sampleAgencies.map((agency) =>
@@ -164,7 +164,7 @@ export default async function Home({
           </section>
         </Reveal>
 
-        {documented.length > 0 && (
+        {documented.preview.length > 0 && (
           <section className="mt-16">
             <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
               <div>
@@ -172,15 +172,19 @@ export default async function Home({
                   Con experiencias publicadas
                 </h2>
                 <p className="mt-1 text-sm text-zinc-600">
-                  Las fichas con más reseñas. El resto está en el registro.
+                  {documented.hidden > 0
+                    ? `Las más documentadas. Hay ${documented.total} fichas con reseñas.`
+                    : "Todas las fichas que ya tienen reseñas."}
                 </p>
               </div>
               <Link href="/agencias" className="link-brand text-sm">
-                Ver el registro
+                {documented.hidden > 0
+                  ? `Ver las ${documented.total} en el registro`
+                  : "Ver el registro"}
               </Link>
             </div>
             <AgencyResultList
-              agencies={documented}
+              agencies={documented.preview}
               empty="Aún no hay reseñas publicadas."
             />
           </section>
