@@ -153,50 +153,48 @@ export default async function Home({
           </section>
         </Reveal>
 
-        <Reveal className="mt-16">
-          <section>
-            <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
-              <h2 className="text-2xl font-semibold tracking-tight">
-                {q ? `Resultados para «${q}»` : "Inmobiliarias en el registro"}
-              </h2>
-              <span className="text-sm text-zinc-500">
-                {agencies.length} resultados
-              </span>
-            </div>
+        <section className="mt-16">
+          <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
+            <h2 className="text-2xl font-semibold tracking-tight">
+              {q ? `Resultados para «${q}»` : "Inmobiliarias en el registro"}
+            </h2>
+            <span className="text-sm text-zinc-500">
+              {agencies.length} resultados
+            </span>
+          </div>
 
-            <ul className="motion-stagger grid gap-4">
-              {agencies.length === 0 && (
-                <li className="rounded-xl border border-dashed border-stone-300 bg-white p-8 text-zinc-600">
-                  No hay resultados.{" "}
-                  <Link href="/agregar-inmobiliaria" className="link-brand">
-                    Sugerir una inmobiliaria
-                  </Link>{" "}
-                  que aún no esté en Fachada.
-                </li>
-              )}
-              {agencies.map((agency) => (
-                <li key={agency.id}>
-                  <Link
-                    href={`/agencias/${agency.slug}`}
-                    className="card-interactive block p-5"
-                  >
-                    <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                      <div>
-                        <h3 className="text-lg font-semibold">{agency.name}</h3>
-                        <p className="text-sm text-zinc-600">
-                          {agency.address}, {agency.city}
-                        </p>
-                      </div>
-                      <div className="min-w-[240px]">
-                        <RoleRatingSummary roleRatings={agency.roleRatings} />
-                      </div>
+          <ul className="grid gap-4">
+            {agencies.length === 0 && (
+              <li className="rounded-xl border border-dashed border-stone-300 bg-white p-8 text-zinc-600">
+                No hay resultados.{" "}
+                <Link href="/agregar-inmobiliaria" className="link-brand">
+                  Sugerir una inmobiliaria
+                </Link>{" "}
+                que aún no esté en Fachada.
+              </li>
+            )}
+            {agencies.map((agency) => (
+              <li key={agency.id}>
+                <Link
+                  href={`/agencias/${agency.slug}`}
+                  className="card-interactive block p-5"
+                >
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                      <h3 className="text-lg font-semibold">{agency.name}</h3>
+                      <p className="text-sm text-zinc-600">
+                        {agency.address}, {agency.city}
+                      </p>
                     </div>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </section>
-        </Reveal>
+                    <div className="min-w-[240px]">
+                      <RoleRatingSummary roleRatings={agency.roleRatings} />
+                    </div>
+                  </div>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
       </main>
 
       <section className="bg-brand text-white">
