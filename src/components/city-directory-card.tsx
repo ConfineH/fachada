@@ -1,71 +1,57 @@
 import Link from "next/link";
 
-import { scoreTone } from "@/lib/domain/explore";
-
-const toneStyles = {
-  positive: "bg-teal-50 text-teal-900 border-teal-100",
-  neutral: "bg-sky-50 text-sky-900 border-sky-100",
-  caution: "bg-amber-50 text-amber-900 border-amber-100",
-} as const;
+import { CityPhoto } from "@/components/city-photo";
 
 export function CityDirectoryCard({
   city,
   slug,
   agencyCount,
   reviewCount,
-  averageRating,
   featured = false,
+  size = "tile",
 }: {
   city: string;
   slug: string;
   agencyCount: number;
   reviewCount: number;
-  averageRating: number | null;
   featured?: boolean;
+  size?: "tile" | "hero";
 }) {
-  const tone = scoreTone(averageRating);
-  const scoreLabel =
-    averageRating !== null ? `${averageRating.toFixed(1)}/5` : "Sin nota";
+  const tall = size === "hero" || featured;
 
   return (
     <Link
       href={`/ciudades/${slug}`}
-      className={`card-interactive block p-5 ${
-        featured ? "sm:col-span-2" : ""
+      className={`relative block h-full overflow-hidden rounded-xl border border-stone-200 bg-zinc-800 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
+        tall ? "min-h-[220px] lg:min-h-[320px]" : "min-h-[168px]"
       }`}
     >
-      <div className="flex items-start justify-between gap-3">
-        <h3 className="text-lg font-semibold tracking-tight text-zinc-900">
+      <CityPhoto
+        slug={slug}
+        city={city}
+        decorative
+        priority={tall}
+        sizes={tall ? "(min-width: 1024px) 40vw, 100vw" : "(min-width: 640px) 33vw, 100vw"}
+      />
+      <div
+        className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-black/10"
+        aria-hidden
+      />
+      <div className="absolute inset-x-0 bottom-0 p-5 text-white">
+        <h3
+          className={`font-semibold tracking-tight ${
+            tall ? "text-3xl" : "text-xl"
+          }`}
+        >
           {city}
         </h3>
-        <div
-          className={`shrink-0 rounded-lg border px-2.5 py-1 text-right text-xs font-medium ${toneStyles[tone]}`}
-        >
-          <span className="block text-[10px] uppercase tracking-wide opacity-70">
-            Nota media
-          </span>
-          <span className="text-sm font-semibold tabular-nums">{scoreLabel}</span>
-        </div>
+        <p className="mt-1 text-sm text-white/80">
+          {agencyCount} {agencyCount === 1 ? "agencia" : "agencias"}
+          {reviewCount > 0
+            ? ` · ${reviewCount} ${reviewCount === 1 ? "reseña" : "reseñas"}`
+            : ""}
+        </p>
       </div>
-      {featured && (
-        <div
-          className="mt-4 h-28 rounded-lg border border-zinc-100 bg-gradient-to-br from-zinc-100 via-zinc-50 to-teal-50"
-          aria-hidden
-        />
-      )}
-      <p className="mt-4 text-sm text-zinc-600">
-        <span className="font-medium text-zinc-800">{agencyCount}</span>{" "}
-        {agencyCount === 1 ? "agencia registrada" : "agencias registradas"}
-        {reviewCount > 0 && (
-          <>
-            {" "}
-            ·{" "}
-            <span className="text-zinc-500">
-              {reviewCount} {reviewCount === 1 ? "reseña" : "reseñas"}
-            </span>
-          </>
-        )}
-      </p>
     </Link>
   );
 }

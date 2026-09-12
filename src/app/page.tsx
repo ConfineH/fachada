@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { CityDirectoryCard } from "@/components/city-directory-card";
 import { PublicShell } from "@/components/public-shell";
 import { Reveal } from "@/components/reveal";
 import { RoleRatingSummary } from "@/components/role-rating-summary";
@@ -83,40 +84,15 @@ export default async function Home({
                 {featuredCities.map((city, index) => (
                   <li
                     key={city.slug}
-                    className={index === 0 ? "lg:row-span-2" : ""}
+                    className={index === 0 ? "sm:col-span-2 lg:col-span-1 lg:row-span-2" : ""}
                   >
-                    <Link
-                      href={`/ciudades/${city.slug}`}
-                      className={`card-interactive flex h-full flex-col justify-end p-6 ${
-                        index === 0
-                          ? "min-h-[220px] bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-700 text-white lg:min-h-[320px]"
-                          : ""
-                      }`}
-                    >
-                      <p
-                        className={
-                          index === 0
-                            ? "text-xs font-semibold uppercase tracking-wider text-zinc-300"
-                            : "text-xs font-semibold uppercase tracking-wider text-zinc-500"
-                        }
-                      >
-                        {index === 0 ? "Capital" : "Ciudad"}
-                      </p>
-                      <h3
-                        className={`mt-1 font-semibold tracking-tight ${
-                          index === 0 ? "text-3xl" : "text-xl"
-                        }`}
-                      >
-                        {city.city}
-                      </h3>
-                      <p
-                        className={`mt-2 text-sm ${
-                          index === 0 ? "text-zinc-300" : "text-zinc-600"
-                        }`}
-                      >
-                        {city.agencyCount} agencias · {city.reviewCount} reseñas
-                      </p>
-                    </Link>
+                    <CityDirectoryCard
+                      city={city.city}
+                      slug={city.slug}
+                      agencyCount={city.agencyCount}
+                      reviewCount={city.reviewCount}
+                      size={index === 0 ? "hero" : "tile"}
+                    />
                   </li>
                 ))}
               </ul>

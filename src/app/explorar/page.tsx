@@ -3,16 +3,13 @@ import Link from "next/link";
 import { CityDirectoryCard } from "@/components/city-directory-card";
 import { PublicShell } from "@/components/public-shell";
 import { SearchForm } from "@/components/search-form";
-import {
-  averageRatingForCity,
-  groupCitiesByLetter,
-} from "@/lib/domain/explore";
+import { groupCitiesByLetter } from "@/lib/domain/explore";
 import { agencyService, usingSupabase } from "@/lib/container";
 
 export const metadata = {
   title: "Explorar inmobiliarias por ciudad — Fachada",
   description:
-    "Consulta valoraciones de inquilinos y propietarios por ciudad en España.",
+    "Directorio de inmobiliarias por ciudad en España. Las valoraciones están en cada ficha.",
 };
 
 export default async function ExplorarPage({
@@ -22,7 +19,6 @@ export default async function ExplorarPage({
 }) {
   const { q } = await searchParams;
   const cities = await agencyService.exploreCities({ publicOnly: true });
-  const agencies = await agencyService.search(undefined, { publicOnly: true });
   const totalAgencies = cities.reduce((sum, c) => sum + c.agencyCount, 0);
   const municipalityCount = cities.length;
 
@@ -50,9 +46,8 @@ export default async function ExplorarPage({
                 Explorar inmobiliarias por ciudad
               </h1>
               <p className="mt-3 text-zinc-600">
-                Registro público de valoraciones por zona geográfica. Las notas
-                medias reflejan reseñas verificadas de inquilinos y
-                propietarios.
+                Registro público de inmobiliarias por ciudad. Las notas van en
+                la ficha de cada agencia, no en la ciudad.
               </p>
             </div>
             <SearchForm variant="explore" initialQuery={q ?? ""} />
@@ -107,13 +102,15 @@ export default async function ExplorarPage({
             </div>
             <ul className="motion-stagger grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {letterCities.map((city) => (
-                <li key={city.slug}>
+                <li
+                  key={city.slug}
+                  className={city.slug === featuredSlug ? "sm:col-span-2" : ""}
+                >
                   <CityDirectoryCard
                     city={city.city}
                     slug={city.slug}
                     agencyCount={city.agencyCount}
                     reviewCount={city.reviewCount}
-                    averageRating={averageRatingForCity(agencies, city.slug)}
                     featured={city.slug === featuredSlug}
                   />
                 </li>
