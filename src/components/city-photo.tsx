@@ -18,7 +18,7 @@ export function CityPhoto({
   const photo = cityPhoto(slug);
 
   return (
-    <div className="absolute inset-0">
+    <div className="pointer-events-none absolute inset-0">
       {photo ? (
         <Image
           src={photo.src}

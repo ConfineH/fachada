@@ -11,7 +11,7 @@ export function SiteNav() {
           FACHADA
         </Link>
         <div className="col-span-2 flex flex-wrap items-center gap-6 lg:col-span-1 lg:justify-center">
-          <Link href="/explorar" className="nav-link">
+          <Link href="/explorar" prefetch className="nav-link">
             Explorar ciudades
           </Link>
           <Link href="/agregar-inmobiliaria" className="nav-link">

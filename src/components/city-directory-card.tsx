@@ -34,7 +34,7 @@ export function CityDirectoryCard({
         sizes={tall ? "(min-width: 1024px) 40vw, 100vw" : "(min-width: 640px) 33vw, 100vw"}
       />
       <div
-        className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-black/10"
+        className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-black/10"
         aria-hidden
       />
       <div className="absolute inset-x-0 bottom-0 p-5 text-white">
