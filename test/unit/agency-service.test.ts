@@ -62,7 +62,7 @@ describe("AgencyService.search", () => {
       flagged: false,
     });
 
-    const results = await service.search("Madrid");
+    const results = await service.search("Madrid", { sort: "overall" });
     expect(results[0]?.name).toBe("Inmobiliaria Sol");
   });
 });

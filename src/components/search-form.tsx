@@ -17,7 +17,7 @@ export function SearchForm({
     event.preventDefault();
     const params = new URLSearchParams();
     if (query.trim()) params.set("q", query.trim());
-    const base = variant === "explore" ? "/explorar" : "/";
+    const base = variant === "explore" ? "/explorar" : "/agencias";
     router.push(`${base}?${params.toString()}`);
   }
 

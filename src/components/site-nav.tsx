@@ -14,6 +14,9 @@ export function SiteNav() {
           <Link href="/explorar" prefetch className="nav-link">
             Explorar ciudades
           </Link>
+          <Link href="/agencias" className="nav-link">
+            Inmobiliarias
+          </Link>
           <Link href="/agregar-inmobiliaria" className="nav-link">
             Añadir inmobiliaria
           </Link>

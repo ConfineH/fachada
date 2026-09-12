@@ -2,6 +2,10 @@ import { randomUUID } from "node:crypto";
 
 import { isAccountVerified } from "@/lib/domain/identity";
 import { cityToSlug } from "@/lib/domain/city";
+import {
+  sortAgencies,
+  type AgencySort,
+} from "@/lib/domain/agency-browse";
 import { matchScore } from "@/lib/domain/match";
 import { summarizeRoleRatings } from "@/lib/domain/ratings";
 import type {
@@ -43,7 +47,10 @@ export type CityExploreSummary = {
 export class AgencyService {
   constructor(private readonly repo: Repository) {}
 
-  async search(query?: string, options?: { publicOnly?: boolean }) {
+  async search(
+    query?: string,
+    options?: { publicOnly?: boolean; sort?: AgencySort },
+  ) {
     const normalized = query?.trim().toLowerCase() ?? "";
     const agencies = await this.repo.listAgencies();
 
@@ -59,18 +66,23 @@ export class AgencyService {
       filtered.map((agency) => this.withStats(agency, options)),
     );
 
-    return withStats.sort((a, b) => {
-      if (b.averageRating !== a.averageRating) {
-        return b.averageRating - a.averageRating;
-      }
-      return b.reviewCount - a.reviewCount;
-    });
+    return sortAgencies(withStats, options?.sort ?? "reviews");
   }
 
-  async listByCity(citySlug: string, options?: { publicOnly?: boolean }) {
+  async listByCity(
+    citySlug: string,
+    options?: { publicOnly?: boolean; query?: string; sort?: AgencySort },
+  ) {
     const agencies = await this.repo.listAgencies();
-    const filtered = agencies.filter((a) => cityToSlug(a.city) === citySlug);
-    return Promise.all(filtered.map((a) => this.withStats(a, options)));
+    const inCity = agencies.filter((a) => cityToSlug(a.city) === citySlug);
+    const normalized = options?.query?.trim().toLowerCase() ?? "";
+    const filtered = normalized
+      ? inCity.filter((a) => a.name.toLowerCase().includes(normalized))
+      : inCity;
+    const withStats = await Promise.all(
+      filtered.map((a) => this.withStats(a, options)),
+    );
+    return sortAgencies(withStats, options?.sort ?? "reviews");
   }
 
   async exploreCities(options?: { publicOnly?: boolean }) {

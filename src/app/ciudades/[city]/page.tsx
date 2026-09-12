@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { AgencyBrowseControls } from "@/components/agency-browse-controls";
+import { AgencyResultList } from "@/components/agency-result-list";
 import { CityPhoto } from "@/components/city-photo";
 import { PublicShell } from "@/components/public-shell";
-import { RoleRatingSummary } from "@/components/role-rating-summary";
+import { parseAgencySort } from "@/lib/domain/agency-browse";
 import { slugToCityLabel } from "@/lib/domain/city";
-import { publicStreetLine } from "@/lib/domain/agency-presence";
 import { agencyService, usingSupabase } from "@/lib/container";
 
 export async function generateMetadata({
@@ -23,14 +24,27 @@ export async function generateMetadata({
 
 export default async function CityPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ city: string }>;
+  searchParams: Promise<{ q?: string; orden?: string }>;
 }) {
   const { city } = await params;
-  const agencies = await agencyService.listByCity(city, { publicOnly: true });
-  if (agencies.length === 0) notFound();
+  const { q, orden } = await searchParams;
+  const sort = parseAgencySort(orden);
+  const query = q?.trim() ?? "";
+  const listed = await agencyService.listByCity(city, {
+    publicOnly: true,
+    sort,
+  });
+  if (listed.length === 0) notFound();
 
-  const label = agencies[0]?.city ?? slugToCityLabel(city);
+  const agencies = query
+    ? listed.filter((agency) =>
+        agency.name.toLocaleLowerCase("es").includes(query.toLocaleLowerCase("es")),
+      )
+    : listed;
+  const label = listed[0]?.city ?? slugToCityLabel(city);
 
   return (
     <PublicShell storage={usingSupabase() ? "supabase" : "memory"}>
@@ -48,32 +62,27 @@ export default async function CityPage({
             Inmobiliarias en {label}
           </h1>
           <p className="mt-2 text-white/80">
-            {agencies.length}{" "}
-            {agencies.length === 1 ? "agencia" : "agencias"} con reseñas de
-            gestión publicadas.
+            {listed.length}{" "}
+            {listed.length === 1 ? "agencia" : "agencias"} en el registro de
+            esta ciudad.
           </p>
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-6 py-10">
-        <ul className="motion-stagger space-y-4">
-          {agencies.map((agency) => (
-            <li key={agency.id} className="card-interactive p-6">
-              <Link
-                href={`/agencias/${agency.slug}`}
-                className="text-xl font-semibold text-zinc-900 hover:underline"
-              >
-                {agency.name}
-              </Link>
-              <p className="mt-1 text-sm text-zinc-600">
-                {publicStreetLine(agency)}
-              </p>
-              <div className="mt-4">
-                <RoleRatingSummary roleRatings={agency.roleRatings} />
-              </div>
-            </li>
-          ))}
-        </ul>
+      <main className="mx-auto max-w-6xl space-y-6 px-6 py-10">
+        <AgencyBrowseControls
+          action={`/ciudades/${city}`}
+          query={query}
+          sort={sort}
+        />
+        <AgencyResultList
+          agencies={agencies}
+          empty={
+            query
+              ? `Ninguna inmobiliaria en ${label} coincide con «${query}».`
+              : `Aún no hay inmobiliarias en ${label}.`
+          }
+        />
       </main>
     </PublicShell>
   );

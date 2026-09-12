@@ -1,26 +1,37 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
+import { AgencyResultList } from "@/components/agency-result-list";
 import { CityDirectoryCard } from "@/components/city-directory-card";
 import { PublicShell } from "@/components/public-shell";
 import { Reveal } from "@/components/reveal";
-import { RoleRatingSummary } from "@/components/role-rating-summary";
 import { SearchForm } from "@/components/search-form";
+import { documentedAgencies } from "@/lib/domain/agency-browse";
 import { agencyService, usingSupabase } from "@/lib/container";
 
 export default async function Home({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{ q?: string; orden?: string }>;
 }) {
-  const { q } = await searchParams;
-  const agencies = await agencyService.search(q, { publicOnly: true });
-  const cities = await agencyService.exploreCities({ publicOnly: true });
+  const { q, orden } = await searchParams;
+  if (q?.trim()) {
+    const params = new URLSearchParams({ q: q.trim() });
+    if (orden) params.set("orden", orden);
+    redirect(`/agencias?${params.toString()}`);
+  }
+
+  const [agencies, cities] = await Promise.all([
+    agencyService.search(undefined, { publicOnly: true }),
+    agencyService.exploreCities({ publicOnly: true }),
+  ]);
   const totalAgencies = cities.reduce((sum, c) => sum + c.agencyCount, 0);
   const totalReviews = cities.reduce((sum, c) => sum + c.reviewCount, 0);
   const featuredCities = [...cities]
     .sort((a, b) => b.agencyCount - a.agencyCount)
     .slice(0, 5);
-  const sampleAgencies = agencies.filter((a) => a.reviewCount > 0).slice(0, 3);
+  const documented = documentedAgencies(agencies);
+  const sampleAgencies = documented.slice(0, 3);
   const sampleReviews = (
     await Promise.all(
       sampleAgencies.map((agency) =>
@@ -62,14 +73,14 @@ export default async function Home({
               </p>
             </div>
             <div className="motion-fade-rise" style={{ animationDelay: "80ms" }}>
-              <SearchForm variant="hero" initialQuery={q ?? ""} />
+              <SearchForm variant="hero" />
             </div>
           </div>
         </div>
       </section>
 
       <main className="mx-auto max-w-6xl px-6 py-14">
-        {!q && featuredCities.length > 0 && (
+        {featuredCities.length > 0 && (
           <Reveal>
             <section>
               <div className="flex items-end justify-between gap-4">
@@ -100,7 +111,7 @@ export default async function Home({
           </Reveal>
         )}
 
-        <Reveal className={q ? "" : "mt-20"}>
+        <Reveal className="mt-20">
           <section className="grid gap-10 lg:grid-cols-2 lg:items-center">
             <div>
               <h2 className="text-2xl font-semibold tracking-tight">
@@ -153,48 +164,27 @@ export default async function Home({
           </section>
         </Reveal>
 
-        <section className="mt-16">
-          <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
-            <h2 className="text-2xl font-semibold tracking-tight">
-              {q ? `Resultados para «${q}»` : "Inmobiliarias en el registro"}
-            </h2>
-            <span className="text-sm text-zinc-500">
-              {agencies.length} resultados
-            </span>
-          </div>
-
-          <ul className="grid gap-4">
-            {agencies.length === 0 && (
-              <li className="rounded-xl border border-dashed border-stone-300 bg-white p-8 text-zinc-600">
-                No hay resultados.{" "}
-                <Link href="/agregar-inmobiliaria" className="link-brand">
-                  Sugerir una inmobiliaria
-                </Link>{" "}
-                que aún no esté en Fachada.
-              </li>
-            )}
-            {agencies.map((agency) => (
-              <li key={agency.id}>
-                <Link
-                  href={`/agencias/${agency.slug}`}
-                  className="card-interactive block p-5"
-                >
-                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                    <div>
-                      <h3 className="text-lg font-semibold">{agency.name}</h3>
-                      <p className="text-sm text-zinc-600">
-                        {agency.address}, {agency.city}
-                      </p>
-                    </div>
-                    <div className="min-w-[240px]">
-                      <RoleRatingSummary roleRatings={agency.roleRatings} />
-                    </div>
-                  </div>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
+        {documented.length > 0 && (
+          <section className="mt-16">
+            <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
+              <div>
+                <h2 className="text-2xl font-semibold tracking-tight">
+                  Con experiencias publicadas
+                </h2>
+                <p className="mt-1 text-sm text-zinc-600">
+                  Las fichas con más reseñas. El resto está en el registro.
+                </p>
+              </div>
+              <Link href="/agencias" className="link-brand text-sm">
+                Ver el registro
+              </Link>
+            </div>
+            <AgencyResultList
+              agencies={documented}
+              empty="Aún no hay reseñas publicadas."
+            />
+          </section>
+        )}
       </main>
 
       <section className="bg-brand text-white">
@@ -208,7 +198,7 @@ export default async function Home({
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Link
-              href="/explorar"
+              href="/agencias"
               className="btn-primary inline-flex min-h-11 items-center bg-white px-6 text-zinc-900 hover:bg-zinc-100"
             >
               Buscar y reseñar
