@@ -4,10 +4,10 @@ import { getSiteUrl } from "@/lib/site-url";
 export const SITE_NAME = "Fachada";
 
 export const DEFAULT_TITLE =
-  "Antes de firmar, mira la nota de esa inmobiliaria";
+  "Antes de firmar, mira la reputación de esa inmobiliaria";
 
 export const DEFAULT_DESCRIPTION =
-  "Valoración de inmobiliarias en España: nota de inquilino y de propietario sobre la gestión del alquiler. En la ficha puedes publicar en anónimo; la cuenta queda identificada para moderar.";
+  "Archivo de reputación de inmobiliarias en España: experiencias de inquilino y de propietario sobre la gestión del alquiler. En la ficha puedes publicar en anónimo; la cuenta queda identificada para moderar.";
 
 export function pageMeta(title: string, description: string, path: string) {
   return {
@@ -147,7 +147,7 @@ export const HOME_FAQS = [
   {
     question: "¿En qué se diferencia de las reseñas de Google o Idealista?",
     answer:
-      "Fachada valora a la inmobiliaria: nota de inquilino y de propietario sobre la gestión (fianza, reparaciones, honorarios, comunicación). Google mezcla oficina, ventas y visitas. Idealista está pensado para el piso, no para puntuar cómo gestiona la agencia.",
+      "Fachada archiva la reputación de la inmobiliaria: experiencias de inquilino y de propietario sobre la gestión (fianza, reparaciones, honorarios, comunicación). Google mezcla oficina, ventas y visitas. Idealista está pensado para el piso, no para esa reputación de gestión.",
   },
   {
     question: "¿Puede una inmobiliaria borrar una reseña negativa?",

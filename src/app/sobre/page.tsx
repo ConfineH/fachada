@@ -7,7 +7,7 @@ import { pageMeta } from "@/lib/seo";
 
 export const metadata = pageMeta(
   "Sobre Fachada",
-  "Por qué existe Fachada: valoración de inmobiliarias, con nota de inquilino y de propietario sobre la gestión del alquiler.",
+  "Por qué existe Fachada: archivo de reputación de inmobiliarias, con experiencias de inquilino y de propietario sobre la gestión del alquiler.",
   "/sobre",
 );
 
@@ -23,9 +23,9 @@ export default function SobrePage() {
           Sobre Fachada
         </h1>
         <p className="mt-4 text-lg text-zinc-600">
-          Fachada valora a las inmobiliarias: cómo gestionan el alquiler en
-          España — fianza, reparaciones, honorarios y comunicación — con nota
-          de inquilino y de propietario.
+          Fachada archiva la reputación de gestión de las inmobiliarias en
+          España: fianza, reparaciones, honorarios y comunicación, con
+          experiencias de inquilino y de propietario.
         </p>
         <p className="mt-4 text-lg text-zinc-600">
           Quien escribe confirma un correo o entra con Google. En la ficha
@@ -36,7 +36,7 @@ export default function SobrePage() {
         <section className="mt-10 space-y-4 text-zinc-700">
           <p>
             Los portales enseñan el piso. Google mezcla visitas a oficina,
-            ventas y azar. Aquí la nota es de la inmobiliaria: inquilino
+            ventas y azar. Aquí la reputación es de la inmobiliaria: inquilino
             frente a propietario, con incidencias etiquetadas (honorarios,
             fianza, reparaciones).
           </p>

@@ -33,7 +33,7 @@ describe("seo helpers", () => {
     const schema = faqJsonLd([...HOME_FAQS]);
     expect(schema.mainEntity).toHaveLength(HOME_FAQS.length);
     expect(HOME_FAQS[0]?.answer).toContain("experiencia acreditada");
-    expect(HOME_FAQS[1]?.answer).toMatch(/valora a la inmobiliaria/i);
+    expect(HOME_FAQS[1]?.answer).toMatch(/reputación de la inmobiliaria/i);
     expect(HOME_FAQS[1]?.answer).not.toMatch(/vende anuncios/i);
   });
 

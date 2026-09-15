@@ -78,11 +78,11 @@ export default async function Home({
                 Archivo público independiente
               </p>
               <h1 className="mt-4 text-4xl font-semibold tracking-tight text-zinc-900 sm:text-5xl">
-                Antes de firmar, mira la nota de esa inmobiliaria
+                Antes de firmar, mira la reputación de esa inmobiliaria
               </h1>
               <p className="mt-4 max-w-xl text-lg leading-relaxed text-zinc-600">
-                Valoración de inquilinos y de propietarios sobre la gestión:
-                fianza, reparaciones, honorarios y comunicación.
+                Archivo de inquilinos y propietarios sobre la gestión: fianza,
+                reparaciones, honorarios y comunicación.
               </p>
               <p className="mt-6 text-xs font-medium uppercase tracking-wide text-zinc-500">
                 {totalAgencies.toLocaleString("es-ES")}{" "}

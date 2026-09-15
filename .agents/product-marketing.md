@@ -1,6 +1,6 @@
 # Product marketing context — Fachada
 
-**Document version:** 1.3  
+**Document version:** 1.4  
 **Last updated:** 2026-09-12  
 
 Canonical detail: [`docs/producto-final.md`](../docs/producto-final.md).  
@@ -10,6 +10,7 @@ Original vision archive: [`docs/docs-extracted.txt`](../docs/docs-extracted.txt)
 
 | Version | Date | Change |
 |---------|------|--------|
+| 1.4 | 2026-09-16 | Hero = reputación de gestión; nota solo en la ficha; no importar Google |
 | 1.3 | 2026-09-12 | Hero = nota de la inmobiliaria; no antíportal; anónimo en ficha |
 | 1.2 | 2026-09-12 | Copy rules: no «reseña verificada»; correo ≠ experiencia; alta = «sugerir» |
 | 1.1 | 2026-09-07 | Reviewer identity: Google/email OTP; SMS only for agency business line |
@@ -57,7 +58,7 @@ Agencies that want to claim profiles, respond to reviews, and later pay for prem
 
 ## 4. Messaging
 
-**Primary promise:** Antes de firmar (o de encargar la gestión), mira la nota de esa inmobiliaria.
+**Primary promise:** Antes de firmar (o de encargar la gestión), mira la reputación de esa inmobiliaria.
 
 **Proof points (aspirational until density):** Dual scores; identified accounts (Google or email); moderation; methodology page; incident tags (honorarios, fianza, reparaciones…).
 
@@ -65,13 +66,14 @@ Agencies that want to claim profiles, respond to reviews, and later pay for prem
 
 **Copy rules:**
 - Public copy: you **can** post anonymously on the ficha. Account is identified (correo/Google) for moderation. Never lead with “no es un muro anónimo”. Never claim absolute anonymity.
+- Hero/category = **reputación de gestión**. Keep **nota** for the dual scores on the ficha. Don’t lead with valoración, transparencia, or “not a listings portal”. Never import or rehost Google reviews.
 - Never promise antifraud for Idealista ads, fact-checking, or a “reseña verificada” seal.
 - Email/teléfono verificado ≠ experiencia verificada. Use **experiencia declarada** vs **acreditada**.
 - CTAs: prefer “buscar / leer / reseñar” over “añadir agencia” as primary. Alta de ficha = “sugerir”.
 - Agency nav must lead to real Acceso, not `/explorar`.
 
 **Hero / acquisition line (Idealista extension):**  
-“Buscas piso en Idealista. ¿Sabes la nota de esa inmobiliaria? Fachada te la enseña.”
+“Buscas piso en Idealista. ¿Sabes la reputación de esa inmobiliaria? Fachada te la enseña.”
 
 ## 5. Offer
 
