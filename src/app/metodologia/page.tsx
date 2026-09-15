@@ -7,7 +7,7 @@ import { pageMeta } from "@/lib/seo";
 
 export const metadata = pageMeta(
   "Cómo publicamos una reseña",
-    "Cuenta identificada, experiencia declarada o acreditada, doble lente inquilino/propietario y moderación humana. Sin anonimato absoluto ni comprobación automática de los hechos.",
+    "En la ficha puedes publicar en anónimo. Pedimos cuenta identificada, experiencia declarada o acreditada, doble lente inquilino/propietario y moderación humana. Sin sello de reseña verificada.",
   "/metodologia",
 );
 
@@ -25,9 +25,9 @@ export default function MetodologiaPage() {
           Cómo publicamos una reseña
         </h1>
         <p className="mt-4 text-lg text-zinc-600">
-          No es un muro anónimo ni un sello de «reseña verificada». Pedimos
+          En la ficha puedes publicar en anónimo o con seudónimo. Pedimos
           cuenta identificada, una experiencia propia declarada y una persona
-          que lea el texto antes de publicarlo.
+          que lea el texto. No es un sello de «reseña verificada».
         </p>
 
         <section className="mt-10 space-y-8 text-zinc-700">

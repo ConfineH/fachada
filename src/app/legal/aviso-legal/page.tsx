@@ -35,9 +35,9 @@ export default function AvisoLegalPage() {
       </ul>
       <h2>Objeto</h2>
       <p>
-        Fachada es un archivo público de opiniones sobre la gestión de
-        inmobiliarias en España (inquilinos y propietarios). No es un portal de
-        anuncios, no intermedia contratos y no presta servicios de agencia.
+        Fachada es un archivo público de opiniones y valoraciones sobre la
+        gestión de inmobiliarias en España (inquilinos y propietarios). No
+        intermedia contratos ni presta servicios de agencia.
       </p>
       <p>
         Las reseñas son contenidos aportados por sus autores y expresan su

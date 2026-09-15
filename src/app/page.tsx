@@ -78,12 +78,11 @@ export default async function Home({
                 Archivo público independiente
               </p>
               <h1 className="mt-4 text-4xl font-semibold tracking-tight text-zinc-900 sm:text-5xl">
-                Antes de firmar, mira cómo trata esa inmobiliaria
+                Antes de firmar, mira la nota de esa inmobiliaria
               </h1>
               <p className="mt-4 max-w-xl text-lg leading-relaxed text-zinc-600">
-                Opiniones de inquilinos y propietarios sobre la gestión:
-                fianzas, reparaciones, honorarios y comunicación. No es Google
-                ni un portal de pisos.
+                Valoración de inquilinos y de propietarios sobre la gestión:
+                fianza, reparaciones, honorarios y comunicación.
               </p>
               <p className="mt-6 text-xs font-medium uppercase tracking-wide text-zinc-500">
                 {totalAgencies.toLocaleString("es-ES")}{" "}
@@ -137,17 +136,18 @@ export default async function Home({
           <section className="grid gap-10 lg:grid-cols-2 lg:items-center">
             <div>
               <h2 className="text-2xl font-semibold tracking-tight">
-                Experiencias identificadas, no un muro anónimo
+                En la ficha puedes publicar en anónimo
               </h2>
               <p className="mt-4 text-zinc-600">
-                Cada autor confirma su correo y declara una experiencia propia;
-                después moderamos el contenido. La inmobiliaria puede responder
-                y cualquier persona puede denunciar una reseña concreta.
+                Confirmas un correo para entrar; no se muestra. Después una
+                persona lee el texto. La inmobiliaria puede responder y
+                cualquiera puede denunciar una reseña concreta.
               </p>
               <ul className="mt-6 space-y-3 text-sm text-zinc-700">
                 <li className="flex gap-2">
                   <span className="font-semibold text-brand">—</span>
-                  Cuenta identificada (Google o correo). En la ficha no aparece
+                  Anónimo o seudónimo en público; la cuenta queda identificada
+                  para moderar
                 </li>
                 <li className="flex gap-2">
                   <span className="font-semibold text-brand">—</span>
@@ -240,8 +240,8 @@ export default async function Home({
             ¿Has alquilado o encargado la gestión?
           </h2>
           <p className="mx-auto mt-3 max-w-xl text-sm text-zinc-300">
-            Publica tu experiencia. Te pedimos un correo para identificar la
-            cuenta; no se muestra en la ficha.
+            Publica tu experiencia. En la ficha puedes hacerlo en anónimo. Te
+            pedimos un correo para identificar la cuenta, no para mostrarlo.
             Si la ficha no existe, sugiere el alta.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">

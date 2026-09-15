@@ -4,10 +4,10 @@ import { getSiteUrl } from "@/lib/site-url";
 export const SITE_NAME = "Fachada";
 
 export const DEFAULT_TITLE =
-  "Antes de firmar, mira cómo trata esa inmobiliaria";
+  "Antes de firmar, mira la nota de esa inmobiliaria";
 
 export const DEFAULT_DESCRIPTION =
-  "Archivo independiente de experiencias de alquiler y gestión en España. Notas separadas para inquilinos y propietarios, con cuenta identificada y moderación humana.";
+  "Valoración de inmobiliarias en España: nota de inquilino y de propietario sobre la gestión del alquiler. En la ficha puedes publicar en anónimo; la cuenta queda identificada para moderar.";
 
 export function pageMeta(title: string, description: string, path: string) {
   return {
@@ -147,7 +147,7 @@ export const HOME_FAQS = [
   {
     question: "¿En qué se diferencia de las reseñas de Google o Idealista?",
     answer:
-      "Google mezcla visitas a oficina, ventas y azar. Idealista vende anuncios. Fachada separa inquilino y propietario y se centra en la gestión: fianza, reparaciones, honorarios y comunicación.",
+      "Fachada valora a la inmobiliaria: nota de inquilino y de propietario sobre la gestión (fianza, reparaciones, honorarios, comunicación). Google mezcla oficina, ventas y visitas. Idealista está pensado para el piso, no para puntuar cómo gestiona la agencia.",
   },
   {
     question: "¿Puede una inmobiliaria borrar una reseña negativa?",
@@ -157,6 +157,6 @@ export const HOME_FAQS = [
   {
     question: "¿El correo del autor aparece en la ficha?",
     answer:
-      "No. El correo queda en nuestros registros para moderación. En la ficha pública sale un seudónimo o el rol. No prometemos anonimato absoluto.",
+      "No. Puedes publicar en anónimo o con seudónimo. El correo queda en nuestros registros para moderación. No prometemos anonimato absoluto: nosotros sí sabemos qué cuenta escribió.",
   },
 ] as const;

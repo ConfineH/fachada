@@ -7,7 +7,7 @@ import { pageMeta } from "@/lib/seo";
 
 export const metadata = pageMeta(
   "Sobre Fachada",
-  "Por qué existe Fachada: un archivo independiente de la gestión de inmobiliarias, no un portal de pisos ni un muro de Google.",
+  "Por qué existe Fachada: valoración de inmobiliarias, con nota de inquilino y de propietario sobre la gestión del alquiler.",
   "/sobre",
 );
 
@@ -23,20 +23,22 @@ export default function SobrePage() {
           Sobre Fachada
         </h1>
         <p className="mt-4 text-lg text-zinc-600">
-          Fachada archiva cómo gestionan las inmobiliarias el alquiler en
-          España: fianzas, reparaciones, honorarios y comunicación. No vendemos
-          pisos ni anuncios.
+          Fachada valora a las inmobiliarias: cómo gestionan el alquiler en
+          España — fianza, reparaciones, honorarios y comunicación — con nota
+          de inquilino y de propietario.
         </p>
         <p className="mt-4 text-lg text-zinc-600">
-          Quien escribe confirma un correo o entra con Google. En la ficha no
-          sale esa dirección. Eso identifica la cuenta, no demuestra por sí
-          solo que la experiencia ocurriera.
+          Quien escribe confirma un correo o entra con Google. En la ficha
+          puedes publicar en anónimo; esa dirección no se muestra. Eso
+          identifica la cuenta, no demuestra por sí solo que la experiencia
+          ocurriera.
         </p>
         <section className="mt-10 space-y-4 text-zinc-700">
           <p>
-            Idealista enseña el piso. Google mezcla visitas a oficina, ventas y
-            azar. Faltaba la lente de gestión: inquilino frente a propietario,
-            con incidencias etiquetadas (honorarios, fianza, reparaciones).
+            Los portales enseñan el piso. Google mezcla visitas a oficina,
+            ventas y azar. Aquí la nota es de la inmobiliaria: inquilino
+            frente a propietario, con incidencias etiquetadas (honorarios,
+            fianza, reparaciones).
           </p>
           <p>
             El archivo es independiente. Una inmobiliaria puede reclamar su

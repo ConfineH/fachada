@@ -1,6 +1,6 @@
 # Product marketing context — Fachada
 
-**Document version:** 1.2  
+**Document version:** 1.3  
 **Last updated:** 2026-09-12  
 
 Canonical detail: [`docs/producto-final.md`](../docs/producto-final.md).  
@@ -10,6 +10,7 @@ Original vision archive: [`docs/docs-extracted.txt`](../docs/docs-extracted.txt)
 
 | Version | Date | Change |
 |---------|------|--------|
+| 1.3 | 2026-09-12 | Hero = nota de la inmobiliaria; no antíportal; anónimo en ficha |
 | 1.2 | 2026-09-12 | Copy rules: no «reseña verificada»; correo ≠ experiencia; alta = «sugerir» |
 | 1.1 | 2026-09-07 | Reviewer identity: Google/email OTP; SMS only for agency business line |
 | 1.0 | 2026-08-13 | Initial context from audit + product-final definition |
@@ -22,7 +23,7 @@ Original vision archive: [`docs/docs-extracted.txt`](../docs/docs-extracted.txt)
 
 **What it is:** Independent trust layer for how agencies treat tenants and owners — identified accounts (Google or email), moderated reviews; dual ratings; Idealista-time check via browser extension.
 
-**What it is not:** Listings portal (Idealista/Fotocasa), listing-fraud detector, OCU-style money reclaim tool, roommate matcher (Roomeo), or heavy agency CRM.
+**What it is not:** Listing-fraud detector, OCU-style money reclaim tool, roommate matcher (Roomeo), or heavy agency CRM. Listings may come later on claimed agency profiles; the core product is agency ratings, not competing as a national ads catalog.
 
 **Category:** Proptech trust / reputation (not marketplace).
 
@@ -46,7 +47,7 @@ Agencies that want to claim profiles, respond to reviews, and later pay for prem
 
 ## 3. Positioning
 
-**Against Idealista/Fotocasa:** They show the flat; Fachada shows how the **agency manages** people. No catalog competition.
+**Against Idealista/Fotocasa:** They show the flat. Fachada is a **rating of the agency** (tenant vs owner), focused on management. Don't define the brand as “not a listings portal”: ads may live on claimed fichas later.
 
 **Against Google Reviews:** Google mixes offices, sales, and random visits. Fachada separates **inquilino** and **propietario** and focuses on rental/management experience.
 
@@ -56,21 +57,21 @@ Agencies that want to claim profiles, respond to reviews, and later pay for prem
 
 ## 4. Messaging
 
-**Primary promise:** Antes de firmar (o de encargar la gestión), mira cómo trata esa inmobiliaria a inquilinos y a propietarios.
+**Primary promise:** Antes de firmar (o de encargar la gestión), mira la nota de esa inmobiliaria.
 
 **Proof points (aspirational until density):** Dual scores; identified accounts (Google or email); moderation; methodology page; incident tags (honorarios, fianza, reparaciones…).
 
 **Tone:** Calm, institutional-editorial, independent archive. Not urgent SaaS, not Idealista-green portal, not Meant To warmth.
 
 **Copy rules:**
-- Never claim absolute anonymity (email identified in backend; public display is non-identifying).
+- Public copy: you **can** post anonymously on the ficha. Account is identified (correo/Google) for moderation. Never lead with “no es un muro anónimo”. Never claim absolute anonymity.
 - Never promise antifraud for Idealista ads, fact-checking, or a “reseña verificada” seal.
 - Email/teléfono verificado ≠ experiencia verificada. Use **experiencia declarada** vs **acreditada**.
 - CTAs: prefer “buscar / leer / reseñar” over “añadir agencia” as primary. Alta de ficha = “sugerir”.
 - Agency nav must lead to real Acceso, not `/explorar`.
 
 **Hero / acquisition line (Idealista extension):**  
-“Buscas piso en Idealista. ¿Sabes cómo trata esa inmobiliaria a los inquilinos? Fachada te lo dice.”
+“Buscas piso en Idealista. ¿Sabes la nota de esa inmobiliaria? Fachada te la enseña.”
 
 ## 5. Offer
 
@@ -98,7 +99,7 @@ Agencies that want to claim profiles, respond to reviews, and later pay for prem
 | Objection | Response |
 |-----------|----------|
 | “Google already has reviews” | Not split by tenant/owner management; not structured for rental agency behavior |
-| “Idealista should fix agencies” | Idealista sells listings; incentive misaligned; Fachada is independent |
+| “Idealista should fix agencies” | Idealista is built around the listing; Fachada rates the agency |
 | “Reviews will be fake” | Identified account + moderation + agency dispute path; methodology public |
 | “Nobody will leave reviews” | High emotion market (fees, deposits); still needs ops + positioning |
 
