@@ -1,7 +1,7 @@
 # Product marketing context — Fachada
 
-**Document version:** 1.4  
-**Last updated:** 2026-09-12  
+**Document version:** 1.6  
+**Last updated:** 2026-09-16  
 
 Canonical detail: [`docs/producto-final.md`](../docs/producto-final.md).  
 Original vision archive: [`docs/docs-extracted.txt`](../docs/docs-extracted.txt).
@@ -10,6 +10,8 @@ Original vision archive: [`docs/docs-extracted.txt`](../docs/docs-extracted.txt)
 
 | Version | Date | Change |
 |---------|------|--------|
+| 1.6 | 2026-09-16 | Identidad pública = correo; SL/titular al haber usuarios |
+| 1.5 | 2026-09-16 | Extensión: página `/extension` estilo sideload; badge con motivo; no CWS |
 | 1.4 | 2026-09-16 | Hero = reputación de gestión; nota solo en la ficha; no importar Google |
 | 1.3 | 2026-09-12 | Hero = nota de la inmobiliaria; no antíportal; anónimo en ficha |
 | 1.2 | 2026-09-12 | Copy rules: no «reseña verificada»; correo ≠ experiencia; alta = «sugerir» |
@@ -71,6 +73,8 @@ Agencies that want to claim profiles, respond to reviews, and later pay for prem
 - Email/teléfono verificado ≠ experiencia verificada. Use **experiencia declarada** vs **acreditada**.
 - CTAs: prefer “buscar / leer / reseñar” over “añadir agencia” as primary. Alta de ficha = “sugerir”.
 - Agency nav must lead to real Acceso, not `/explorar`.
+- Extension install copy lives at `/extension` (Mercabien-style sideload: 4 steps, don’t delete the folder, developer mode, Chrome warning is normal). Badge shows **why** it matched (`Coincide con … · N experiencias`) or `Sin datos Fachada`. Never claim Chrome Web Store until submitted. Never say “we send no data”: we send the advertiser name to `/api/agencies/match`. No public campaign until Idealista written permission.
+- Legal identity in public copy: **email only** (`LEGAL_CONTACT_EMAIL`). Do not publish name, NIF or address until the SL exists. Don’t overclaim LSSI art. 10 completeness.
 
 **Hero / acquisition line (Idealista extension):**  
 “Buscas piso en Idealista. ¿Sabes la reputación de esa inmobiliaria? Fachada te la enseña.”

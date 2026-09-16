@@ -1,5 +1,5 @@
 import { LegalDoc } from "@/components/legal-doc";
-import { getLegal, isLegalIdentityComplete } from "@/lib/legal";
+import { getLegal, hasPublicContact } from "@/lib/legal";
 import { pageMeta } from "@/lib/seo";
 
 export const metadata = pageMeta(
@@ -14,18 +14,12 @@ export default function PrivacidadPage() {
   return (
     <LegalDoc title="Política de privacidad" updated="septiembre 2026">
       <p>
-        El responsable del tratamiento es el titular identificado en el{" "}
-        <a href="/legal/aviso-legal">aviso legal</a> ({legal.holderName},{" "}
-        {legal.privacyEmail}). Esta política cubre el sitio web y la extensión
-        de navegador «Fachada — reseñas en Idealista».
+        El responsable del tratamiento se contacta a través del correo del{" "}
+        <a href="/legal/aviso-legal">aviso legal</a>
+        {hasPublicContact() ? ` (${legal.privacyEmail})` : ""}. Esta política
+        cubre el sitio web y la extensión de navegador «Fachada — capa
+        independiente».
       </p>
-      {isLegalIdentityComplete() ? null : (
-        <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950">
-          Completa <code>LEGAL_CONTACT_EMAIL</code> (y el resto de{" "}
-          <code>LEGAL_*</code>) en Vercel. Hasta que sea un buzón real, los
-          derechos ARCO+ no se pueden ejercer de forma efectiva.
-        </p>
-      )}
 
       <h2>Qué datos tratamos</h2>
       <ul>
@@ -132,7 +126,13 @@ export default function PrivacidadPage() {
       <h2>Tus derechos</h2>
       <p>
         Acceso, rectificación, supresión, oposición, limitación y portabilidad:
-        escribe a {legal.privacyEmail}. Acusaremos recibo, verificaremos tu
+        escribe a{" "}
+        {hasPublicContact() ? (
+          legal.privacyEmail
+        ) : (
+          <a href="/legal/aviso-legal">el aviso legal</a>
+        )}
+        . Acusaremos recibo, verificaremos tu
         identidad de forma proporcionada y responderemos normalmente en un
         mes. También puedes reclamar ante la{" "}
         <a href="https://www.aepd.es">AEPD</a>.
@@ -149,17 +149,19 @@ export default function PrivacidadPage() {
 
       <h2>Extensión de navegador</h2>
       <p>
-        La extensión solo se ejecuta en páginas de Idealista. Lee el nombre de
-        la inmobiliaria visible en el anuncio, lo envía a Fachada (
-        <code>/api/agencies/match</code>) y muestra un badge con el enlace a la
-        ficha. No lee tu cuenta de Idealista, no modifica envíos de formularios
-        y no guarda el historial de navegación en nuestros servidores más allá
-        de la consulta de coincidencia (el nombre buscado, de forma transitoria
-        en logs técnicos).
+        La extensión solo se ejecuta en páginas de Idealista que tú has
+        abierto. Lee el nombre visible del anunciante, lo envía a Fachada (
+        <code>/api/agencies/match</code>) y muestra un badge con la
+        coincidencia y el enlace a la ficha. No lee tu cuenta de Idealista, no
+        pide contraseña, no scrapea el catálogo de pisos, no modifica envíos
+        de formularios y no guarda el historial de navegación en nuestros
+        servidores más allá de la consulta de coincidencia (el nombre buscado,
+        de forma transitoria en logs técnicos).
       </p>
       <p>
-        Hasta publicarla en Chrome Web Store puedes cargarla descomprimida; el
-        tratamiento es el mismo.
+        Mientras se carga descomprimida (sin Chrome Web Store) el tratamiento
+        es el mismo. Las instrucciones para testers están en{" "}
+        <a href="/extension">/extension</a>.
       </p>
     </LegalDoc>
   );

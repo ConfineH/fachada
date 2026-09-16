@@ -1,7 +1,7 @@
 import { PublicShell } from "@/components/public-shell";
 import { AccountHome } from "@/components/account-home";
 import { usingSupabase } from "@/lib/container";
-import { getLegal } from "@/lib/legal";
+import { getLegal, hasPublicContact } from "@/lib/legal";
 
 export const metadata = {
   title: "Tu cuenta",
@@ -10,10 +10,13 @@ export const metadata = {
 };
 
 export default function CuentaPage() {
+  const legal = getLegal();
+  const privacyEmail = hasPublicContact() ? legal.privacyEmail : "";
+
   return (
     <PublicShell storage={usingSupabase() ? "supabase" : "memory"}>
       <main className="mx-auto max-w-3xl px-6 py-10">
-        <AccountHome privacyEmail={getLegal().privacyEmail} />
+        <AccountHome privacyEmail={privacyEmail} />
       </main>
     </PublicShell>
   );

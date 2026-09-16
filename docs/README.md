@@ -1,6 +1,6 @@
 # Documentación Fachada
 
-**Estado actual (12 sep 2026):** Live en https://fachada-tau.vercel.app con Supabase propio. El producto de blindaje legal ya está en código; faltan titular LSSI en Vercel, migración `012` en vivo, dictamen y SL. El norte operativo sigue siendo densidad (Madrid), no más features. Plan: [Roadmap](./roadmap.md).
+**Estado actual (16 sep 2026):** Live en https://fachada-tau.vercel.app con Supabase propio. En público basta un correo de contacto (`LEGAL_CONTACT_EMAIL`); la SL y el titular registral esperan a tener usuarios. SQL `012` y el catálogo Madrid ya están en vivo. Faltan el correo en Vercel (cuando exista el dominio) y dictamen. El norte operativo sigue siendo densidad (Madrid), no más features. Plan: [Roadmap](./roadmap.md).
 
 ## Ruta rápida
 
@@ -12,7 +12,8 @@
 | Arquitectura técnica del código | [Arquitectura](./arquitectura.md) |
 | Decisiones tomadas (y por qué) | [Registro de decisiones](./decisiones.md) |
 | Cómo desarrollar, desplegar o cambiar de modo | [Infraestructura](./infraestructura.md) |
-| Checklist de la semana 1 (password, LSSI, catálogo, extensión) | [Ops semana 1](./ops-semana-1.md) |
+| Checklist de la semana 1 (password, correo, catálogo, extensión) | [Ops semana 1](./ops-semana-1.md) |
+| Cómo cargar la extensión (testers) | [Página `/extension`](../src/app/extension/page.tsx) · [README extensión](../extension/idealista/README.md) |
 | Qué está hecho en código vs qué queda humano (legal) | [Gate legal](./legal-release-checklist.md) · [Brief abogado](./legal-review-brief.md) · [Ops RGPD](./legal-operations.md) · [Gate SL](./sl-migration-checklist.md) |
 | Visión Fase 2 (dashboard, roles, historial; features) | [Producto Fase 2](./producto-fase-2.md) |
 | Arrancar el proyecto en 5 minutos | [Guía de desarrollo](./desarrollo.md) |

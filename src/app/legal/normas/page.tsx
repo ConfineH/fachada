@@ -1,5 +1,5 @@
 import { LegalDoc } from "@/components/legal-doc";
-import { getLegal } from "@/lib/legal";
+import { publicMailbox } from "@/lib/legal";
 import { pageMeta } from "@/lib/seo";
 
 export const metadata = pageMeta(
@@ -9,7 +9,10 @@ export const metadata = pageMeta(
 );
 
 export default function NormasPage() {
-  const legal = getLegal();
+  const mailbox = publicMailbox();
+  const contact = mailbox ?? (
+    <a href="/legal/aviso-legal">el aviso legal</a>
+  );
 
   return (
     <LegalDoc title="Normas de uso y contenidos" updated="septiembre 2026">
@@ -98,7 +101,7 @@ export default function NormasPage() {
       <h2>Denunciar contenido ilícito</h2>
       <p>
         Usa el enlace «Denunciar» junto a cada reseña o escribe a{" "}
-        {legal.contactEmail}. Identifica la URL y el fragmento exacto, explica
+        {contact}. Identifica la URL y el fragmento exacto, explica
         el derecho o norma vulnerados, aporta un correo de contacto y confirma
         de buena fe que la información es exacta. Acusaremos recibo y
         comunicaremos una decisión motivada. Una discrepancia o una valoración
@@ -114,14 +117,14 @@ export default function NormasPage() {
       <p>
         Para corregir un dato de ficha usa «¿Ves algo que no cuadra?». Para
         ejercer un derecho formal de rectificación sobre hechos inexactos y
-        perjudiciales, escribe a {legal.contactEmail} con el contenido exacto,
+        perjudiciales, escribe a {contact} con el contenido exacto,
         la rectificación solicitada y evidencia. Este canal no sirve para
         eliminar opiniones lícitas con las que no se esté de acuerdo.
       </p>
       <h2>Contacto DSA</h2>
       <p>
         El punto de contacto para usuarios y autoridades conforme al
-        Reglamento de Servicios Digitales es {legal.contactEmail}. Atendemos en
+        Reglamento de Servicios Digitales es {contact}. Atendemos en
         español y las comunicaciones no se resuelven exclusivamente de forma
         automatizada.
       </p>

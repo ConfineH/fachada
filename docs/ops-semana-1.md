@@ -2,10 +2,10 @@
 
 El código ya no es el bloqueo. Esta lista sí.
 
-**Añadido 12 sep 2026:** además del titular LSSI, aplica en el SQL editor
-del proyecto live `supabase/migrations/012_legal_hardening.sql` (columnas
-de autenticidad de reseña, `content_notices`, bucket `review-evidence`).
-Sin esa migración, los flujos nuevos fallan o no persisten.
+**16 sep 2026:** el aviso público solo pide un correo (`LEGAL_CONTACT_EMAIL`)
+cuando exista el dominio. Nombre/NIF/domicilio van al constituir la SL.
+`012_legal_hardening.sql` y el seed de Madrid (25 fichas + alias) ya están
+en el proyecto live. No hace falta volver a pegarlos salvo que cambies el JSON.
 
 ## 1. Rotar `ADMIN_PASSWORD`
 
@@ -16,41 +16,43 @@ Sin esa migración, los flujos nuevos fallan o no persisten.
 
 Local: mismo valor en `.env.local`.
 
-## 2. Titular LSSI (sin constituir SL)
+## 2. Correo de contacto (ahora)
 
-Vercel (Production + Preview), variables **no** `NEXT_PUBLIC_`:
+En Vercel (Production + Preview), **solo**:
 
-| Variable | Ejemplo |
+| Variable | Valor |
 |----------|---------|
-| `LEGAL_HOLDER_NAME` | tu nombre y apellidos |
-| `LEGAL_HOLDER_ID` | tu NIF |
-| `LEGAL_HOLDER_ADDRESS` | domicilio a efectos de notificaciones |
 | `LEGAL_CONTACT_EMAIL` | un correo que leas |
-| `LEGAL_PRIVACY_EMAIL` | el mismo, o uno dedicado |
 
-Redeploy. Abre `/legal/aviso-legal`: debe desaparecer el aviso ámbar.
+Opcional: `LEGAL_PRIVACY_EMAIL` si quieres un buzón aparte. Si no, se usa el mismo.
+
+Redeploy. Abre `/legal/aviso-legal`: debe desaparecer el aviso ámbar y verse el correo. **No** pongas nombre, NIF ni domicilio hasta constituir la SL.
+
+`LEGAL_HOLDER_NAME` / `LEGAL_HOLDER_ID` / `LEGAL_HOLDER_ADDRESS` se rellenan entonces. Hasta ese momento el aviso no los publica.
 
 ## 3. 25 fichas Madrid
 
-El catálogo está en `data/madrid-pilot-agencies.json` (marcas reales, sin teléfonos inventados, sin reseñas fake). Direcciones genéricas salvo donpiso / Alfa / Redpiso.
+**Hecho (16 sep 2026):** las 25 fichas y alias están en el proyecto live.
+`/ciudades/madrid` debe listarlas (más Alamo Foro si sigue).
 
-**Aplicar en Supabase (SQL editor del proyecto `embmicoogxrxsvchywis`):**
-
-1. `npm run seed:madrid-sql` regenera `supabase/seed/madrid-pilot.sql` si cambias el JSON.
-2. Pega y ejecuta ese SQL. Es idempotente por `slug`.
-
-Luego `/explorar` o `/ciudades/madrid` debería listar las 25 fichas reales (más Alamo Foro si sigue). Las fichas demo por ciudad (Sol, Gestión Urbana, Pisos Barcelona, etc.) se borran al aplicar `supabase/seed/city-pilot.sql`.
+El catálogo vive en `data/madrid-pilot-agencies.json`. Si lo cambias:
+`npm run seed:madrid-sql` y vuelve a pegar `supabase/seed/madrid-pilot.sql`.
 
 Oficinas de barrio que salgan en Idealista y no matcheen: `/admin` → alta rápida o «añadir alias».
 
-Otras ciudades: `data/city-pilot-agencies.json` (10 marcas conocidas en Barcelona, Valencia, Málaga y Sevilla). `npm run seed:cities-sql` regenera `supabase/seed/city-pilot.sql`.
+Otras ciudades: `data/city-pilot-agencies.json`. `npm run seed:cities-sql` regenera `supabase/seed/city-pilot.sql`.
 
 ## 4. Extensión unpacked (10 anuncios)
 
-1. Chrome → `chrome://extensions` → Cargar descomprimida → `extension/idealista`.
-2. Abre 10 anuncios de **alquiler en Madrid** de marcas del catálogo.
-3. En `/admin`, pega el nombre del anuncio en **Probar match**.
-4. Log:
+Instrucciones para testers (aviso de Chrome, carpeta fija, qué no hace):
+`/extension`. Resumen:
+
+1. Deja `extension/idealista` en un sitio fijo. No la borres.
+2. Chrome → `chrome://extensions` → Modo de desarrollador (arriba a la derecha).
+3. Cargar descomprimida → esa carpeta.
+4. Abre 10 anuncios de **alquiler en Madrid** de marcas del catálogo.
+
+En `/admin`, pega el nombre del anuncio en **Probar match**. Log:
 
 | # | URL anuncio | Nombre en Idealista | ¿Match? | Confianza | Alias que faltaba |
 |---|----------------|---------------------|---------|-----------|-------------------|

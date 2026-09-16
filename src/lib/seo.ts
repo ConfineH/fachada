@@ -1,4 +1,4 @@
-import { getLegal } from "@/lib/legal";
+import { getLegal, hasRegisteredHolder, isPlaceholder } from "@/lib/legal";
 import { getSiteUrl } from "@/lib/site-url";
 
 export const SITE_NAME = "Fachada";
@@ -44,14 +44,14 @@ export function organizationJsonLd() {
     name: SITE_NAME,
     url: absoluteUrl("/"),
     description: DEFAULT_DESCRIPTION,
-    email: legal.contactEmail.startsWith("[") ? undefined : legal.contactEmail,
-    address: legal.holderAddress.startsWith("[")
-      ? undefined
-      : {
+    email: isPlaceholder(legal.contactEmail) ? undefined : legal.contactEmail,
+    address: hasRegisteredHolder()
+      ? {
           "@type": "PostalAddress",
           streetAddress: legal.holderAddress,
           addressCountry: "ES",
-        },
+        }
+      : undefined,
   };
 }
 

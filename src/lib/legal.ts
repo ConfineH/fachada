@@ -13,6 +13,10 @@ function readEnv(key: string, placeholder: string) {
   return value ? value : placeholder;
 }
 
+export function isPlaceholder(value: string) {
+  return value.startsWith("[");
+}
+
 export function getLegal() {
   const contactEmail = readEnv("LEGAL_CONTACT_EMAIL", PLACEHOLDERS.contactEmail);
   return {
@@ -26,13 +30,21 @@ export function getLegal() {
   };
 }
 
-export function isLegalIdentityComplete() {
+/** Public phase: a mailbox we read. No name, NIF or address on the site yet. */
+export function hasPublicContact() {
+  const email = getLegal().contactEmail;
+  return !isPlaceholder(email) && email.includes("@");
+}
+
+/** Real contact email, or null so pages never print the placeholder. */
+export function publicMailbox() {
+  return hasPublicContact() ? getLegal().contactEmail : null;
+}
+
+/** After SL (or a deliberate full LSSI identity): name, tax id, address. */
+export function hasRegisteredHolder() {
   const legal = getLegal();
-  return ![
-    legal.holderName,
-    legal.holderId,
-    legal.holderAddress,
-    legal.contactEmail,
-    legal.privacyEmail,
-  ].some((value) => value.startsWith("["));
+  return ![legal.holderName, legal.holderId, legal.holderAddress].some(
+    isPlaceholder,
+  );
 }

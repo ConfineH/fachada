@@ -7,8 +7,10 @@ Plan operativo (sep 2026): densidad Madrid, no más features.
 blindaje de reseñas (fecha, declaraciones, evidencia privada), flujo DSA
 (denuncia / decisión / apelación), exportación de datos, copy y SEO on-page
 (títulos, canonical, OG, sitemap, JSON-LD, metodología). **No** implica
-campaña nacional ni Store. Sigue pendiente: `LEGAL_*` en Vercel, SQL `012`
-en el proyecto live, abogado, SL y permiso de Idealista.
+campaña nacional ni Store. SQL `012` y el catálogo Madrid ya están en el
+proyecto live. Sigue pendiente: `LEGAL_CONTACT_EMAIL` en Vercel cuando exista
+`fachada.app`, y más adelante SL + titular registral. Permiso de Idealista
+antes de distribuir la extensión.
 
 ## Veredicto
 
@@ -27,7 +29,7 @@ Competencia útil: **Reviu** (piso/casero, Cataluña) y portales por **direcció
 
 ## 30 días
 
-1. **Ops + catálogo:** ver [`ops-semana-1.md`](./ops-semana-1.md) — rotar `ADMIN_PASSWORD`; `LEGAL_*` en Vercel; SQL `supabase/seed/madrid-pilot.sql`; extensión unpacked.
+1. **Ops + catálogo:** ver [`ops-semana-1.md`](./ops-semana-1.md) — `ADMIN_PASSWORD` rotada; Madrid 25 live; `LEGAL_CONTACT_EMAIL` cuando exista el dominio.
 2. **Extensión unpacked:** 10 anuncios; log de fallos de match (aliases).
 3. **15 reseñas reales** (amigos / grupos). Moderar en < 24 h. Cero reseñas inventadas.
 4. **Gate:** si se cumple la métrica → 5 testers con la extensión. Si no → no Store, no SEO nacional, no premium.

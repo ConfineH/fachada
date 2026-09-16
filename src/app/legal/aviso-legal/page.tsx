@@ -1,43 +1,56 @@
 import { LegalDoc } from "@/components/legal-doc";
-import { getLegal, isLegalIdentityComplete } from "@/lib/legal";
+import { getLegal, hasPublicContact, hasRegisteredHolder } from "@/lib/legal";
 import { pageMeta } from "@/lib/seo";
 
 export const metadata = pageMeta(
   "Aviso legal",
-  "Identificación del prestador, objeto del archivo y punto de contacto de Fachada.",
+  "Punto de contacto de Fachada y objeto del archivo.",
   "/legal/aviso-legal",
 );
 
 export default function AvisoLegalPage() {
   const legal = getLegal();
+  const registered = hasRegisteredHolder();
 
   return (
     <LegalDoc title="Aviso legal" updated="septiembre 2026">
       <p>
-        Este aviso identifica al prestador del servicio de la sociedad de la
-        información <strong>{legal.serviceName}</strong>, accesible en{" "}
-        {legal.siteUrl}, de conformidad con el artículo 10 de la Ley 34/2002
-        (LSSI).
+        <strong>{legal.serviceName}</strong> es un archivo público de
+        reputación de inmobiliarias, accesible en {legal.siteUrl}.
       </p>
-      {isLegalIdentityComplete() ? null : (
-        <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950">
-          Borrador: falta titular real. En Vercel, rellena{" "}
-          <code>LEGAL_HOLDER_NAME</code>, <code>LEGAL_HOLDER_ID</code>,{" "}
-          <code>LEGAL_HOLDER_ADDRESS</code> y <code>LEGAL_CONTACT_EMAIL</code>.
+      <h2>Contacto</h2>
+      {hasPublicContact() ? (
+        <p>
+          El punto de contacto para usuarios y autoridades es{" "}
+          {legal.contactEmail}. Atendemos en español.
+        </p>
+      ) : (
+        <p>
+          Publicaremos aquí un correo de contacto. Atendemos en español.
         </p>
       )}
-      <h2>Titular</h2>
-      <ul>
-        <li>Nombre o denominación: {legal.holderName}</li>
-        <li>NIF / NIE / CIF: {legal.holderId}</li>
-        <li>Domicilio: {legal.holderAddress}</li>
-        <li>Email: {legal.contactEmail}</li>
-      </ul>
+      {registered ? (
+        <>
+          <h2>Titular</h2>
+          <ul>
+            <li>Nombre o denominación: {legal.holderName}</li>
+            <li>NIF / NIE / CIF: {legal.holderId}</li>
+            <li>Domicilio: {legal.holderAddress}</li>
+            <li>Correo: {legal.contactEmail}</li>
+          </ul>
+        </>
+      ) : (
+        <p>
+          En esta fase no publicamos nombre, NIF ni domicilio. Cuando se
+          constituya la sociedad, este aviso incluirá denominación, NIF y
+          domicilio social.
+        </p>
+      )}
       <h2>Objeto</h2>
       <p>
-        Fachada es un archivo público de opiniones y valoraciones sobre la
-        gestión de inmobiliarias en España (inquilinos y propietarios). No
-        intermedia contratos ni presta servicios de agencia.
+        Fachada archiva opiniones y valoraciones sobre la gestión de
+        inmobiliarias en España (inquilinos y propietarios). No intermedia
+        contratos ni presta servicios de agencia.
       </p>
       <p>
         Las reseñas son contenidos aportados por sus autores y expresan su
@@ -46,20 +59,18 @@ export default function AvisoLegalPage() {
         publican. Las fichas, cálculos y resúmenes sí son elaborados por
         Fachada y pueden corregirse mediante los canales de las normas de uso.
       </p>
-      <h2>Contacto y contenidos ilícitos</h2>
+      <h2>Contenidos ilícitos</h2>
       <p>
-        El punto de contacto para usuarios y autoridades, incluidas
-        comunicaciones del Reglamento de Servicios Digitales, es{" "}
-        {legal.contactEmail}. Atendemos en español. Para denunciar una reseña,
-        usa el enlace junto a ella o identifica su URL, el fragmento concreto y
-        el motivo jurídico en un correo. Consulta las{" "}
+        Para denunciar una reseña, usa el enlace junto a ella o identifica su
+        URL, el fragmento concreto y el motivo jurídico en un correo. Consulta
+        las{" "}
         <a href="/legal/normas">normas de uso y contenidos</a>.
       </p>
       <h2>Propiedad intelectual</h2>
       <p>
-        El diseño, las marcas y el software de Fachada pertenecen al titular.
-        Las reseñas siguen siendo responsabilidad de quien las envía; Fachada
-        las aloja y puede moderarlas o retirarlas.
+        El diseño, las marcas y el software de Fachada pertenecen a quien
+        opera el archivo. Las reseñas siguen siendo responsabilidad de quien
+        las envía; Fachada las aloja y puede moderarlas o retirarlas.
       </p>
       <h2>Exclusión de responsabilidad</h2>
       <p>
@@ -73,8 +84,10 @@ export default function AvisoLegalPage() {
       <h2>Legislación y fuero</h2>
       <p>
         Este sitio se dirige a usuarios en España. Salvo norma imperativa en
-        contrario, se aplica la legislación española y los juzgados del
-        domicilio del titular.
+        contrario, se aplica la legislación española y{" "}
+        {registered
+          ? "los juzgados del domicilio del titular."
+          : "los juzgados competentes en España."}
       </p>
     </LegalDoc>
   );

@@ -14,7 +14,7 @@
 | Supabase | ✅ `embmicoogxrxsvchywis` |
 | Auth reseñas | ✅ Google Sign-In + email OTP (no Twilio) |
 | Datos | Seed; **sin tracción** (1 reseña pública a 12 sep 2026) |
-| Legal producto | ✅ En código; ⚠️ `LEGAL_*` + SQL `012` + abogado + SL pendientes |
+| Legal producto | ✅ Código + SQL `012` live; ⚠️ correo de contacto; SL/titular y abogado más adelante |
 | SMS ficha agencia | ❌ Twilio solo cuando haga falta línea de negocio |
 
 Sin env de Supabase, `MemoryStore` (tests). Auth de usuarios **no** es Supabase Auth.
@@ -25,7 +25,7 @@ Env: `NEXT_PUBLIC_SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` (no la anon key; n
 
 1. 25 fichas Madrid reales + 15 reseñas reales moderadas.
 2. Extensión unpacked: medir match Idealista (objetivo ≥ 7/10).
-3. `src/lib/legal.ts` con titular real. Rotar `ADMIN_PASSWORD`.
+3. Correo `LEGAL_CONTACT_EMAIL` cuando exista `fachada.app`. `ADMIN_PASSWORD` ya rotada. Nombre/NIF/domicilio: al constituir la SL.
 4. Gate “Madrid usable”: 10 fichas con ≥ 2 reseñas; entonces testers. **No** Store / Stripe / Twilio / SEO nacional antes.
 
 No mezclar datos con Meant To ni Migajas.

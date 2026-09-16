@@ -4,7 +4,8 @@ Este gate no se completa con un cambio de código. Requiere escritura,
 inscripción, NIF y contratos efectivos.
 
 **12 sep 2026:** no se ha constituido. El operador sigue siendo persona
-física. El código ya admite titular vía `LEGAL_*` (persona o SL).
+física. En público solo hay correo de contacto. Nombre, NIF y domicilio
+salen en el aviso cuando existan `LEGAL_HOLDER_*` (la SL).
 
 ## Disparadores
 

@@ -254,14 +254,23 @@ export function AccountHome({ privacyEmail }: { privacyEmail: string }) {
           >
             Exportar mis datos
           </button>
-          <a
-            href={`mailto:${privacyEmail}?subject=${encodeURIComponent(
-              "Ejercicio de derechos RGPD",
-            )}`}
-            className="rounded-lg border border-stone-300 px-3 py-2 text-sm"
-          >
-            Solicitar un derecho
-          </a>
+          {privacyEmail.includes("@") ? (
+            <a
+              href={`mailto:${privacyEmail}?subject=${encodeURIComponent(
+                "Ejercicio de derechos RGPD",
+              )}`}
+              className="rounded-lg border border-stone-300 px-3 py-2 text-sm"
+            >
+              Solicitar un derecho
+            </a>
+          ) : (
+            <a
+              href="/legal/aviso-legal"
+              className="rounded-lg border border-stone-300 px-3 py-2 text-sm"
+            >
+              Solicitar un derecho
+            </a>
+          )}
         </div>
       </section>
 

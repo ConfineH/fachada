@@ -5,8 +5,9 @@ captan reseñas mediante campañas ni se distribuye la extensión.
 
 **Estado del código (12 sep 2026):** las casillas de Producto ya tienen
 implementación en la app (formularios, APIs, admin, etiquetas). Siguen
-pendientes: aplicar `012_legal_hardening.sql` en el Supabase live, rellenar
-`LEGAL_*` en Vercel, y **probar** cada flujo en producción. Seguridad
+pendientes: `LEGAL_CONTACT_EMAIL` en Vercel (cuando exista el dominio) y
+**probar** cada flujo en producción. SQL `012` ya está en el proyecto live.
+Nombre/NIF/domicilio (`LEGAL_HOLDER_*`) solo al constituir la SL. Seguridad
 (RLS/DPA) y dictamen siguen siendo trabajo humano.
 
 ## Producto

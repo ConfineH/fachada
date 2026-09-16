@@ -9,8 +9,9 @@ documento sigue siendo el ROPA/LIA operativo; no está firmado por abogado.
 
 ## Responsables
 
-- Responsable del tratamiento y prestador: el titular publicado en el aviso
-  legal.
+- Responsable del tratamiento: hasta constituir la SL, el operador del
+  archivo se identifica por el correo del aviso legal (`LEGAL_CONTACT_EMAIL`).
+  Nombre, NIF y domicilio (`LEGAL_HOLDER_*`) se publican entonces.
 - Punto de contacto de usuarios, autoridades y avisos DSA:
   `LEGAL_CONTACT_EMAIL`.
 - Privacidad: `LEGAL_PRIVACY_EMAIL` o, si no existe, el mismo buzón.

@@ -1,7 +1,13 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { isProductionAdminMisconfigured } from "@/lib/auth/admin-session";
-import { getLegal, isLegalIdentityComplete } from "@/lib/legal";
+import {
+  getLegal,
+  hasPublicContact,
+  hasRegisteredHolder,
+  publicMailbox,
+} from "@/lib/legal";
+import { organizationJsonLd } from "@/lib/seo";
 
 const keys = [
   "LEGAL_HOLDER_NAME",
@@ -38,18 +44,40 @@ describe("legal identity env", () => {
     delete process.env.LEGAL_HOLDER_ID;
     delete process.env.LEGAL_HOLDER_ADDRESS;
     delete process.env.LEGAL_CONTACT_EMAIL;
-    expect(isLegalIdentityComplete()).toBe(false);
+    delete process.env.LEGAL_PRIVACY_EMAIL;
+    expect(hasPublicContact()).toBe(false);
+    expect(hasRegisteredHolder()).toBe(false);
+    expect(publicMailbox()).toBeNull();
     expect(getLegal().holderName.startsWith("[")).toBe(true);
   });
 
-  it("is complete when env is filled", () => {
+  it("is ready with only a contact email", () => {
+    snapshotEnv();
+    delete process.env.LEGAL_HOLDER_NAME;
+    delete process.env.LEGAL_HOLDER_ID;
+    delete process.env.LEGAL_HOLDER_ADDRESS;
+    delete process.env.LEGAL_PRIVACY_EMAIL;
+    process.env.LEGAL_CONTACT_EMAIL = "ada@example.com";
+    expect(hasPublicContact()).toBe(true);
+    expect(hasRegisteredHolder()).toBe(false);
+    expect(publicMailbox()).toBe("ada@example.com");
+    expect(getLegal().privacyEmail).toBe("ada@example.com");
+    expect(organizationJsonLd().email).toBe("ada@example.com");
+    expect(organizationJsonLd().address).toBeUndefined();
+  });
+
+  it("exposes the registered holder when those env vars are filled", () => {
     snapshotEnv();
     process.env.LEGAL_HOLDER_NAME = "Ada Lovelace";
     process.env.LEGAL_HOLDER_ID = "12345678Z";
     process.env.LEGAL_HOLDER_ADDRESS = "Calle Ejemplo 1, Madrid";
     process.env.LEGAL_CONTACT_EMAIL = "ada@example.com";
-    expect(isLegalIdentityComplete()).toBe(true);
-    expect(getLegal().privacyEmail).toBe("ada@example.com");
+    expect(hasPublicContact()).toBe(true);
+    expect(hasRegisteredHolder()).toBe(true);
+    expect(organizationJsonLd().address).toMatchObject({
+      "@type": "PostalAddress",
+      streetAddress: "Calle Ejemplo 1, Madrid",
+    });
   });
 });
 

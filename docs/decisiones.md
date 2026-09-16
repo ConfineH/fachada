@@ -139,7 +139,8 @@ Inspirado en cómo documentamos decisiones en Meant To y Migajas para no re-deba
 **Estado:** Aceptada
 
 **Contexto:** El plan de blindaje exige art. 20.4 TRLGDCU, DSA y etiquetas
-honestas antes de crecer. El titular LSSI y el dictamen siguen pendientes.
+honestas antes de crecer. El correo de contacto y el dictamen siguen pendientes;
+nombre/NIF/domicilio esperan a la SL.
 
 **Decisión:** Aplicar en código la lectura conservadora (30 días, declaraciones,
 evidencia privada, denuncia/apelación, exportación). En público: experiencia
@@ -148,9 +149,53 @@ SEO on-page (títulos, sitemap, JSON-LD) sí; campaña nacional no.
 
 **Consecuencias:**
 - ✅ Producto alineado con el brief legal mientras llega el abogado
-- ⚠️ Sin `LEGAL_*` el aviso legal sigue en borrador
+- ⚠️ Sin `LEGAL_CONTACT_EMAIL` el aviso legal avisa en ámbar
 - ⚠️ Migración `012` debe aplicarse en el Supabase live
 - 📁 `docs/legal-release-checklist.md`, `src/lib/seo.ts`, `012_legal_hardening.sql`
+
+---
+
+## ADR-010: Extensión al estilo sideload (Mercabien), no Store
+
+**Fecha:** 2026-09-16  
+**Estado:** Aceptada
+
+**Contexto:** Mercabien (atardece.com) explica el sideload de Chrome mejor
+que nuestro README: cuatro pasos, carpeta fija, modo desarrollador, aviso
+al arrancar, motivo de cada etiqueta, qué no hace y límites. No es un rival
+de Idealista; el oficio de instalación sí se copia. Fachada no puede decir
+«no enviamos datos» porque consulta `/api/agencies/match`.
+
+**Decisión:** Página pública `/extension` para testers. El badge muestra
+«Coincide con … · N experiencias» o «Sin datos Fachada». No afirmar Chrome
+Web Store hasta enviarla. No campaña hasta permiso escrito de Idealista.
+
+**Consecuencias:**
+- ✅ Las indicaciones no viven solo en un README de una línea
+- ⚠️ Sigue siendo prototipo; el HTML de Idealista puede romper el badge
+- 📁 `src/app/extension/page.tsx`, `extension/idealista/`
+
+---
+
+## ADR-011: En público, solo correo; titular registral al constituir la SL
+
+**Fecha:** 2026-09-16  
+**Estado:** Aceptada
+
+**Contexto:** Publicar nombre, NIF y domicilio de una persona física en un
+MVP de reputación es un riesgo de targeting desproporcionado. El art. 10
+LSSI pide más, pero el archivo aún no tiene usuarios ni sociedad. El
+correo sí es un punto de contacto real.
+
+**Decisión:** `LEGAL_CONTACT_EMAIL` basta para el aviso, privacidad, normas
+y JSON-LD. `LEGAL_HOLDER_NAME` / `ID` / `ADDRESS` existen en env y solo
+salen en el aviso cuando los tres están rellenos (la SL, o una decisión
+expresa de titularidad completa). Hasta entonces el aviso lo dice.
+
+**Consecuencias:**
+- ✅ No se filtra identidad personal en páginas indexables
+- ⚠️ El hueco LSSI art. 10 queda documentado; se cierra al constituir
+- 📁 `src/lib/legal.ts`, `docs/ops-semana-1.md`, `docs/sl-migration-checklist.md`
 
 ---
 
