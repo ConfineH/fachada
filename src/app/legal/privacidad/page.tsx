@@ -39,7 +39,7 @@ export default function PrivacidadPage() {
           publican y te pedimos que ocultes datos ajenos e innecesarios.
         </li>
         <li>
-          <strong>Denuncias y rectificaciones:</strong> identidad y contacto
+          <strong>Avisos y rectificaciones:</strong> identidad y contacto
           del solicitante, contenido afectado, fundamento, evidencia,
           comunicaciones y decisión.
         </li>

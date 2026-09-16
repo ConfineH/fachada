@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { MemoryStore } from "@/lib/repositories/memory-store";
+import { AgencyService } from "@/lib/services/agency-service";
 import { AuthService } from "@/lib/services/auth-service";
 import { ReviewError, ReviewService } from "@/lib/services/review-service";
 import { MockSmsProvider } from "@/lib/services/sms-provider";
@@ -156,5 +157,107 @@ describe("ReviewService", () => {
     await expect(service.markHelpful(user, review.id)).rejects.toThrow(
       /propia reseña/,
     );
+  });
+
+  it("lets the author edit a review, marks it edited and unpublishes it", async () => {
+    const user = await verifiedUser();
+    const review = await service.create(user, payload());
+    review.moderated = true;
+    review.verificationLevel = "acreditada";
+    await store.updateReview(review);
+
+    const updated = await service.update(user, review.id, {
+      rating: 3,
+      title: "Cambié de opinión",
+      pros: "Siguieron contestando con claridad en el contrato.",
+      cons: "Los plazos de las llaves se alargaron más de lo dicho.",
+      anonymous: true,
+      incidentTags: ["fianza"],
+    });
+
+    expect(updated.title).toBe("Cambié de opinión");
+    expect(updated.editedAt).toBeInstanceOf(Date);
+    expect(updated.moderated).toBe(false);
+    expect(updated.flagged).toBe(false);
+    expect(updated.verificationLevel).toBe("declarada");
+    expect(updated.incidentTags).toEqual(["fianza"]);
+  });
+
+  it("rejects edits from another account", async () => {
+    const author = await verifiedUser("+34600111222");
+    const other = await verifiedUser("+34600999000");
+    const review = await service.create(author, payload());
+
+    await expect(
+      service.update(other, review.id, {
+        rating: 1,
+        title: "No es mía",
+        pros: "La visita fue correcta y el piso estaba limpio.",
+        cons: "No debería poder cambiar el texto de otra persona.",
+      }),
+    ).rejects.toThrow(/Solo puedes cambiar/);
+  });
+
+  it("soft-deletes a review and allows a new one after deletion", async () => {
+    const user = await verifiedUser();
+    const review = await service.create(user, payload({ title: "Primera" }));
+    review.moderated = true;
+    await store.updateReview(review);
+
+    await service.remove(user, review.id);
+    const stored = await store.findReviewById(review.id);
+    expect(stored?.deletedAt).toBeInstanceOf(Date);
+    expect(stored?.flagged).toBe(true);
+
+    const next = await service.create(user, payload({ title: "Segunda" }));
+    expect(next.id).not.toBe(review.id);
+    expect(next.title).toBe("Segunda");
+  });
+
+  it("rejects helpful votes on deleted reviews", async () => {
+    const author = await verifiedUser("+34600111222");
+    const voter = await verifiedUser("+34600999000");
+    const review = await service.create(author, payload());
+    review.moderated = true;
+    await store.updateReview(review);
+    await service.remove(author, review.id);
+
+    await expect(service.markHelpful(voter, review.id)).rejects.toThrow(
+      /Reseña no encontrada/,
+    );
+  });
+
+  it("hides edited and deleted reviews from the public ficha", async () => {
+    const user = await verifiedUser();
+    const review = await service.create(user, payload());
+    review.moderated = true;
+    await store.updateReview(review);
+    const agencies = new AgencyService(store);
+    const slug = (await store.listAgencies())[0]!.slug;
+
+    expect(
+      (await agencies.getBySlug(slug, { publicOnly: true }))?.reviews.some(
+        (item) => item.id === review.id,
+      ),
+    ).toBe(true);
+
+    await service.update(user, review.id, {
+      rating: 4,
+      title: "Ajuste de matices",
+      pros: "La gestión siguió siendo clara en el contrato.",
+      cons: "Hubo un retraso puntual con las llaves.",
+    });
+    expect(
+      (await agencies.getBySlug(slug, { publicOnly: true }))?.reviews.some(
+        (item) => item.id === review.id,
+      ),
+    ).toBe(false);
+
+    await service.remove(user, review.id);
+    expect(
+      (await agencies.getBySlug(slug, { publicOnly: true }))?.reviews.some(
+        (item) => item.id === review.id,
+      ),
+    ).toBe(false);
   });
 });

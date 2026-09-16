@@ -81,7 +81,7 @@ export class AdminService {
 
   async listReviewsForModeration(): Promise<ReviewWithAgency[]> {
     const reviews = await this.repo.listAllReviews();
-    const queue = reviews.filter((r) => !r.moderated || r.flagged);
+    const queue = reviews.filter((r) => !r.deletedAt && (!r.moderated || r.flagged));
 
     return Promise.all(
       queue.map(async (review) => {
@@ -122,7 +122,9 @@ export class AdminService {
     accreditExperience = false,
   ) {
     const review = await this.repo.findReviewById(reviewId);
-    if (!review) throw new AdminError("Review not found");
+    if (!review || review.deletedAt) {
+      throw new AdminError("Review not found");
+    }
     if (reason.trim().length < 10) {
       throw new AdminError("Motiva la decisión con al menos 10 caracteres");
     }
@@ -149,7 +151,9 @@ export class AdminService {
 
   async flagReview(reviewId: string, reason: string, flagged = true) {
     const review = await this.repo.findReviewById(reviewId);
-    if (!review) throw new AdminError("Review not found");
+    if (!review || review.deletedAt) {
+      throw new AdminError("Review not found");
+    }
     if (reason.trim().length < 10) {
       throw new AdminError("Motiva la decisión con al menos 10 caracteres");
     }

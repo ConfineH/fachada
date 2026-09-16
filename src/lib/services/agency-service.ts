@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 
 import { isAccountVerified } from "@/lib/domain/identity";
+import { isPublicReview } from "@/lib/domain/review-visibility";
 import { cityToSlug } from "@/lib/domain/city";
 import {
   sortAgencies,
@@ -369,8 +370,9 @@ export class AgencyService {
   }
 
   private async filterReviews(reviews: Review[], options?: { publicOnly?: boolean }) {
-    if (options?.publicOnly === false) return reviews;
-    return reviews.filter((r) => r.moderated && !r.flagged);
+    const active = reviews.filter((review) => !review.deletedAt);
+    if (options?.publicOnly === false) return active;
+    return active.filter(isPublicReview);
   }
 
   private async withStats(agency: Agency, options?: { publicOnly?: boolean }) {

@@ -25,7 +25,7 @@ export class ContentNoticeService {
   async create(input: unknown): Promise<ContentNotice> {
     const data = contentNoticeInputSchema.parse(input);
     const review = await this.repo.findReviewById(data.reviewId);
-    if (!review) throw new ContentNoticeError("Reseña no encontrada");
+    if (!review || review.deletedAt) throw new ContentNoticeError("Reseña no encontrada");
 
     const existing = await this.repo.listContentNotices();
     const duplicate = existing.some(
@@ -36,7 +36,7 @@ export class ContentNoticeService {
     );
     if (duplicate) {
       throw new ContentNoticeError(
-        "Ya existe una denuncia pendiente de este correo para esta reseña",
+        "Ya existe un aviso pendiente de este correo para esta reseña",
       );
     }
 
@@ -61,9 +61,9 @@ export class ContentNoticeService {
     await Promise.allSettled([
       this.email.sendMessage(
         notice.reporterEmail,
-        `Denuncia recibida — ${notice.id}`,
+        `Aviso recibido — ${notice.id}`,
         [
-          "Hemos recibido tu denuncia de contenido.",
+          "Hemos recibido tu aviso de contenido.",
           `Referencia: ${notice.id}`,
           "La revisará una persona y recibirás una decisión motivada en este correo.",
         ].join("\n"),
@@ -75,9 +75,9 @@ export class ContentNoticeService {
   async decide(id: string, input: unknown): Promise<ContentNotice> {
     const data = contentNoticeDecisionSchema.parse(input);
     const notice = await this.repo.findContentNoticeById(id);
-    if (!notice) throw new ContentNoticeError("Denuncia no encontrada");
+    if (!notice) throw new ContentNoticeError("Aviso no encontrado");
     const review = await this.repo.findReviewById(notice.reviewId);
-    if (!review) throw new ContentNoticeError("Reseña no encontrada");
+    if (!review || review.deletedAt) throw new ContentNoticeError("Reseña no encontrada");
 
     const previousStatus = notice.status;
     notice.status = data.status;
@@ -108,7 +108,7 @@ export class ContentNoticeService {
 
     const reporterNotification = this.email.sendMessage(
         notice.reporterEmail,
-        `Decisión sobre tu denuncia — ${notice.id}`,
+        `Decisión sobre tu aviso — ${notice.id}`,
         `${data.decisionRule}\n\n${data.decisionReason}`,
       );
     const authorNotification = author?.email
@@ -146,9 +146,9 @@ export class ContentNoticeService {
     if (!user) throw new ContentNoticeError("Identificación necesaria");
     const data = contentNoticeAppealSchema.parse(input);
     const notice = await this.repo.findContentNoticeById(id);
-    if (!notice) throw new ContentNoticeError("Denuncia no encontrada");
+    if (!notice) throw new ContentNoticeError("Aviso no encontrado");
     if (!notice.decidedAt) {
-      throw new ContentNoticeError("La denuncia todavía no tiene decisión");
+      throw new ContentNoticeError("El aviso todavía no tiene decisión");
     }
     const review = await this.repo.findReviewById(notice.reviewId);
     if (!review || review.userId !== user.id) {

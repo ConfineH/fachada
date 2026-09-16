@@ -73,6 +73,8 @@ type ReviewRow = {
   terms_version: string | null;
   terms_accepted_at: string | null;
   created_at: string;
+  edited_at: string | null;
+  deleted_at: string | null;
   moderated: boolean;
   flagged: boolean;
   moderation_reason: string | null;
@@ -212,6 +214,8 @@ export function mapReview(row: ReviewRow): Review {
     termsVersion: row.terms_version ?? REVIEW_TERMS_VERSION,
     termsAcceptedAt: new Date(row.terms_accepted_at ?? row.created_at),
     createdAt: new Date(row.created_at),
+    editedAt: row.edited_at ? new Date(row.edited_at) : undefined,
+    deletedAt: row.deleted_at ? new Date(row.deleted_at) : undefined,
     moderated: row.moderated,
     flagged: row.flagged,
     moderationReason: row.moderation_reason ?? undefined,

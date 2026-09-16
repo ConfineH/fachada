@@ -142,7 +142,7 @@ export default async function Home({
                 Para escribir, entras con un correo o con Google. Ese correo no
                 aparece en la ficha. Un moderador lee la reseña antes de
                 publicarla. La inmobiliaria puede responder; cualquiera puede
-                denunciar un texto concreto.
+                avisar de un texto concreto.
               </p>
               <ul className="mt-6 space-y-3 text-sm text-zinc-700">
                 <li className="flex gap-2">

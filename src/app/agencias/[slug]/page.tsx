@@ -83,6 +83,7 @@ export default async function AgencyPage({
     verificationLevel: review.verificationLevel,
     identityVerification: review.identityVerification,
     createdAt: review.createdAt.toISOString(),
+    editedAt: review.editedAt?.toISOString(),
     response: review.response
       ? {
           ...review.response,

@@ -18,10 +18,10 @@ export async function POST(request: Request) {
   } catch (error) {
     const message =
       error instanceof ZodError
-        ? (error.issues[0]?.message ?? "Denuncia no válida")
+        ? (error.issues[0]?.message ?? "Aviso no válido")
         : error instanceof ContentNoticeError
           ? error.message
-          : "No se pudo registrar la denuncia";
+          : "No se pudo registrar el aviso";
     return NextResponse.json({ error: message }, { status: 400 });
   }
 }

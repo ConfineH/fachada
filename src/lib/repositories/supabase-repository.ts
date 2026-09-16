@@ -303,12 +303,23 @@ export class SupabaseRepository implements Repository {
     const { error } = await this.client
       .from("reviews")
       .update({
+        rating: review.rating,
+        title: review.title,
+        body: review.body,
+        pros: review.pros ?? null,
+        cons: review.cons ?? null,
+        anonymous: review.anonymous,
+        public_name: review.publicName ?? null,
+        would_recommend: review.wouldRecommend ?? null,
+        incident_tags: review.incidentTags,
+        helpful_count: review.helpfulCount,
+        verification_level: review.verificationLevel,
         moderated: review.moderated,
         flagged: review.flagged,
-        helpful_count: review.helpfulCount,
         moderation_reason: review.moderationReason ?? null,
         moderated_at: review.moderatedAt?.toISOString() ?? null,
-        verification_level: review.verificationLevel,
+        edited_at: review.editedAt?.toISOString() ?? null,
+        deleted_at: review.deletedAt?.toISOString() ?? null,
       })
       .eq("id", review.id);
     throwIfError(error);
@@ -342,6 +353,8 @@ export class SupabaseRepository implements Repository {
       terms_version: review.termsVersion,
       terms_accepted_at: review.termsAcceptedAt.toISOString(),
       created_at: review.createdAt.toISOString(),
+      edited_at: review.editedAt?.toISOString() ?? null,
+      deleted_at: review.deletedAt?.toISOString() ?? null,
       moderated: review.moderated,
       flagged: review.flagged,
       moderation_reason: review.moderationReason ?? null,

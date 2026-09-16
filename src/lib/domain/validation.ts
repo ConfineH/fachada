@@ -137,6 +137,39 @@ export const reviewInputSchema = z
     }
   });
 
+export const reviewEditSchema = z
+  .object({
+    rating: z.coerce.number().int().min(1).max(5),
+    title: z
+      .string()
+      .trim()
+      .min(1, "El título es obligatorio")
+      .max(100),
+    pros: z
+      .string()
+      .trim()
+      .min(10, "Las ventajas deben tener al menos 10 caracteres")
+      .max(450),
+    cons: z
+      .string()
+      .trim()
+      .min(10, "Las desventajas deben tener al menos 10 caracteres")
+      .max(450),
+    anonymous: z.boolean().optional().default(true),
+    publicName: z.string().trim().max(40).optional(),
+    wouldRecommend: z.boolean().nullish(),
+    incidentTags: z.array(z.enum(INCIDENT_TAGS)).max(7).optional().default([]),
+  })
+  .superRefine((data, ctx) => {
+    if (!data.anonymous && !data.publicName?.trim()) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["publicName"],
+        message: "Indica un nombre público o publica de forma anónima",
+      });
+    }
+  });
+
 export const contentNoticeInputSchema = z.object({
   reviewId: z.string().uuid(),
   reporterName: z.string().trim().min(2).max(120),

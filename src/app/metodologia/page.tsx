@@ -108,7 +108,7 @@ export default function MetodologiaPage() {
               La reseña pertenece a su autor y la respuesta a la inmobiliaria.
               La estructura de la ficha, el cálculo de medias y los resúmenes
               los elabora Fachada. Siempre indicamos cuántas experiencias hay
-              y ofrecemos un canal de corrección o denuncia.
+              y ofrecemos un canal de corrección o aviso.
             </p>
           </div>
         </section>

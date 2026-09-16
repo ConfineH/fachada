@@ -22,6 +22,7 @@ export class AccountService {
 
     const reviewsWithAgency = await Promise.all(
       reviews
+        .filter((review) => !review.deletedAt)
         .toSorted((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
         .map(async (review) => {
           const agency = await this.repo.findAgencyById(review.agencyId);
@@ -29,9 +30,16 @@ export class AccountService {
             id: review.id,
             title: review.title,
             rating: review.rating,
+            pros: review.pros,
+            cons: review.cons,
+            anonymous: review.anonymous,
+            publicName: review.publicName,
+            wouldRecommend: review.wouldRecommend,
+            incidentTags: review.incidentTags,
             moderated: review.moderated,
             flagged: review.flagged,
             createdAt: review.createdAt,
+            editedAt: review.editedAt,
             agency: agency
               ? { name: agency.name, slug: agency.slug }
               : null,
@@ -109,6 +117,8 @@ export class AccountService {
         evidenceDeleteAfter: review.evidenceDeleteAfter?.toISOString(),
         termsAcceptedAt: review.termsAcceptedAt.toISOString(),
         moderatedAt: review.moderatedAt?.toISOString(),
+        editedAt: review.editedAt?.toISOString(),
+        deletedAt: review.deletedAt?.toISOString(),
       })),
       savedAgencies: saved.map((agency) => ({
         id: agency.id,

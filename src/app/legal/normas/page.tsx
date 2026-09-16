@@ -4,7 +4,7 @@ import { pageMeta } from "@/lib/seo";
 
 export const metadata = pageMeta(
   "Normas de uso y contenidos",
-  "Reglas para reseñas, respuestas de inmobiliarias, denuncias y corrección de fichas en Fachada.",
+  "Reglas para reseñas, respuestas de inmobiliarias, avisos de contenido y corrección de fichas en Fachada.",
   "/legal/normas",
 );
 
@@ -17,8 +17,8 @@ export default function NormasPage() {
   return (
     <LegalDoc title="Normas de uso y contenidos" updated="septiembre 2026">
       <p>
-        Al enviar una reseña, responder como inmobiliaria, denunciar contenido
-        o aportar datos a una ficha aceptas estas normas. Fachada aloja
+        Al enviar una reseña, responder como inmobiliaria, avisar de un
+        contenido o aportar datos a una ficha aceptas estas normas. Fachada aloja
         contenidos de usuarios y aplica estas reglas de forma objetiva,
         proporcionada y con revisión humana.
       </p>
@@ -79,6 +79,12 @@ export default function NormasPage() {
           No se admiten reseñas falsas, coordinadas, incentivadas, duplicadas,
           copiadas ni generadas automáticamente.
         </li>
+        <li>
+          Puedes editar o eliminar tu reseña desde tu cuenta. Si la editas,
+          deja de verse en la ficha hasta una nueva revisión y queda marcada
+          como editada. El rol, la inmobiliaria y la fecha de la experiencia
+          no se pueden cambiar.
+        </li>
       </ul>
       <h2>Licencia y autoría</h2>
       <p>
@@ -98,9 +104,9 @@ export default function NormasPage() {
         Comunicaremos al autor la regla aplicada y el motivo. No retiramos una
         crítica por ser negativa, por petición especial ni por pago.
       </p>
-      <h2>Denunciar contenido ilícito</h2>
+      <h2>Avisar de contenido ilícito</h2>
       <p>
-        Usa el enlace «Denunciar» junto a cada reseña o escribe a{" "}
+        Usa el enlace «Avisar» junto a cada reseña o escribe a{" "}
         {contact}. Identifica la URL y el fragmento exacto, explica
         el derecho o norma vulnerados, aporta un correo de contacto y confirma
         de buena fe que la información es exacta. Acusaremos recibo y

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
+import { AccountReviews } from "@/components/account-reviews";
 import { AccountVerification } from "@/components/account-verification";
 import {
   authHeaders,
@@ -10,6 +11,7 @@ import {
   readSessionToken,
   writeSessionToken,
 } from "@/lib/auth/session-client";
+import type { IncidentTag } from "@/lib/domain/incidents";
 
 type Dashboard = {
   user: { email?: string; emailVerified: boolean; phoneVerified: boolean };
@@ -17,9 +19,16 @@ type Dashboard = {
     id: string;
     title: string;
     rating: number;
+    pros?: string;
+    cons?: string;
+    anonymous: boolean;
+    publicName?: string;
+    wouldRecommend?: boolean;
+    incidentTags: IncidentTag[];
     moderated: boolean;
     flagged: boolean;
     createdAt: string;
+    editedAt?: string;
     agency: { name: string; slug: string } | null;
   }[];
   saved: { id: string; name: string; slug: string; city: string }[];
@@ -166,78 +175,18 @@ export function AccountHome({ privacyEmail }: { privacyEmail: string }) {
         </section>
       ) : null}
 
-      <section className="rounded-xl border border-stone-200 bg-white p-5">
-        <h2 className="font-medium">Tus reseñas</h2>
-        {dashboard && dashboard.reviews.length === 0 && (
-          <p className="mt-2 text-sm text-zinc-600">Aún no has enviado reseñas.</p>
-        )}
-        <ul className="mt-3 space-y-3">
-          {dashboard?.reviews.map((review) => (
-            <li key={review.id} className="border-t border-stone-100 pt-3 first:border-0 first:pt-0">
-              <p className="font-medium">{review.title}</p>
-              <p className="text-sm text-zinc-600">
-                {review.agency ? (
-                  <Link href={`/agencias/${review.agency.slug}`} className="link-brand">
-                    {review.agency.name}
-                  </Link>
-                ) : (
-                  "Inmobiliaria"
-                )}{" "}
-                · {review.rating}/5 ·{" "}
-                {review.flagged
-                  ? "retirada"
-                  : review.moderated
-                    ? "publicada"
-                    : "pendiente de moderación"}
-              </p>
-              {dashboard.moderationDecisions
-                .filter((decision) => decision.reviewId === review.id)
-                .map((decision) => (
-                  <div
-                    key={decision.id}
-                    className="mt-3 rounded-lg bg-stone-50 p-3 text-sm"
-                  >
-                    <p className="font-medium">
-                      Decisión: {decision.status}
-                    </p>
-                    <p className="mt-1 text-zinc-700">
-                      {decision.decisionRule}: {decision.decisionReason}
-                    </p>
-                    {decision.appealedAt ? (
-                      <p className="mt-2 text-xs text-sky-800">
-                        Revisión solicitada.
-                      </p>
-                    ) : (
-                      <div className="mt-3">
-                        <textarea
-                          value={appealReasons[decision.id] ?? ""}
-                          onChange={(event) =>
-                            setAppealReasons((current) => ({
-                              ...current,
-                              [decision.id]: event.target.value,
-                            }))
-                          }
-                          minLength={20}
-                          maxLength={2000}
-                          rows={3}
-                          placeholder="Explica por qué debería revisarse"
-                          className="input-field"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => appeal(decision.id)}
-                          className="mt-2 rounded-lg border border-stone-300 px-3 py-2 text-xs"
-                        >
-                          Solicitar revisión humana
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                ))}
-            </li>
-          ))}
-        </ul>
-      </section>
+      <AccountReviews
+        token={token}
+        reviews={dashboard?.reviews ?? []}
+        decisions={dashboard?.moderationDecisions ?? []}
+        appealReasons={appealReasons}
+        onAppealReason={(id, value) =>
+          setAppealReasons((current) => ({ ...current, [id]: value }))
+        }
+        onAppeal={(id) => void appeal(id)}
+        onReload={() => void load(token)}
+        onError={setError}
+      />
 
       <section className="rounded-xl border border-stone-200 bg-white p-5">
         <h2 className="font-medium">Tus datos y derechos</h2>

@@ -18,7 +18,7 @@ Nombre/NIF/domicilio (`LEGAL_HOLDER_*`) solo al constituir la SL. Seguridad
 - Comprobar etiqueta «experiencia declarada» sin evidencia.
 - Adjuntar evidencia, comprobar bucket privado y URL firmada temporal.
 - Aprobar con y sin acreditación y verificar la etiqueta pública resultante.
-- Denunciar desde la reseña, recibir referencia y acuse por email.
+- Avisar desde la reseña, recibir referencia y acuse por email.
 - Mantener, retirar y pedir información con regla y motivación no vacías.
 - Confirmar ocultación inmediata de contenido retirado.
 - Confirmar comunicación al denunciante y autor.

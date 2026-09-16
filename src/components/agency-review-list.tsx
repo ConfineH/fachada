@@ -36,6 +36,7 @@ type PublicReview = {
   verificationLevel: ReviewVerificationLevel;
   identityVerification: "email" | "phone";
   createdAt: string;
+  editedAt?: string;
   response?: { body: string; createdAt: string };
 };
 
@@ -209,8 +210,9 @@ export function AgencyReviewList({
               )}
               <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
                 <p className="text-xs text-stone-500">
-                  {new Date(review.createdAt).toLocaleDateString("es-ES")}
-                </p>
+                {new Date(review.createdAt).toLocaleDateString("es-ES")}
+                {review.editedAt ? " · Editada" : ""}
+              </p>
                 <div className="flex items-center gap-3">
                   <ReviewReportForm reviewId={review.id} />
                   <button

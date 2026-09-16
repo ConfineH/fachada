@@ -156,6 +156,8 @@ export interface Review {
   termsVersion: string;
   termsAcceptedAt: Date;
   createdAt: Date;
+  editedAt?: Date;
+  deletedAt?: Date;
   moderated: boolean;
   flagged: boolean;
   moderationReason?: string;

@@ -45,7 +45,7 @@ export function ReviewReportForm({ reviewId }: { reviewId: string }) {
       });
       const data = (await response.json()) as { id?: string; error?: string };
       if (!response.ok || !data.id) {
-        setError(data.error ?? "No se pudo registrar la denuncia.");
+        setError(data.error ?? "No se pudo registrar el aviso.");
         return;
       }
       setReference(data.id);
@@ -59,7 +59,7 @@ export function ReviewReportForm({ reviewId }: { reviewId: string }) {
   if (reference) {
     return (
       <p className="mt-3 rounded-lg bg-emerald-50 p-3 text-xs text-emerald-900">
-        Denuncia recibida. Referencia: <strong>{reference}</strong>. Recibirás
+        Aviso recibido. Referencia: <strong>{reference}</strong>. Recibirás
         la decisión motivada por correo.
       </p>
     );
@@ -72,7 +72,7 @@ export function ReviewReportForm({ reviewId }: { reviewId: string }) {
         onClick={() => setOpen((current) => !current)}
         className="text-xs text-stone-500 underline hover:text-zinc-800"
       >
-        Denunciar
+        Avisar
       </button>
       {open ? (
         <form
@@ -80,7 +80,7 @@ export function ReviewReportForm({ reviewId }: { reviewId: string }) {
           className="mt-3 space-y-3 rounded-lg border border-stone-200 bg-stone-50 p-4"
         >
           <p className="text-sm font-semibold text-zinc-900">
-            Denunciar contenido presuntamente ilícito
+            Avisar de un contenido presuntamente ilícito
           </p>
           <p className="text-xs text-zinc-600">
             Una valoración negativa no es ilícita por sí sola. Señala el
@@ -161,7 +161,7 @@ export function ReviewReportForm({ reviewId }: { reviewId: string }) {
             disabled={sending}
             className="btn-primary disabled:opacity-60"
           >
-            {sending ? "Enviando…" : "Enviar denuncia"}
+            {sending ? "Enviando…" : "Enviar aviso"}
           </button>
         </form>
       ) : null}

@@ -61,7 +61,7 @@ export default function AvisoLegalPage() {
       </p>
       <h2>Contenidos ilícitos</h2>
       <p>
-        Para denunciar una reseña, usa el enlace junto a ella o identifica su
+        Para avisar de una reseña, usa el enlace junto a ella o identifica su
         URL, el fragmento concreto y el motivo jurídico en un correo. Consulta
         las{" "}
         <a href="/legal/normas">normas de uso y contenidos</a>.
