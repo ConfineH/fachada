@@ -68,7 +68,7 @@ export const verificationCodeSchema = z
 export const accountEmailSchema = z
   .string()
   .trim()
-  .email("Indica un email válido")
+  .email("Indica un correo válido")
   .transform((value) => value.toLowerCase());
 
 export const reviewInputSchema = z

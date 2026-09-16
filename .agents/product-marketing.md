@@ -1,6 +1,6 @@
 # Product marketing context — Fachada
 
-**Document version:** 1.6  
+**Document version:** 1.7  
 **Last updated:** 2026-09-16  
 
 Canonical detail: [`docs/producto-final.md`](../docs/producto-final.md).  
@@ -10,7 +10,7 @@ Original vision archive: [`docs/docs-extracted.txt`](../docs/docs-extracted.txt)
 
 | Version | Date | Change |
 |---------|------|--------|
-| 1.6 | 2026-09-16 | Identidad pública = correo; SL/titular al haber usuarios |
+| 1.7 | 2026-09-16 | Copy es-ES/RAE: de forma anónima, no «en anónimo»; correo, no email |
 | 1.5 | 2026-09-16 | Extensión: página `/extension` estilo sideload; badge con motivo; no CWS |
 | 1.4 | 2026-09-16 | Hero = reputación de gestión; nota solo en la ficha; no importar Google |
 | 1.3 | 2026-09-12 | Hero = nota de la inmobiliaria; no antíportal; anónimo en ficha |
@@ -67,7 +67,7 @@ Agencies that want to claim profiles, respond to reviews, and later pay for prem
 **Tone:** Calm, institutional-editorial, independent archive. Not urgent SaaS, not Idealista-green portal, not Meant To warmth.
 
 **Copy rules:**
-- Public copy: you **can** post anonymously on the ficha. Account is identified (correo/Google) for moderation. Never lead with “no es un muro anónimo”. Never claim absolute anonymity.
+- Public copy: you **can** post anonymously on the ficha (`de forma anónima`, never «en anónimo»). Account is identified (correo/Google) for moderation. Never lead with “no es un muro anónimo”. Never claim absolute anonymity. Spanish from Spain (es-ES); RAE: *anónimo* is an adjective, *anónimamente* / *de forma anónima* for the adverb. Tú for the reader. *correo*, not *email*, in UI. *alquiler*, not *renta*.
 - Hero/category = **reputación de gestión**. Keep **nota** for the dual scores on the ficha. Don’t lead with valoración, transparencia, or “not a listings portal”. Never import or rehost Google reviews.
 - Never promise antifraud for Idealista ads, fact-checking, or a “reseña verificada” seal.
 - Email/teléfono verificado ≠ experiencia verificada. Use **experiencia declarada** vs **acreditada**.

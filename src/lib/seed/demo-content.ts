@@ -87,7 +87,7 @@ export const DEMO_REVIEWS: SeedReview[] = [
     role: "inquilino",
     rating: 2,
     title: "Lenta en reparaciones",
-    pros: "El contrato estaba claro y el cobro de la renta era puntual.",
+    pros: "El contrato estaba claro y el cobro del alquiler era puntual.",
     cons: "Tardaron semanas en enviar al fontanero y la comunicación fue escasa.",
     incidentTags: ["reparaciones", "comunicacion"],
     moderated: true,

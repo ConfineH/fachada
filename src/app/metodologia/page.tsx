@@ -7,7 +7,7 @@ import { pageMeta } from "@/lib/seo";
 
 export const metadata = pageMeta(
   "Cómo publicamos una reseña",
-    "En la ficha puedes publicar en anónimo. Pedimos cuenta identificada, experiencia declarada o acreditada, doble lente inquilino/propietario y moderación humana. Sin sello de reseña verificada.",
+    "Puedes publicar en la ficha de forma anónima. Pedimos cuenta identificada, experiencia declarada o acreditada, nota de inquilino y de propietario, y moderación humana. Sin sello de reseña verificada.",
   "/metodologia",
 );
 
@@ -25,9 +25,9 @@ export default function MetodologiaPage() {
           Cómo publicamos una reseña
         </h1>
         <p className="mt-4 text-lg text-zinc-600">
-          En la ficha puedes publicar en anónimo o con seudónimo. Pedimos
-          cuenta identificada, una experiencia propia declarada y una persona
-          que lea el texto. No es un sello de «reseña verificada».
+          Puedes publicar en la ficha de forma anónima o con seudónimo. Pedimos
+          una cuenta identificada, una experiencia propia declarada y que una
+          persona lea el texto. No es un sello de «reseña verificada».
         </p>
 
         <section className="mt-10 space-y-8 text-zinc-700">
@@ -36,12 +36,12 @@ export default function MetodologiaPage() {
               1. Cuenta identificada
             </h2>
             <p className="mt-2">
-              Para dejar una reseña hay que confirmar un correo (código o
+              Para dejar una reseña hay que entrar con un correo (código o
               Google). En la ficha pública no lo mostramos: aparece un
               seudónimo o un identificador neutro. El correo queda en nuestros
-              registros para moderación y para limitar abusos. Eso demuestra el
+              registros para moderar y para limitar abusos. Eso demuestra el
               control de la cuenta, no que la experiencia ocurriera. No
-              prometemos anonimato absoluto.
+              prometemos el anonimato absoluto.
             </p>
           </div>
           <div>
@@ -49,16 +49,17 @@ export default function MetodologiaPage() {
               2. Experiencia declarada o acreditada
             </h2>
             <p className="mt-2">
-              El autor indica cuándo y cómo trató con la inmobiliaria y declara
-              que fue una experiencia propia, sin incentivo ni conflicto de
-              interés. «Experiencia declarada» significa eso. Solo usamos
-              «experiencia acreditada» cuando Fachada ha revisado evidencia
-              suficiente; esa evidencia nunca se publica.
+              El autor indica cuándo ocurrió la experiencia y de qué tipo fue
+              (visita, alquiler, gestión…) y declara que fue propia, sin
+              incentivo ni conflicto de interés. «Experiencia declarada»
+              significa eso. Solo usamos «experiencia acreditada» cuando
+              Fachada ha revisado pruebas suficientes; esas pruebas nunca se
+              publican.
             </p>
           </div>
           <div>
             <h2 className="text-xl font-semibold text-zinc-900">
-              3. Doble lente
+              3. Inquilino y propietario
             </h2>
             <p className="mt-2">
               Cada reseña declara si quien escribe es inquilino o propietario.
@@ -106,8 +107,8 @@ export default function MetodologiaPage() {
             <p className="mt-2">
               La reseña pertenece a su autor y la respuesta a la inmobiliaria.
               La estructura de la ficha, el cálculo de medias y los resúmenes
-              son elaborados por Fachada. Siempre mostramos la muestra y
-              ofrecemos un canal de corrección o denuncia.
+              los elabora Fachada. Siempre indicamos cuántas experiencias hay
+              y ofrecemos un canal de corrección o denuncia.
             </p>
           </div>
         </section>

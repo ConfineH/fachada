@@ -81,8 +81,8 @@ export default async function Home({
                 Antes de firmar, mira la reputación de esa inmobiliaria
               </h1>
               <p className="mt-4 max-w-xl text-lg leading-relaxed text-zinc-600">
-                Archivo de inquilinos y propietarios sobre la gestión: fianza,
-                reparaciones, honorarios y comunicación.
+                Inquilinos y propietarios cuentan cómo ha sido la gestión del
+                alquiler: fianza, reparaciones, honorarios y comunicación.
               </p>
               <p className="mt-6 text-xs font-medium uppercase tracking-wide text-zinc-500">
                 {totalAgencies.toLocaleString("es-ES")}{" "}
@@ -136,26 +136,27 @@ export default async function Home({
           <section className="grid gap-10 lg:grid-cols-2 lg:items-center">
             <div>
               <h2 className="text-2xl font-semibold tracking-tight">
-                En la ficha puedes publicar en anónimo
+                Puedes publicar en la ficha de forma anónima
               </h2>
               <p className="mt-4 text-zinc-600">
-                Confirmas un correo para entrar; no se muestra. Después una
-                persona lee el texto. La inmobiliaria puede responder y
-                cualquiera puede denunciar una reseña concreta.
+                Para escribir, entras con un correo o con Google. Ese correo no
+                aparece en la ficha. Un moderador lee la reseña antes de
+                publicarla. La inmobiliaria puede responder; cualquiera puede
+                denunciar un texto concreto.
               </p>
               <ul className="mt-6 space-y-3 text-sm text-zinc-700">
                 <li className="flex gap-2">
                   <span className="font-semibold text-brand">—</span>
-                  Anónimo o seudónimo en público; la cuenta queda identificada
-                  para moderar
+                  En público sale de forma anónima o con seudónimo; nosotros sí
+                  sabemos qué cuenta escribió, para poder moderar.
                 </li>
                 <li className="flex gap-2">
                   <span className="font-semibold text-brand">—</span>
-                  Notas separadas de inquilino y de propietario
+                  Hay una nota de inquilino y otra de propietario.
                 </li>
                 <li className="flex gap-2">
                   <span className="font-semibold text-brand">—</span>
-                  Incidencias etiquetadas (fianza, reparaciones, honorarios)
+                  Puedes marcar incidencias: fianza, reparaciones, honorarios.
                 </li>
               </ul>
               <Link
@@ -212,7 +213,7 @@ export default async function Home({
             <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
               <div>
                 <h2 className="text-2xl font-semibold tracking-tight">
-                  Con experiencias publicadas
+                  Fichas con reseñas
                 </h2>
                 <p className="mt-1 text-sm text-zinc-600">
                   {documented.hidden > 0
@@ -240,9 +241,9 @@ export default async function Home({
             ¿Has alquilado o encargado la gestión?
           </h2>
           <p className="mx-auto mt-3 max-w-xl text-sm text-zinc-300">
-            Publica tu experiencia. En la ficha puedes hacerlo en anónimo. Te
-            pedimos un correo para identificar la cuenta, no para mostrarlo.
-            Si la ficha no existe, sugiere el alta.
+            Publica tu experiencia. En la ficha puede salir de forma anónima.
+            Pedimos un correo para identificar la cuenta, no para mostrarlo.
+            Si la ficha no existe, puedes sugerir el alta.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Link

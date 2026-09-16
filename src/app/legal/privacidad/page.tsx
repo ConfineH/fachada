@@ -100,7 +100,7 @@ export default function PrivacidadPage() {
           Google nos confirma.
         </li>
         <li>
-          Email transaccional (Resend), solo si está configurado: envío del
+          Correo transaccional (Resend), solo si está configurado: envío del
           código.
         </li>
       </ul>

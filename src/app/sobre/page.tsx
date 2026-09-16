@@ -28,10 +28,9 @@ export default function SobrePage() {
           experiencias de inquilino y de propietario.
         </p>
         <p className="mt-4 text-lg text-zinc-600">
-          Quien escribe confirma un correo o entra con Google. En la ficha
-          puedes publicar en anónimo; esa dirección no se muestra. Eso
-          identifica la cuenta, no demuestra por sí solo que la experiencia
-          ocurriera.
+          Quien escribe entra con un correo o con Google. Puedes publicar en la
+          ficha de forma anónima: esa dirección no se muestra. Eso identifica
+          la cuenta; no demuestra por sí solo que la experiencia ocurriera.
         </p>
         <section className="mt-10 space-y-4 text-zinc-700">
           <p>

@@ -161,7 +161,7 @@ function validateCorporateEmailAndEvidence(
   const domain = emailDomain(input.contactEmail);
   if (!domain || isFreeEmailDomain(domain)) {
     throw new Error(
-      "Usa un email corporativo (no Gmail, Outlook, etc.), como en Glassdoor",
+      "Usa un correo corporativo (no Gmail, Outlook, etc.)",
     );
   }
 
@@ -171,7 +171,7 @@ function validateCorporateEmailAndEvidence(
 
   if (!emailOk && !domainProof) {
     throw new Error(
-      `El email debe usar el dominio de la agencia (${[...trusted].join(", ") || "web o email en ficha"}) o adjunta prueba de dominio`,
+      `El correo debe usar el dominio de la agencia (${[...trusted].join(", ") || "web o correo en la ficha"}) o adjunta prueba de dominio`,
     );
   }
 

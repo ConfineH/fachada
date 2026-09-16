@@ -239,7 +239,7 @@ export function AdminDashboard({
                           : "bg-amber-100 text-amber-900"
                       }`}
                     >
-                      Email corporativo{" "}
+                      Correo corporativo{" "}
                       {claim.workEmailDomainMatch ? "coincide" : "revisar"}
                     </span>
                   </div>

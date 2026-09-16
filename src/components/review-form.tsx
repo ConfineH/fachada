@@ -236,7 +236,7 @@ export function ReviewForm({ agencySlug }: { agencySlug: string }) {
           </select>
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="block text-xs font-medium text-zinc-600">
-              Última interacción
+              Último contacto
               <input
                 type="date"
                 required
@@ -261,16 +261,16 @@ export function ReviewForm({ agencySlug }: { agencySlug: string }) {
                 <option value="negociacion">Negociación o reserva</option>
                 <option value="alquiler">Alquiler</option>
                 <option value="incidencia">Incidencia o reparación</option>
-                <option value="gestion">Mandato de gestión</option>
+                <option value="gestion">Encargo de gestión</option>
               </select>
             </label>
           </div>
           <p className="text-xs text-zinc-500">
-            La fecha debe corresponder a una interacción de los últimos 30
-            días. Si la relación continúa, indica el último contacto relevante.
+            La fecha debe ser de los últimos 30 días. Si sigues de alquiler o
+            de gestión, indica el último contacto que importe.
           </p>
           <label className="block text-xs text-zinc-500">
-            Valoración (1–5)
+            Nota (1–5)
             <input
               type="number"
               min={1}
@@ -346,8 +346,8 @@ export function ReviewForm({ agencySlug }: { agencySlug: string }) {
               checked={anonymous}
               onChange={(e) => setAnonymous(e.target.checked)}
             />
-            Publicar solo como {role} (recomendado). Fachada sigue identificando
-            la cuenta en sus registros.
+            Publicar de forma anónima (recomendado). Fachada sigue sabiendo
+            qué cuenta escribió, en sus registros.
           </label>
           {!anonymous && (
             <input
@@ -448,7 +448,7 @@ export function ReviewForm({ agencySlug }: { agencySlug: string }) {
             </label>
           </fieldset>
           <label className="block text-xs font-medium text-zinc-600">
-            Evidencia privada (opcional)
+            Documento o captura (opcional)
             <input
               type="file"
               accept="image/jpeg,image/png,image/webp,application/pdf"

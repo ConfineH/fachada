@@ -36,7 +36,7 @@ export class ContentNoticeService {
     );
     if (duplicate) {
       throw new ContentNoticeError(
-        "Ya existe una denuncia pendiente de este email para esta reseña",
+        "Ya existe una denuncia pendiente de este correo para esta reseña",
       );
     }
 
@@ -65,7 +65,7 @@ export class ContentNoticeService {
         [
           "Hemos recibido tu denuncia de contenido.",
           `Referencia: ${notice.id}`,
-          "La revisará una persona y recibirás una decisión motivada en este email.",
+          "La revisará una persona y recibirás una decisión motivada en este correo.",
         ].join("\n"),
       ),
     ]);

@@ -60,7 +60,7 @@ export function ReviewReportForm({ reviewId }: { reviewId: string }) {
     return (
       <p className="mt-3 rounded-lg bg-emerald-50 p-3 text-xs text-emerald-900">
         Denuncia recibida. Referencia: <strong>{reference}</strong>. Recibirás
-        la decisión motivada por email.
+        la decisión motivada por correo.
       </p>
     );
   }
@@ -98,7 +98,7 @@ export function ReviewReportForm({ reviewId }: { reviewId: string }) {
               name="reporterEmail"
               type="email"
               required
-              placeholder="Email de contacto"
+              placeholder="Correo de contacto"
               className="input-field"
             />
           </div>
@@ -143,7 +143,7 @@ export function ReviewReportForm({ reviewId }: { reviewId: string }) {
             name="evidenceUrl"
             type="url"
             maxLength={500}
-            placeholder="Enlace a evidencia (opcional; evita datos innecesarios)"
+            placeholder="Enlace a pruebas (opcional; evita datos innecesarios)"
             className="input-field"
           />
           <label className="flex items-start gap-2 text-xs text-zinc-700">

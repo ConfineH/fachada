@@ -23,7 +23,7 @@ export function SiteNav() {
         </div>
         <div className="flex items-center justify-end gap-3 lg:col-start-3">
           <Link href="/agencia/acceso" className="btn-secondary hidden min-h-10 sm:inline-flex">
-            Acceso agencias
+            Acceso para agencias
           </Link>
           <Link href="/cuenta" className="btn-secondary min-h-10 px-3">
             Cuenta

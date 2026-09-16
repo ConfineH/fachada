@@ -166,7 +166,7 @@ export function SuggestAgencyForm() {
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="Email de contacto (opcional)"
+          placeholder="Correo de contacto (opcional)"
             className="input-field"
           />
           <input

@@ -8,7 +8,7 @@ const AUTH_ERROR_ES: Record<string, string> = {
   "SMS provider not configured":
     "El envío de SMS no está configurado en este entorno. Prueba más tarde.",
   "Email provider not configured":
-    "El envío de email no está configurado en este entorno.",
+    "El envío de correo no está configurado en este entorno.",
   "Invalid Google token":
     "No se pudo entrar con Google. Inténtalo de nuevo.",
   "Verification code recently sent":
@@ -21,7 +21,7 @@ export function authErrorMessage(error: unknown): string {
     return "No se pudo enviar el SMS. Revisa el número e inténtalo de nuevo.";
   }
   if (error.message.startsWith("Email send failed")) {
-    return "No se pudo enviar el email. Revisa la dirección e inténtalo de nuevo.";
+    return "No se pudo enviar el correo. Revisa la dirección e inténtalo de nuevo.";
   }
   return AUTH_ERROR_ES[error.message] ?? error.message;
 }

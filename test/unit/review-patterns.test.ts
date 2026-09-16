@@ -42,7 +42,7 @@ describe("summarizeReviewPatterns", () => {
     const summary = summarizeReviewPatterns([
       {
         rating: 2,
-        pros: "El contrato estaba claro y el cobro de la renta era puntual.",
+        pros: "El contrato estaba claro y el cobro del alquiler era puntual.",
         cons: "Tardaron semanas en enviar al fontanero y la comunicación fue escasa.",
         body: "",
         incidentTags: ["reparaciones", "comunicacion"],

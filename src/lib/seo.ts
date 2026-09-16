@@ -7,7 +7,7 @@ export const DEFAULT_TITLE =
   "Antes de firmar, mira la reputación de esa inmobiliaria";
 
 export const DEFAULT_DESCRIPTION =
-  "Archivo de reputación de inmobiliarias en España: experiencias de inquilino y de propietario sobre la gestión del alquiler. En la ficha puedes publicar en anónimo; la cuenta queda identificada para moderar.";
+  "Archivo de reputación de inmobiliarias en España: experiencias de inquilino y de propietario sobre la gestión del alquiler. Puedes publicar en la ficha de forma anónima; la cuenta queda identificada para moderar.";
 
 export function pageMeta(title: string, description: string, path: string) {
   return {
@@ -142,7 +142,7 @@ export const HOME_FAQS = [
   {
     question: "¿Fachada verifica que la experiencia ocurrió?",
     answer:
-      "No de forma automática. Quien escribe confirma un correo y declara una experiencia propia reciente. Solo marcamos «experiencia acreditada» si una persona revisa evidencia privada.",
+      "No de forma automática. Quien escribe entra con un correo y declara una experiencia propia reciente. Solo marcamos «experiencia acreditada» si una persona revisa pruebas privadas.",
   },
   {
     question: "¿En qué se diferencia de las reseñas de Google o Idealista?",
@@ -157,6 +157,6 @@ export const HOME_FAQS = [
   {
     question: "¿El correo del autor aparece en la ficha?",
     answer:
-      "No. Puedes publicar en anónimo o con seudónimo. El correo queda en nuestros registros para moderación. No prometemos anonimato absoluto: nosotros sí sabemos qué cuenta escribió.",
+      "No. Puedes publicar en la ficha de forma anónima o con seudónimo. El correo queda en nuestros registros para moderar. No prometemos el anonimato absoluto: nosotros sí sabemos qué cuenta escribió.",
   },
 ] as const;

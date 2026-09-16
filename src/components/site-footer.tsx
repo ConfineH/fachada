@@ -8,9 +8,9 @@ export function SiteFooter() {
           <div>
             <p className="text-lg font-bold tracking-tight">FACHADA</p>
             <p className="mt-3 max-w-sm text-sm text-zinc-600">
-              Archivo independiente de reputación de inmobiliarias. En la
-              ficha puedes publicar en anónimo; la cuenta queda identificada
-              para moderar.
+              Archivo independiente de reputación de inmobiliarias. Puedes
+              publicar en la ficha de forma anónima; la cuenta queda
+              identificada para moderar.
             </p>
           </div>
           <div>

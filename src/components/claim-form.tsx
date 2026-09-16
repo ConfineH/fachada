@@ -202,7 +202,7 @@ export function ClaimForm({
             type="email"
             value={contactEmail}
             onChange={(e) => setContactEmail(e.target.value)}
-            placeholder={`Email corporativo (@${agencyEmailDomainHint})`}
+            placeholder={`Correo corporativo (@${agencyEmailDomainHint})`}
             required
             className="w-full rounded-lg border border-stone-300 px-3 py-2"
           />

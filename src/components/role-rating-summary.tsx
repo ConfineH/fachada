@@ -18,13 +18,13 @@ export function RoleRatingSummary({
       <RatingCard
         title="Inquilinos"
         summary={roleRatings.inquilino}
-        hint="Basado en experiencias de alquiler."
+        hint="A partir de experiencias de alquiler."
         variant={variant}
       />
       <RatingCard
         title="Propietarios"
         summary={roleRatings.propietario}
-        hint="Basado en mandatos de gestión."
+        hint="A partir de experiencias de propietarios."
         variant={variant}
       />
     </div>

@@ -16,7 +16,7 @@ export default function AccesoAgenciasPage() {
     <PublicShell storage={usingSupabase() ? "supabase" : "memory"}>
       <main className="mx-auto max-w-3xl px-6 py-14">
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">
-          Portal inmobiliaria
+          Portal para inmobiliarias
         </p>
         <h1 className="mt-3 text-3xl font-semibold tracking-tight">
           Reclama la ficha de tu inmobiliaria
