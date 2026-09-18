@@ -1,13 +1,16 @@
 import Link from "next/link";
 
+import { FachadaMark } from "@/components/fachada-mark";
+
 export function SiteNav() {
   return (
     <nav className="border-b border-stone-200 bg-white">
       <div className="mx-auto grid max-w-6xl grid-cols-[1fr_auto] items-center gap-4 px-6 py-4 lg:grid-cols-[1fr_auto_1fr]">
         <Link
           href="/"
-          className="text-lg font-bold tracking-tight text-zinc-900"
+          className="inline-flex items-center gap-2.5 text-lg font-bold tracking-tight text-zinc-900"
         >
+          <FachadaMark className="h-7 w-auto shrink-0" />
           FACHADA
         </Link>
         <div className="col-span-2 flex flex-wrap items-center gap-6 lg:col-span-1 lg:justify-center">

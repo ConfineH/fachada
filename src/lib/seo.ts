@@ -43,6 +43,7 @@ export function organizationJsonLd() {
     "@type": "Organization",
     name: SITE_NAME,
     url: absoluteUrl("/"),
+    logo: absoluteUrl("/fachada-mark.svg"),
     description: DEFAULT_DESCRIPTION,
     email: isPlaceholder(legal.contactEmail) ? undefined : legal.contactEmail,
     address: hasRegisteredHolder()

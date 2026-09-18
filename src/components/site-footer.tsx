@@ -1,12 +1,17 @@
 import Link from "next/link";
 
+import { FachadaMark } from "@/components/fachada-mark";
+
 export function SiteFooter() {
   return (
     <footer className="mt-16 border-t border-stone-200 bg-white">
       <div className="mx-auto max-w-6xl px-6 py-12">
         <div className="grid gap-10 sm:grid-cols-[1.4fr_1fr_1fr]">
           <div>
-            <p className="text-lg font-bold tracking-tight">FACHADA</p>
+            <p className="inline-flex items-center gap-2.5 text-lg font-bold tracking-tight">
+              <FachadaMark className="h-7 w-auto shrink-0" />
+              FACHADA
+            </p>
             <p className="mt-3 max-w-sm text-sm text-zinc-600">
               Archivo independiente de reputación de inmobiliarias. Puedes
               publicar en la ficha de forma anónima; la cuenta queda
