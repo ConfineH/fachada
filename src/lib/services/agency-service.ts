@@ -270,7 +270,7 @@ export class AgencyService {
       agencyId: agency.id,
       userId: user.id,
       kind: data.kind,
-      status: options?.publishNow ? "aprobado" : "pendiente",
+      status: options?.publishNow && data.kind !== "logo" ? "aprobado" : "pendiente",
       address: data.address,
       city: data.city,
       postalCode: data.postalCode,
@@ -281,10 +281,11 @@ export class AgencyService {
       sourceUrl: data.sourceUrl,
       evidencePath: data.evidencePath,
       createdAt: new Date(),
-      resolvedAt: options?.publishNow ? new Date() : undefined,
+      resolvedAt:
+        options?.publishNow && data.kind !== "logo" ? new Date() : undefined,
     };
     await this.repo.createTip(tip);
-    if (options?.publishNow) {
+    if (options?.publishNow && data.kind !== "logo") {
       await this.applyTip(tip);
     }
     return tip;
@@ -334,6 +335,12 @@ export class AgencyService {
         agency.legalName = tip.alias;
         await this.repo.updateAgency(agency);
       }
+      return;
+    }
+
+    if (tip.kind === "logo" && tip.evidencePath) {
+      agency.logoPath = tip.evidencePath;
+      await this.repo.updateAgency(agency);
     }
   }
 

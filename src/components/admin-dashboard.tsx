@@ -400,7 +400,7 @@ export function AdminDashboard({
         <ul className="mt-4 space-y-4">
           {tips.length === 0 && (
             <li className="rounded-xl border border-dashed border-stone-300 bg-white p-5 text-stone-600">
-              Nadie ha aportado oficinas ni historial.
+              Nadie ha aportado oficinas, historial ni logotipos.
             </li>
           )}
           {tips.map((tip) => (
@@ -442,6 +442,13 @@ export function AdminDashboard({
                     </p>
                   ) : null}
                   {tip.evidenceUrl ? (
+                    tip.kind === "logo" ? (
+                      <img
+                        src={tip.evidenceUrl}
+                        alt={`Logotipo propuesto de ${tip.agencyName}`}
+                        className="mt-3 h-16 w-16 rounded-lg border border-stone-200 bg-white object-contain p-1"
+                      />
+                    ) : (
                     <p className="mt-2">
                       <a
                         href={tip.evidenceUrl}
@@ -452,6 +459,7 @@ export function AdminDashboard({
                         Ver captura
                       </a>
                     </p>
+                    )
                   ) : null}
                 </div>
                 <div className="flex gap-2">

@@ -1,5 +1,6 @@
 import { isAccountVerified } from "@/lib/domain/identity";
 import type { User } from "@/lib/domain/types";
+import { agencyLogoUrl } from "@/lib/ops/agency-logos";
 import type { Repository } from "@/lib/repositories/types";
 
 export class AccountError extends Error {
@@ -41,7 +42,11 @@ export class AccountService {
             createdAt: review.createdAt,
             editedAt: review.editedAt,
             agency: agency
-              ? { name: agency.name, slug: agency.slug }
+              ? {
+                  name: agency.name,
+                  slug: agency.slug,
+                  logoUrl: agencyLogoUrl(agency.logoPath),
+                }
               : null,
           };
         }),
@@ -54,11 +59,15 @@ export class AccountService {
           .map(async (claim) => {
             const agency = await this.repo.findAgencyById(claim.agencyId);
             return agency
-              ? { name: agency.name, slug: agency.slug }
+              ? {
+                  name: agency.name,
+                  slug: agency.slug,
+                  logoUrl: agencyLogoUrl(agency.logoPath),
+                }
               : null;
           }),
       )
-    ).filter((agency): agency is { name: string; slug: string } => agency !== null);
+    ).flatMap((agency) => (agency ? [agency] : []));
 
     return {
       user: {
@@ -72,6 +81,7 @@ export class AccountService {
         name: agency.name,
         slug: agency.slug,
         city: agency.city,
+        logoUrl: agencyLogoUrl(agency.logoPath),
       })),
       claimedAgencies,
       moderationDecisions: notices

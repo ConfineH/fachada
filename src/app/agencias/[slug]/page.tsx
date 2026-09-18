@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { JsonLd } from "@/components/json-ld";
+import { AgencyLogo } from "@/components/agency-logo";
 import { AgencyFichaTabs } from "@/components/agency-ficha-tabs";
 import { AgencyMetadataCard } from "@/components/agency-metadata-card";
 import { AgencyPresence } from "@/components/agency-presence";
@@ -23,6 +24,7 @@ import {
 import { agencyService, usingSupabase } from "@/lib/container";
 import { cityToSlug } from "@/lib/domain/city";
 import { agencyJsonLd, pageMeta } from "@/lib/seo";
+import { agencyLogoUrl } from "@/lib/ops/agency-logos";
 import { isTwilioConfigured } from "@/lib/services/sms-provider";
 
 export async function generateMetadata({
@@ -106,6 +108,7 @@ export default async function AgencyPage({
           postalCode: agency.postalCode,
           reviewCount: totalReviews,
           averageRating: agency.averageRating,
+          logoUrl: agencyLogoUrl(agency.logoPath),
         })}
       />
       <header className="border-b border-stone-200 bg-white">
@@ -121,8 +124,14 @@ export default async function AgencyPage({
             ]}
           />
           <div className="motion-fade-rise mt-6 flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-            <div>
-              <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-start gap-4">
+              <AgencyLogo
+                name={agency.name}
+                src={agencyLogoUrl(agency.logoPath)}
+                size="lg"
+              />
+              <div>
+                <div className="flex flex-wrap items-center gap-3">
                 <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
                   {agency.name} en {agency.city}
                 </h1>
@@ -148,6 +157,7 @@ export default async function AgencyPage({
                   </span>
                 )}
                 {publicEmail ? <span>{publicEmail}</span> : null}
+              </div>
               </div>
             </div>
             <div className="flex flex-col gap-3 sm:flex-row">

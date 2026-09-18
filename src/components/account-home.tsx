@@ -5,6 +5,7 @@ import Link from "next/link";
 
 import { AccountReviews } from "@/components/account-reviews";
 import { AccountVerification } from "@/components/account-verification";
+import { AgencyLogo } from "@/components/agency-logo";
 import {
   authHeaders,
   clearSessionToken,
@@ -31,8 +32,8 @@ type Dashboard = {
     editedAt?: string;
     agency: { name: string; slug: string } | null;
   }[];
-  saved: { id: string; name: string; slug: string; city: string }[];
-  claimedAgencies: { name: string; slug: string }[];
+  saved: { id: string; name: string; slug: string; city: string; logoUrl?: string }[];
+  claimedAgencies: { name: string; slug: string; logoUrl?: string }[];
   moderationDecisions: {
     id: string;
     reviewId: string;
@@ -165,7 +166,8 @@ export function AccountHome({ privacyEmail }: { privacyEmail: string }) {
           <h2 className="font-medium">Fichas reclamadas</h2>
           <ul className="mt-3 space-y-2 text-sm">
             {dashboard.claimedAgencies.map((agency) => (
-              <li key={agency.slug}>
+              <li key={agency.slug} className="flex items-center gap-2">
+                <AgencyLogo name={agency.name} src={agency.logoUrl} size="sm" />
                 <Link href={`/agencia/${agency.slug}/panel`} className="link-brand">
                   Panel de {agency.name}
                 </Link>
@@ -236,7 +238,8 @@ export function AccountHome({ privacyEmail }: { privacyEmail: string }) {
               key={agency.id}
               className="flex items-center justify-between gap-3 text-sm"
             >
-              <Link href={`/agencias/${agency.slug}`} className="link-brand">
+              <Link href={`/agencias/${agency.slug}`} className="flex items-center gap-2 link-brand">
+                <AgencyLogo name={agency.name} src={agency.logoUrl} size="sm" />
                 {agency.name} · {agency.city}
               </Link>
               <button

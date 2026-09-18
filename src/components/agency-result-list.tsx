@@ -1,8 +1,10 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
+import { AgencyLogo } from "@/components/agency-logo";
 import { RoleRatingSummary } from "@/components/role-rating-summary";
 import { publicStreetLine } from "@/lib/domain/agency-presence";
+import { agencyLogoUrl } from "@/lib/ops/agency-logos";
 import type { AgencyWithStats } from "@/lib/domain/types";
 
 export function AgencyResultList({
@@ -29,11 +31,17 @@ export function AgencyResultList({
             className="card-interactive block p-5"
           >
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-              <div>
-                <h3 className="text-lg font-semibold">{agency.name}</h3>
-                <p className="text-sm text-zinc-600">
-                  {publicStreetLine(agency)}
-                </p>
+              <div className="flex items-start gap-3">
+                <AgencyLogo
+                  name={agency.name}
+                  src={agencyLogoUrl(agency.logoPath)}
+                />
+                <div>
+                  <h3 className="text-lg font-semibold">{agency.name}</h3>
+                  <p className="text-sm text-zinc-600">
+                    {publicStreetLine(agency)}
+                  </p>
+                </div>
               </div>
               <div className="min-w-[240px]">
                 <RoleRatingSummary roleRatings={agency.roleRatings} />

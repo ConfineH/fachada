@@ -10,6 +10,7 @@ import {
 import { AdminLoginForm } from "@/components/admin-login-form";
 import { COOKIE_NAME, verifyAdminToken } from "@/lib/auth/admin-session";
 import { adminService, usingSupabase } from "@/lib/container";
+import { agencyLogoUrl } from "@/lib/ops/agency-logos";
 import { resolveTipEvidenceUrl } from "@/lib/ops/tip-evidence";
 import { resolveReviewEvidenceUrl } from "@/lib/ops/review-evidence";
 
@@ -49,7 +50,10 @@ export default async function AdminPage() {
   const tipsWithEvidence = await Promise.all(
     tips.map(async (tip) => ({
       ...tip,
-      evidenceUrl: await resolveTipEvidenceUrl(tip.evidencePath),
+      evidenceUrl:
+        tip.kind === "logo"
+          ? agencyLogoUrl(tip.evidencePath)
+          : await resolveTipEvidenceUrl(tip.evidencePath),
     })),
   );
   const reviewsWithEvidence = await Promise.all(

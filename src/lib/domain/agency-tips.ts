@@ -5,6 +5,7 @@ export const AGENCY_TIP_KINDS = [
   "branch",
   "former_name",
   "legal_name",
+  "logo",
 ] as const satisfies readonly AgencyTipKind[];
 
 export const AGENCY_TIP_KIND_LABELS: Record<AgencyTipKind, string> = {
@@ -12,6 +13,7 @@ export const AGENCY_TIP_KIND_LABELS: Record<AgencyTipKind, string> = {
   branch: "Otra oficina",
   former_name: "Se llamaban de otra forma",
   legal_name: "Razón social",
+  logo: "Logotipo",
 };
 
 export function isLocationTip(kind: AgencyTipKind) {
@@ -20,4 +22,8 @@ export function isLocationTip(kind: AgencyTipKind) {
 
 export function isNameTip(kind: AgencyTipKind) {
   return kind === "former_name" || kind === "legal_name";
+}
+
+export function isLogoTip(kind: AgencyTipKind) {
+  return kind === "logo";
 }

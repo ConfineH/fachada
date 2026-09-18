@@ -70,6 +70,7 @@ export interface Agency {
   verified: boolean;
   premium: boolean;
   createdAt: Date;
+  logoPath?: string;
 }
 
 export type AgencyAliasKind = "commercial" | "legal" | "former";
@@ -88,7 +89,8 @@ export type AgencyTipKind =
   | "principal"
   | "branch"
   | "former_name"
-  | "legal_name";
+  | "legal_name"
+  | "logo";
 
 export type AgencyTipStatus = "pendiente" | "aprobado" | "rechazado";
 

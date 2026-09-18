@@ -101,4 +101,39 @@ describe("agency ficha tips", () => {
       }),
     ).rejects.toThrow(/verification/i);
   });
+
+  it("keeps a suggested logo off the public ficha until approved", async () => {
+    const store = new MemoryStore();
+    const agencies = new AgencyService(store);
+    const user = await verifiedUser(store);
+
+    await agencies.submitTip(
+      user,
+      "inmobiliaria-sol-madrid",
+      {
+        kind: "logo",
+        evidencePath: "https://cdn.example/sol-logo.png",
+      },
+      { publishNow: true },
+    );
+
+    const before = await agencies.getBySlug("inmobiliaria-sol-madrid", {
+      publicOnly: true,
+    });
+    expect(before?.logoPath).toBeUndefined();
+
+    const admin = new AdminService(
+      store,
+      new ClaimService(store),
+      new AgencySubmissionService(store),
+    );
+    const pending = await admin.listPendingTips();
+    expect(pending[0]?.kind).toBe("logo");
+    await admin.approveTip(pending[0]!.id);
+
+    const after = await agencies.getBySlug("inmobiliaria-sol-madrid", {
+      publicOnly: true,
+    });
+    expect(after?.logoPath).toBe("https://cdn.example/sol-logo.png");
+  });
 });

@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { agencyService, authService, claimService } from "@/lib/container";
 import { isAccountVerified } from "@/lib/domain/identity";
 import { agencyTipInputSchema } from "@/lib/domain/validation";
+import { storeAgencyLogo } from "@/lib/ops/agency-logos";
 import { storeTipEvidence } from "@/lib/ops/tip-evidence";
 import { createServiceClient, isSupabaseConfigured } from "@/lib/supabase/server";
 
@@ -15,7 +16,7 @@ async function parseTipBody(request: Request) {
   const contentType = request.headers.get("content-type") ?? "";
   if (!contentType.includes("multipart/form-data")) {
     return {
-      parsed: agencyTipInputSchema.parse(await request.json()),
+      raw: await request.json(),
       evidence: null as File | null,
     };
   }
@@ -23,7 +24,7 @@ async function parseTipBody(request: Request) {
   const form = await request.formData();
   const evidence = form.get("evidence");
   return {
-    parsed: agencyTipInputSchema.parse({
+    raw: {
       kind: field(form, "kind"),
       address: field(form, "address"),
       city: field(form, "city"),
@@ -33,7 +34,7 @@ async function parseTipBody(request: Request) {
       year: field(form, "year"),
       note: field(form, "note"),
       sourceUrl: field(form, "sourceUrl"),
-    }),
+    },
     evidence: evidence instanceof File && evidence.size > 0 ? evidence : null,
   };
 }
@@ -58,7 +59,9 @@ export async function POST(
       return NextResponse.json({ error: "Agency not found" }, { status: 404 });
     }
 
-    const { parsed, evidence } = await parseTipBody(request);
+    const { raw, evidence } = await parseTipBody(request);
+    const draft =
+      raw && typeof raw === "object" ? { ...(raw as Record<string, unknown>) } : {};
     if (evidence) {
       if (!isSupabaseConfigured()) {
         return NextResponse.json(
@@ -69,14 +72,14 @@ export async function POST(
           { status: 400 },
         );
       }
-      parsed.evidencePath = await storeTipEvidence(
-        createServiceClient(),
-        agency.id,
-        evidence,
-        evidence.type,
-      );
+      const client = createServiceClient();
+      draft.evidencePath =
+        draft.kind === "logo"
+          ? await storeAgencyLogo(client, agency.id, evidence, evidence.type)
+          : await storeTipEvidence(client, agency.id, evidence, evidence.type);
     }
 
+    const parsed = agencyTipInputSchema.parse(draft);
     const canManage = await claimService.canManageAgency(user, agency.id);
     const tip = await agencyService.submitTip(user, slug, parsed, {
       publishNow: canManage,

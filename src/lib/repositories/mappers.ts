@@ -34,6 +34,7 @@ type AgencyRow = {
   verified: boolean;
   premium: boolean;
   created_at: string;
+  logo_path?: string | null;
 };
 
 type UserRow = {
@@ -169,6 +170,7 @@ export function mapAgency(row: AgencyRow): Agency {
     verified: row.verified,
     premium: row.premium,
     createdAt: new Date(row.created_at),
+    logoPath: row.logo_path ?? undefined,
   };
 }
 

@@ -121,11 +121,13 @@ export default function NormasPage() {
       </p>
       <h2>Corrección y rectificación</h2>
       <p>
-        Para corregir un dato de ficha usa «¿Ves algo que no cuadra?». Para
-        ejercer un derecho formal de rectificación sobre hechos inexactos y
-        perjudiciales, escribe a {contact} con el contenido exacto,
-        la rectificación solicitada y evidencia. Este canal no sirve para
-        eliminar opiniones lícitas con las que no se esté de acuerdo.
+        Para corregir un dato de ficha usa «¿Ves algo que no cuadra?»,
+        incluido el logotipo. Se publica si un moderador confirma que
+        corresponde a esa inmobiliaria. Para ejercer un derecho formal de
+        rectificación sobre hechos inexactos y perjudiciales, escribe a{" "}
+        {contact} con el contenido exacto, la rectificación solicitada y
+        evidencia. Este canal no sirve para eliminar opiniones lícitas con las
+        que no se esté de acuerdo.
       </p>
       <h2>Contacto DSA</h2>
       <p>

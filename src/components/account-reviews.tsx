@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { FormEvent, useState } from "react";
 
+import { AgencyLogo } from "@/components/agency-logo";
 import {
   INCIDENT_TAG_LABELS,
   INCIDENT_TAGS,
@@ -24,7 +25,7 @@ export type AccountReviewItem = {
   flagged: boolean;
   createdAt: string;
   editedAt?: string;
-  agency: { name: string; slug: string } | null;
+  agency: { name: string; slug: string; logoUrl?: string } | null;
 };
 
 type ModerationDecision = {
@@ -94,11 +95,18 @@ export function AccountReviews({
             className="border-t border-stone-100 pt-3 first:border-0 first:pt-0"
           >
             <p className="font-medium">{review.title}</p>
-            <p className="text-sm text-zinc-600">
+            <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-zinc-600">
               {review.agency ? (
-                <Link href={`/agencias/${review.agency.slug}`} className="link-brand">
-                  {review.agency.name}
-                </Link>
+                <>
+                  <AgencyLogo
+                    name={review.agency.name}
+                    src={review.agency.logoUrl}
+                    size="sm"
+                  />
+                  <Link href={`/agencias/${review.agency.slug}`} className="link-brand">
+                    {review.agency.name}
+                  </Link>
+                </>
               ) : (
                 "Inmobiliaria"
               )}{" "}

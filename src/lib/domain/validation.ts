@@ -265,7 +265,7 @@ const optionalHttpUrl = z
 
 export const agencyTipInputSchema = z
   .object({
-    kind: z.enum(["principal", "branch", "former_name", "legal_name"]),
+    kind: z.enum(["principal", "branch", "former_name", "legal_name", "logo"]),
     address: z.string().trim().max(200).optional(),
     city: z.string().trim().max(80).optional(),
     postalCode: z.string().trim().max(10).optional(),
@@ -304,6 +304,13 @@ export const agencyTipInputSchema = z
           message: "Indica el nombre",
         });
       }
+    }
+    if (data.kind === "logo" && !data.evidencePath) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["evidencePath"],
+        message: "Adjunta el logotipo",
+      });
     }
   });
 

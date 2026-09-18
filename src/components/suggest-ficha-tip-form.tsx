@@ -7,6 +7,7 @@ import {
   AGENCY_TIP_KIND_LABELS,
   AGENCY_TIP_KINDS,
   isLocationTip,
+  isLogoTip,
   isNameTip,
 } from "@/lib/domain/agency-tips";
 import type { AgencyTipKind } from "@/lib/domain/types";
@@ -100,8 +101,8 @@ export function SuggestFichaTipForm({
     >
       <h3 className="font-medium">¿Ves algo que no cuadra?</h3>
       <p className="mt-1 text-sm text-zinc-600">
-        Oficina, nombre anterior, razón social. Vale solo el dato; un enlace o
-        una captura ayuda a publicarlo antes.
+        Oficina, nombre anterior, razón social o logotipo. Vale solo el dato; un
+        enlace o una captura ayuda a publicarlo antes.
       </p>
       {!token ? (
         <div className="mt-4">
@@ -174,7 +175,7 @@ export function SuggestFichaTipForm({
                 </label>
               ) : null}
             </>
-          ) : (
+          ) : isNameTip(kind) ? (
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="block text-sm sm:col-span-2">
                 Nombre
@@ -203,6 +204,11 @@ export function SuggestFichaTipForm({
                 </label>
               ) : null}
             </div>
+          ) : (
+            <p className="text-sm text-zinc-600">
+              Sube el logotipo que usa la inmobiliaria en su web o escaparate,
+              no un recorte de un anuncio de portal.
+            </p>
           )}
 
           <label className="block text-sm">
@@ -225,10 +231,15 @@ export function SuggestFichaTipForm({
             />
           </label>
           <label className="block text-sm">
-            Captura (opcional)
+            {isLogoTip(kind) ? "Logotipo" : "Captura (opcional)"}
             <input
               type="file"
-              accept="image/jpeg,image/png,image/webp,image/gif"
+              required={isLogoTip(kind)}
+              accept={
+                isLogoTip(kind)
+                  ? "image/jpeg,image/png,image/webp"
+                  : "image/jpeg,image/png,image/webp,image/gif"
+              }
               onChange={(event) =>
                 setEvidence(event.target.files?.[0] ?? null)
               }

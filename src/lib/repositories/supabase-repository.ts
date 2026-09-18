@@ -231,6 +231,7 @@ export class SupabaseRepository implements Repository {
         claimed: agency.claimed,
         verified: agency.verified,
         premium: agency.premium,
+        logo_path: agency.logoPath ?? null,
       })
       .eq("id", agency.id);
     throwIfError(error);
@@ -257,6 +258,7 @@ export class SupabaseRepository implements Repository {
       claimed: agency.claimed,
       verified: agency.verified,
       premium: agency.premium,
+      logo_path: agency.logoPath ?? null,
       created_at: agency.createdAt.toISOString(),
     });
     throwIfError(error);

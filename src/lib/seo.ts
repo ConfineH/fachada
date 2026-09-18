@@ -109,6 +109,7 @@ export function agencyJsonLd(agency: {
   postalCode: string;
   reviewCount: number;
   averageRating: number;
+  logoUrl?: string;
 }) {
   const url = absoluteUrl(`/agencias/${agency.slug}`);
   return {
@@ -117,6 +118,7 @@ export function agencyJsonLd(agency: {
     "@id": url,
     name: agency.name,
     url,
+    ...(agency.logoUrl ? { image: agency.logoUrl } : {}),
     address: {
       "@type": "PostalAddress",
       streetAddress: agency.address,

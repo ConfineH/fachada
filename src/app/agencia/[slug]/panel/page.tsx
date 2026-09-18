@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { AgencyLogo } from "@/components/agency-logo";
 import { AgencyOwnerPanel } from "@/components/agency-owner-panel";
 import { DevBanner } from "@/components/dev-banner";
 import { RoleRatingSummary } from "@/components/role-rating-summary";
 import { SiteNav } from "@/components/site-nav";
 import { agencyService, usingSupabase } from "@/lib/container";
+import { agencyLogoUrl } from "@/lib/ops/agency-logos";
 
 export const metadata = {
   title: "Panel inmobiliaria",
@@ -44,7 +46,14 @@ export default async function AgencyPanelPage({
         >
           ← Volver a la ficha pública
         </Link>
-        <h1 className="mt-3 text-2xl font-semibold">Panel — {agency.name}</h1>
+        <div className="mt-3 flex items-center gap-3">
+          <AgencyLogo
+            name={agency.name}
+            src={agencyLogoUrl(agency.logoPath)}
+            size="md"
+          />
+          <h1 className="text-2xl font-semibold">Panel — {agency.name}</h1>
+        </div>
         <p className="mt-2 text-sm text-stone-600">
           Identifícate con la cuenta del reclamo y responde reseñas. Las
           respuestas se muestran en la ficha cuando la reseña está publicada.
