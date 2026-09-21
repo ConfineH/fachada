@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { DEFAULT_DESCRIPTION, DEFAULT_TITLE, SITE_NAME } from "@/lib/seo";
+import { DEFAULT_DESCRIPTION, DEFAULT_TITLE, SHARE_DESCRIPTION, SITE_NAME } from "@/lib/seo";
 import { getSiteUrl } from "@/lib/site-url";
 
 const geistSans = Geist({
@@ -28,12 +28,12 @@ export const metadata: Metadata = {
     locale: "es_ES",
     siteName: SITE_NAME,
     title: DEFAULT_TITLE,
-    description: DEFAULT_DESCRIPTION,
+    description: SHARE_DESCRIPTION,
   },
   twitter: {
-    card: "summary",
+    card: "summary_large_image",
     title: DEFAULT_TITLE,
-    description: DEFAULT_DESCRIPTION,
+    description: SHARE_DESCRIPTION,
   },
   robots: {
     index: true,

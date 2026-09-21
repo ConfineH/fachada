@@ -13,6 +13,7 @@ import {
   DEFAULT_DESCRIPTION,
   DEFAULT_TITLE,
   HOME_FAQS,
+  SHARE_DESCRIPTION,
   SITE_NAME,
   faqJsonLd,
   organizationJsonLd,
@@ -21,7 +22,7 @@ import {
 } from "@/lib/seo";
 
 export const metadata = {
-  ...pageMeta(DEFAULT_TITLE, DEFAULT_DESCRIPTION, "/"),
+  ...pageMeta(DEFAULT_TITLE, DEFAULT_DESCRIPTION, "/", SHARE_DESCRIPTION),
   title: { absolute: `${DEFAULT_TITLE} · ${SITE_NAME}` },
 };
 

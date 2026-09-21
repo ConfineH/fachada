@@ -9,23 +9,32 @@ export const DEFAULT_TITLE =
 export const DEFAULT_DESCRIPTION =
   "Archivo de reputación de inmobiliarias en España: experiencias de inquilino y de propietario sobre la gestión del alquiler. Puedes publicar en la ficha de forma anónima; la cuenta queda identificada para moderar.";
 
-export function pageMeta(title: string, description: string, path: string) {
+/** WhatsApp / OG: one short line. The SEO description can be longer. */
+export const SHARE_DESCRIPTION =
+  "Inquilinos y propietarios cuentan cómo gestiona el alquiler esa inmobiliaria.";
+
+export function pageMeta(
+  title: string,
+  description: string,
+  path: string,
+  shareDescription = description,
+) {
   return {
     title,
     description,
     alternates: { canonical: path },
     openGraph: {
       title,
-      description,
+      description: shareDescription,
       url: absoluteUrl(path),
       locale: "es_ES" as const,
       siteName: SITE_NAME,
       type: "website" as const,
     },
     twitter: {
-      card: "summary" as const,
+      card: "summary_large_image" as const,
       title,
-      description,
+      description: shareDescription,
     },
   };
 }

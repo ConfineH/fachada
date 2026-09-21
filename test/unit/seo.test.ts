@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  DEFAULT_DESCRIPTION,
+  DEFAULT_TITLE,
   HOME_FAQS,
+  SHARE_DESCRIPTION,
   absoluteUrl,
   agencyJsonLd,
   breadcrumbJsonLd,
@@ -46,6 +49,19 @@ describe("seo helpers", () => {
     expect(meta.alternates.canonical).toBe("/agencias");
     expect(meta.openGraph.title).toBe("Registro de inmobiliarias");
     expect(meta.openGraph.url).toMatch(/\/agencias$/);
+    expect(meta.twitter.card).toBe("summary_large_image");
+  });
+
+  it("uses a short line for WhatsApp when the home copy is long", () => {
+    const meta = pageMeta(
+      DEFAULT_TITLE,
+      DEFAULT_DESCRIPTION,
+      "/",
+      SHARE_DESCRIPTION,
+    );
+    expect(meta.description).toBe(DEFAULT_DESCRIPTION);
+    expect(meta.openGraph.description).toBe(SHARE_DESCRIPTION);
+    expect(meta.openGraph.description.length).toBeLessThan(120);
   });
 
   it("lists breadcrumb positions from the homepage", () => {
