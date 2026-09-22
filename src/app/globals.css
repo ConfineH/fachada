@@ -72,15 +72,6 @@ body {
   }
 }
 
-@keyframes bar-fill {
-  from {
-    transform: scaleX(0);
-  }
-  to {
-    transform: scaleX(1);
-  }
-}
-
 @layer components {
   .btn-primary {
     @apply rounded-lg bg-brand px-5 py-2.5 text-sm font-medium text-white;
@@ -207,11 +198,6 @@ body {
     animation-delay: 250ms;
   }
 
-  .motion-bar-fill {
-    transform-origin: left center;
-    animation: bar-fill var(--duration-enter) var(--ease-out) both;
-  }
-
   .filter-chip {
     @apply rounded-full px-3 py-1 text-sm;
     transition:
@@ -249,8 +235,7 @@ body {
   .motion-fade-rise,
   .motion-fade-in,
   .motion-scale-in,
-  .motion-stagger > *,
-  .motion-bar-fill {
+  .motion-stagger > * {
     animation: none !important;
   }
 
