@@ -95,8 +95,8 @@ export default function PrivacidadPage() {
         <li>Alojamiento y despliegue: Vercel.</li>
         <li>Base de datos: Supabase (proyecto propio de Fachada).</li>
         <li>
-          Inicio de sesión con Google: Google Ireland Limited, solo si pulsas
-          «Continuar con Google». Reciben el hecho del acceso y el correo que
+          Inicio de sesión con Google: Google Ireland Limited, solo si continúas
+          con Google. Reciben el hecho del acceso y el correo que
           Google nos confirma.
         </li>
         <li>

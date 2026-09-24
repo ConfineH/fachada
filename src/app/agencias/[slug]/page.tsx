@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { JsonLd } from "@/components/json-ld";
 import { AgencyLogo } from "@/components/agency-logo";
-import { AgencyFichaTabs } from "@/components/agency-ficha-tabs";
+import { AgencyReviewList } from "@/components/agency-review-list";
 import { AgencyMetadataCard } from "@/components/agency-metadata-card";
 import { AgencyPresence } from "@/components/agency-presence";
 import { AgencyReviewPatterns } from "@/components/agency-review-patterns";
@@ -56,11 +56,15 @@ export default async function AgencyPage({
   const agency = await agencyService.getBySlug(slug, { publicOnly: true });
   if (!agency) notFound();
 
+  const perspective =
+    perspectiva === "inquilino" || perspectiva === "propietario"
+      ? perspectiva
+      : null;
   const perspectiveHint =
-    perspectiva === "inquilino"
-      ? "Estás viendo la ficha con foco en inquilinos."
-      : perspectiva === "propietario"
-        ? "Estás viendo la ficha con foco en propietarios."
+    perspective === "inquilino"
+      ? "Mostrando la nota y las experiencias de inquilinos."
+      : perspective === "propietario"
+        ? "Mostrando la nota y las experiencias de propietarios."
         : null;
 
   const publicEmail = publicAgencyEmail(agency.email);
@@ -162,11 +166,19 @@ export default async function AgencyPage({
             </div>
             <div className="flex flex-col gap-3 sm:flex-row">
               <SaveAgencyButton agencyId={agency.id} />
+              {totalReviews > 0 ? (
+                <a
+                  href="#experiencias"
+                  className="btn-primary inline-flex min-h-11 shrink-0 items-center justify-center px-6"
+                >
+                  Leer experiencias
+                </a>
+              ) : null}
               <a
                 href="#dejar-resena"
-                className="btn-primary inline-flex min-h-11 shrink-0 items-center justify-center px-6"
+                className={`${totalReviews > 0 ? "btn-secondary" : "btn-primary"} inline-flex min-h-11 shrink-0 items-center justify-center px-6`}
               >
-                Dejar una reseña
+                {totalReviews > 0 ? "Dejar una reseña" : "Dejar la primera reseña"}
               </a>
             </div>
           </div>
@@ -182,25 +194,39 @@ export default async function AgencyPage({
             <RoleRatingSummary
               roleRatings={agency.roleRatings}
               variant="profile"
+              emphasis={perspective ?? undefined}
+              writeHref="#dejar-resena"
             />
           </div>
-          {perspectiveHint && (
-            <p className="mt-4 text-sm text-zinc-700">{perspectiveHint}</p>
-          )}
-          <div className="mt-6 flex flex-wrap gap-2 text-sm">
+          <p className="mt-6 text-sm text-zinc-600">
+            Las dos notas no se mezclan. Elige un lado si quieres leer solo esas
+            experiencias.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2 text-sm">
+            <Link
+              href={`/agencias/${slug}`}
+              className={`filter-chip ${perspective ? "filter-chip-idle" : "filter-chip-active"}`}
+            >
+              Las dos notas
+            </Link>
             <Link
               href={`/agencias/${slug}?perspectiva=inquilino`}
-              className="rounded-full border border-stone-300 px-3 py-1 transition hover:border-zinc-400"
+              className={`filter-chip ${perspective === "inquilino" ? "filter-chip-active" : "filter-chip-idle"}`}
             >
-              Soy inquilino
+              Solo inquilinos
             </Link>
             <Link
               href={`/agencias/${slug}?perspectiva=propietario`}
-              className="rounded-full border border-stone-300 px-3 py-1 transition hover:border-zinc-400"
+              className={`filter-chip ${perspective === "propietario" ? "filter-chip-active" : "filter-chip-idle"}`}
             >
-              Soy propietario
+              Solo propietarios
             </Link>
           </div>
+          {perspectiveHint ? (
+            <p className="mt-3 text-sm font-medium text-zinc-800">
+              {perspectiveHint}
+            </p>
+          ) : null}
 
           <AgencyReviewPatterns summary={patterns} />
 
@@ -216,7 +242,7 @@ export default async function AgencyPage({
             />
           </div>
 
-          <h2 className="mt-12 text-xl font-semibold tracking-tight">
+          <h2 id="experiencias" className="mt-12 text-xl font-semibold tracking-tight">
             Registro de experiencias
           </h2>
           <p className="mt-1 text-sm text-zinc-600">
@@ -226,13 +252,9 @@ export default async function AgencyPage({
               : "reseñas publicadas tras moderación."}
           </p>
           <div className="mt-6">
-            <AgencyFichaTabs
+            <AgencyReviewList
               reviews={reviewsForClient}
-              initialFilter={perspectiva}
-              portalLinks={{
-                idealistaUrl: agency.idealistaUrl,
-                fotocasaUrl: agency.fotocasaUrl,
-              }}
+              initialFilter={perspective ?? undefined}
             />
           </div>
         </section>
@@ -242,29 +264,20 @@ export default async function AgencyPage({
           <div id="dejar-resena">
             <ReviewForm agencySlug={agency.slug} />
           </div>
-          <div className="rounded-xl bg-brand p-6 text-white">
-            <h3 className="text-lg font-semibold">Portal corporativo</h3>
-            <p className="mt-2 text-sm text-zinc-300">
-              ¿Eres el representante legal? Reclama la ficha para responder a
-              las reseñas publicadas.
-            </p>
-            <div className="mt-4 [&_.rounded-xl]:border-zinc-600 [&_.rounded-xl]:bg-zinc-800/50 [&_h3]:text-white [&_input]:border-zinc-600 [&_input]:bg-zinc-900/40 [&_label]:text-zinc-200 [&_p]:text-zinc-300">
-              <ClaimForm
-                agencyId={agency.id}
-                agencyClaimed={agency.claimed}
-                agencyPhonePublished={agencyHasPublishedPhone(agency)}
-                agencyPhoneHint={maskSpanishPhone(agency.phone)}
-                agencyEmailDomainHint={emailDomainHint}
-                requiresCif={Boolean(agency.cif)}
-                businessSmsEnabled={isTwilioConfigured()}
-              />
-            </div>
-          </div>
+          <ClaimForm
+            agencyId={agency.id}
+            agencyClaimed={agency.claimed}
+            agencyPhonePublished={agencyHasPublishedPhone(agency)}
+            agencyPhoneHint={maskSpanishPhone(agency.phone)}
+            agencyEmailDomainHint={emailDomainHint}
+            requiresCif={Boolean(agency.cif)}
+            businessSmsEnabled={isTwilioConfigured()}
+          />
           <Link
             href={`/agencia/${slug}/panel`}
             className="link-brand block text-center text-sm"
           >
-            Panel inmobiliaria
+            Ya reclamé la ficha: ir al panel
           </Link>
           {(agency.idealistaUrl || agency.fotocasaUrl) && (
             <p className="text-center text-sm text-zinc-600">

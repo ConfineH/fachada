@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 
 import { ReviewReportForm } from "@/components/review-report-form";
+import { StarScore } from "@/components/star-score";
 import { authHeaders, readSessionToken } from "@/lib/auth/session-client";
 import { INCIDENT_TAG_LABELS, type IncidentTag } from "@/lib/domain/incidents";
 import {
@@ -146,8 +147,9 @@ export function AgencyReviewList({
             >
               <div className="flex items-center justify-between gap-4">
                 <p className="font-medium">{reviewPublicByline(review)}</p>
-                <p className="font-medium tabular-nums text-zinc-800">
-                  {review.rating}/5
+                <p className="font-medium text-zinc-800">
+                  <span className="sr-only">{review.rating} de 5</span>
+                  <StarScore score={review.rating} size="sm" />
                 </p>
               </div>
               <p className="mt-1 text-xs text-stone-500">

@@ -107,6 +107,7 @@ export function SuggestFichaTipForm({
       {!token ? (
         <div className="mt-4">
           <AccountVerification
+            purpose="para enviar la corrección"
             onVerified={(sessionToken) => {
               writeSessionToken(sessionToken);
               setToken(sessionToken);

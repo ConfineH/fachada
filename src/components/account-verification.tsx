@@ -25,8 +25,10 @@ declare global {
 
 export function AccountVerification({
   onVerified,
+  purpose,
 }: {
   onVerified: (token: string) => void;
+  purpose?: string;
 }) {
   const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID?.trim();
   const googleButtonRef = useRef<HTMLDivElement>(null);
@@ -228,7 +230,7 @@ export function AccountVerification({
               className="btn-secondary w-full min-h-11"
               onClick={() => setGoogleRequested(true)}
             >
-              Continuar con Google
+              {purpose ? `Continuar con Google ${purpose}` : "Continuar con Google"}
             </button>
           )}
           {emailEnabled ? (

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { AgencyResultList } from "@/components/agency-result-list";
+import { StarScore } from "@/components/star-score";
 import { CityDirectoryCard } from "@/components/city-directory-card";
 import { PublicShell } from "@/components/public-shell";
 import { Reveal } from "@/components/reveal";
@@ -180,8 +181,12 @@ export default async function Home({
                     key={`${review.name}-${review.body.slice(0, 24)}`}
                     className="rounded-lg border border-stone-200 bg-stone-50 p-4 text-sm"
                   >
-                    <p className="font-semibold text-zinc-900">
-                      {review.name} · {review.role} · {review.rating}/5
+                    <p className="flex flex-wrap items-center gap-2 font-semibold text-zinc-900">
+                      <span>
+                        {review.name} · {review.role}
+                      </span>
+                      <span className="sr-only">{review.rating} de 5</span>
+                      <StarScore score={review.rating} size="sm" />
                     </p>
                     <p className="mt-1 text-zinc-700">“{review.body}”</p>
                   </div>

@@ -134,6 +134,7 @@ export function ClaimForm({
             Entra con Google o un código al correo. No sale en la ficha pública.
           </p>
           <AccountVerification
+            purpose="para reclamar esta ficha"
             onVerified={(sessionToken) => {
               setToken(sessionToken);
               setStep(needsBusinessPhone ? "business" : "claim");

@@ -28,7 +28,7 @@ export default function CookiesPage() {
         </li>
         <li>
           <strong>Google:</strong> el script de Google Identity Services solo
-          se carga si pulsas «Continuar con Google». Entonces Google puede
+          se carga si continúas con Google. Entonces Google puede
           usar cookies propias en sus dominios. Es el medio de identificación
           que has elegido.
         </li>

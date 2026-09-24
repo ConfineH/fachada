@@ -72,7 +72,7 @@ export default async function CityPage({
           <p className="mt-2 text-white/80">
             {listed.length}{" "}
             {listed.length === 1 ? "ficha" : "fichas"} en el archivo de esta
-            ciudad. La nota de cada agencia está en su ficha.
+            ciudad. La nota sale en cada tarjeta; el texto, en la ficha.
           </p>
         </div>
       </header>

@@ -210,7 +210,10 @@ export function ReviewForm({ agencySlug }: { agencySlug: string }) {
 
       {step === "verify" && (
         <div key="verify" className="motion-scale-in mt-4">
-          <AccountVerification onVerified={persistToken} />
+          <AccountVerification
+            onVerified={persistToken}
+            purpose="para publicar la reseña"
+          />
         </div>
       )}
 

@@ -13,9 +13,9 @@ export type AgencySort = (typeof AGENCY_SORTS)[number];
 
 export const AGENCY_SORT_OPTIONS: { id: AgencySort; label: string }[] = [
   { id: "reviews", label: "Más reseñas" },
-  { id: "inquilino", label: "Inquilinos" },
-  { id: "propietario", label: "Propietarios" },
-  { id: "overall", label: "Nota general" },
+  { id: "inquilino", label: "Nota inquilinos" },
+  { id: "propietario", label: "Nota propietarios" },
+  { id: "overall", label: "Nota media" },
   { id: "name", label: "Nombre" },
 ];
 
