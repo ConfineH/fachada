@@ -38,10 +38,14 @@ export function AdminDashboard({
   const [noticeRules, setNoticeRules] = useState<Record<string, string>>({});
   const [noticeReasons, setNoticeReasons] = useState<Record<string, string>>({});
   const [reviewReasons, setReviewReasons] = useState<Record<string, string>>({});
+  const [reviewActionError, setReviewActionError] = useState<
+    Record<string, string>
+  >({});
   const [reviewAccredited, setReviewAccredited] = useState<
     Record<string, boolean>
   >({});
   const [message, setMessage] = useState("");
+  const [messageIsError, setMessageIsError] = useState(false);
 
   async function runAction(
     action: string,
@@ -49,16 +53,27 @@ export function AdminDashboard({
     extra: Record<string, unknown> = {},
   ) {
     setMessage("");
-    const res = await fetch("/api/admin", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action, id, ...extra }),
-    });
+    setMessageIsError(false);
+    let res: Response;
+    try {
+      res = await fetch("/api/admin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action, id, ...extra }),
+      });
+    } catch {
+      const error = "No se pudo conectar con el servidor.";
+      setMessage(error);
+      setMessageIsError(true);
+      return error;
+    }
 
     if (!res.ok) {
-      const data = await res.json();
-      setMessage(data.error ?? "Error al ejecutar acción");
-      return;
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      const error = data.error ?? "No se pudo completar la acción";
+      setMessage(error);
+      setMessageIsError(true);
+      return error;
     }
 
     setClaims((current) => current.filter((c) => c.id !== id));
@@ -78,13 +93,48 @@ export function AdminDashboard({
       setContentNotices((current) => current.filter((notice) => notice.id !== id));
     }
     setMessage("Acción completada");
+    setMessageIsError(false);
     router.refresh();
+    return null;
+  }
+
+  function decideReview(
+    reviewId: string,
+    action: "moderate-review" | "flag-review",
+  ) {
+    const reason = (reviewReasons[reviewId] ?? "").trim();
+    if (reason.length < 10) {
+      setReviewActionError((current) => ({
+        ...current,
+        [reviewId]:
+          "Escribe el motivo, al menos 10 caracteres. Sin eso no se aprueba ni se marca.",
+      }));
+      return;
+    }
+    setReviewActionError((current) => ({ ...current, [reviewId]: "" }));
+    void runAction(action, reviewId, {
+      reason,
+      accreditExperience:
+        action === "moderate-review"
+          ? Boolean(reviewAccredited[reviewId])
+          : undefined,
+    }).then((error) => {
+      if (error) {
+        setReviewActionError((current) => ({ ...current, [reviewId]: error }));
+      }
+    });
   }
 
   return (
     <div className="space-y-10">
       {message && (
-        <p className="rounded-lg bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+        <p
+          className={
+            messageIsError
+              ? "rounded-lg bg-rose-50 px-4 py-3 text-sm text-rose-800"
+              : "rounded-lg bg-emerald-50 px-4 py-3 text-sm text-emerald-800"
+          }
+        >
           {message}
         </p>
       )}
@@ -531,6 +581,9 @@ export function AdminDashboard({
                       </label>
                     </div>
                   ) : null}
+                  <p className="mt-3 text-xs text-zinc-600">
+                    El motivo es obligatorio, al menos 10 caracteres.
+                  </p>
                   <input
                     value={reviewReasons[review.id] ?? ""}
                     onChange={(event) =>
@@ -539,34 +592,30 @@ export function AdminDashboard({
                         [review.id]: event.target.value,
                       }))
                     }
-                    placeholder="Motivo de la decisión"
-                    className="input-field mt-3"
+                    placeholder="Por qué la publicas o la retienes"
+                    className="input-field mt-1"
                   />
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() =>
-                      runAction("moderate-review", review.id, {
-                        reason: reviewReasons[review.id],
-                        accreditExperience: Boolean(
-                          reviewAccredited[review.id],
-                        ),
-                      })
-                    }
-                    className="rounded-lg bg-emerald-700 px-3 py-2 text-sm text-white"
-                  >
-                    Aprobar
-                  </button>
-                  <button
-                    onClick={() =>
-                      runAction("flag-review", review.id, {
-                        reason: reviewReasons[review.id],
-                      })
-                    }
-                    className="rounded-lg bg-amber-700 px-3 py-2 text-sm text-white"
-                  >
-                    Marcar
-                  </button>
+                  {reviewActionError[review.id] ? (
+                    <p className="mt-2 text-sm text-rose-700">
+                      {reviewActionError[review.id]}
+                    </p>
+                  ) : null}
+                  <div className="mt-3 flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => decideReview(review.id, "moderate-review")}
+                      className="rounded-lg bg-emerald-700 px-3 py-2 text-sm text-white"
+                    >
+                      Aprobar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => decideReview(review.id, "flag-review")}
+                      className="rounded-lg bg-amber-700 px-3 py-2 text-sm text-white"
+                    >
+                      Marcar
+                    </button>
+                  </div>
                 </div>
               </div>
             </li>

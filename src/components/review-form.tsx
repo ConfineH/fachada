@@ -247,7 +247,7 @@ export function ReviewForm({ agencySlug }: { agencySlug: string }) {
 
       if (droppedEvidence) {
         setEvidenceNote(
-          "La reseña se ha enviado sin el documento: pesa más de 3 MB.",
+          "La reseña se ha enviado sin el archivo. Sube una foto de una página, no el contrato entero.",
         );
       }
       setStep("done");
@@ -494,7 +494,7 @@ export function ReviewForm({ agencySlug }: { agencySlug: string }) {
             </label>
           </fieldset>
           <label className="block text-xs font-medium text-zinc-600">
-            Documento o captura (opcional)
+            Foto de una página (opcional)
             <input
               type="file"
               accept="image/jpeg,image/png,image/webp,application/pdf"
@@ -504,9 +504,10 @@ export function ReviewForm({ agencySlug }: { agencySlug: string }) {
               className="mt-1 block w-full text-xs"
             />
             <span className="mt-1 block font-normal text-zinc-500">
-              Contrato, recibo o conversación, máximo 3 MB. Oculta datos ajenos.
-              Solo la revisará moderación; aportar un archivo no lo convierte
-              automáticamente en experiencia acreditada.
+              Una foto de una página, un recibo o un mensaje. No subas el
+              contrato entero: no cabe. Máximo 3 MB. Tapa datos que no sean
+              tuyos. Solo lo ve moderación, y la foto no acredita la
+              experiencia por sí sola.
               {evidence
                 ? ` Seleccionado: ${evidence.name} (${Math.ceil(evidence.size / 1024)} KB).`
                 : ""}

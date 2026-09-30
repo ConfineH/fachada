@@ -1,7 +1,7 @@
 export const MAX_REVIEW_EVIDENCE_BYTES = 3 * 1024 * 1024;
 
 export const EVIDENCE_TOO_LARGE_ERROR =
-  "No se ha publicado la reseña porque el documento pesa más de 3 MB. Quítalo, o publica sin documento.";
+  "Ese archivo no cabe. Sube una foto de una página, no el contrato entero. Si no, publica sin documento.";
 
 export function evidenceWithinLimit(size: number) {
   return size <= MAX_REVIEW_EVIDENCE_BYTES;
