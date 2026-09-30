@@ -15,6 +15,10 @@ import {
   unsetMarkMessage,
   type IncidentMarks,
 } from "@/lib/domain/incidents";
+import {
+  EVIDENCE_TOO_LARGE_ERROR,
+  prepareEvidenceFile,
+} from "@/lib/review-evidence-file";
 import { publicApiUrl } from "@/lib/site-url";
 import {
   REVIEW_TERMS_VERSION,
@@ -45,6 +49,7 @@ export function ReviewForm({ agencySlug }: { agencySlug: string }) {
   const [noConflictAttested, setNoConflictAttested] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [evidence, setEvidence] = useState<File | null>(null);
+  const [evidenceNote, setEvidenceNote] = useState("");
   const [marks, setMarks] = useState<IncidentMarks>({});
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -139,6 +144,7 @@ export function ReviewForm({ agencySlug }: { agencySlug: string }) {
 
     setLoading(true);
     setError("");
+    setEvidenceNote("");
     const sentiments = sentimentsFromMarks(marks);
     const payload = {
       agencySlug,
@@ -162,39 +168,66 @@ export function ReviewForm({ agencySlug }: { agencySlug: string }) {
       termsVersion: REVIEW_TERMS_VERSION,
     };
     try {
-      const headers: Record<string, string> = {
-        Authorization: `Bearer ${token}`,
-      };
-      let body: BodyInit;
+      let fileToSend: File | null = null;
+      let droppedEvidence = false;
       if (evidence) {
-        const formData = new FormData();
-        for (const [key, value] of Object.entries(payload)) {
-          if (value === undefined) continue;
-          formData.set(
-            key,
-            typeof value === "string" ? value : JSON.stringify(value),
-          );
+        try {
+          fileToSend = await prepareEvidenceFile(evidence);
+        } catch {
+          fileToSend = null;
+          droppedEvidence = true;
         }
-        formData.set("evidence", evidence);
-        body = formData;
-      } else {
-        headers["Content-Type"] = "application/json";
-        body = JSON.stringify(payload);
       }
-      const res = await fetch(publicApiUrl("/api/reviews"), {
-        method: "POST",
-        headers,
-        body,
-      });
 
-      const raw = await res.text();
+      const send = (file: File | null) => {
+        const headers: Record<string, string> = {
+          Authorization: `Bearer ${token}`,
+        };
+        let body: BodyInit;
+        if (file) {
+          const formData = new FormData();
+          for (const [key, value] of Object.entries(payload)) {
+            if (value === undefined) continue;
+            formData.set(
+              key,
+              typeof value === "string" ? value : JSON.stringify(value),
+            );
+          }
+          formData.set("evidence", file);
+          body = formData;
+        } else {
+          headers["Content-Type"] = "application/json";
+          body = JSON.stringify(payload);
+        }
+        return fetch(publicApiUrl("/api/reviews"), {
+          method: "POST",
+          headers,
+          body,
+        });
+      };
+
+      let res = await send(fileToSend);
+      let raw = await res.text();
+      const rejectedForSize =
+        res.status === 413 ||
+        raw.includes("PAYLOAD_TOO_LARGE") ||
+        raw.includes("más de 3 MB");
+      if (fileToSend && rejectedForSize) {
+        droppedEvidence = true;
+        res = await send(null);
+        raw = await res.text();
+      }
       let data: { error?: string } = {};
       try {
         data = raw ? (JSON.parse(raw) as { error?: string }) : {};
       } catch {
+        const tooLarge = res.status === 413 || raw.includes("PAYLOAD_TOO_LARGE");
         data = {
-          error:
-            window.location.hostname === "localhost"
+          error: tooLarge
+            ? evidence
+              ? EVIDENCE_TOO_LARGE_ERROR
+              : "No se ha publicado la reseña: el servidor ha rechazado el tamaño del envío."
+            : window.location.hostname === "localhost"
               ? "El servidor no respondió correctamente. Revisa npm run dev."
               : res.status >= 300 && res.status < 400
                 ? "No se ha publicado la reseña porque el dominio ha redirigido la petición. Recarga la página e inténtalo."
@@ -212,6 +245,11 @@ export function ReviewForm({ agencySlug }: { agencySlug: string }) {
         return;
       }
 
+      if (droppedEvidence) {
+        setEvidenceNote(
+          "La reseña se ha enviado sin el documento: pesa más de 3 MB.",
+        );
+      }
       setStep("done");
       scrollToFeedback();
     } catch {
@@ -469,6 +507,9 @@ export function ReviewForm({ agencySlug }: { agencySlug: string }) {
               Contrato, recibo o conversación, máximo 3 MB. Oculta datos ajenos.
               Solo la revisará moderación; aportar un archivo no lo convierte
               automáticamente en experiencia acreditada.
+              {evidence
+                ? ` Seleccionado: ${evidence.name} (${Math.ceil(evidence.size / 1024)} KB).`
+                : ""}
             </span>
           </label>
           <button
@@ -498,6 +539,7 @@ export function ReviewForm({ agencySlug }: { agencySlug: string }) {
             Sale en la ficha cuando un moderador la revise. Puedes ver el estado
             en tu cuenta.
           </p>
+          {evidenceNote ? <p className="mt-1">{evidenceNote}</p> : null}
         </div>
       )}
     </div>
