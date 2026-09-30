@@ -1,6 +1,9 @@
 import { z } from "zod";
 
-import { INCIDENT_TAGS } from "@/lib/domain/incidents";
+import {
+  INCIDENT_TAGS,
+  parseIncidentSentiments,
+} from "@/lib/domain/incidents";
 import {
   experienceDateError,
   REVIEW_TERMS_VERSION,
@@ -103,6 +106,10 @@ export const reviewInputSchema = z
     publicName: z.string().trim().max(40).optional(),
     wouldRecommend: z.boolean().optional(),
     incidentTags: z.array(z.enum(INCIDENT_TAGS)).max(7).optional().default([]),
+    incidentSentiments: z
+      .unknown()
+      .optional()
+      .transform((value) => parseIncidentSentiments(value)),
     experienceDate: z.coerce.date(),
     experienceType: z.enum(reviewExperienceTypes),
     firstHandAttested: z.literal(true, {
@@ -166,6 +173,10 @@ export const reviewEditSchema = z
     publicName: z.string().trim().max(40).optional(),
     wouldRecommend: z.boolean().nullish(),
     incidentTags: z.array(z.enum(INCIDENT_TAGS)).max(7).optional().default([]),
+    incidentSentiments: z
+      .unknown()
+      .optional()
+      .transform((value) => parseIncidentSentiments(value)),
   })
   .superRefine((data, ctx) => {
     if (!data.anonymous && !data.publicName?.trim()) {

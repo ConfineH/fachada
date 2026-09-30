@@ -6,7 +6,7 @@ import Link from "next/link";
 import { ReviewReportForm } from "@/components/review-report-form";
 import { StarScore } from "@/components/star-score";
 import { authHeaders, readSessionToken } from "@/lib/auth/session-client";
-import { INCIDENT_TAG_LABELS, type IncidentTag } from "@/lib/domain/incidents";
+import { INCIDENT_TAG_LABELS, type IncidentSentiments, type IncidentTag } from "@/lib/domain/incidents";
 import {
   reviewProsCons,
   reviewPublicByline,
@@ -32,6 +32,7 @@ type PublicReview = {
   wouldRecommend?: boolean;
   helpfulCount: number;
   incidentTags: IncidentTag[];
+  incidentSentiments?: IncidentSentiments;
   experienceDate: string;
   experienceType: ReviewExperienceType;
   verificationLevel: ReviewVerificationLevel;
@@ -196,6 +197,11 @@ export function AgencyReviewList({
                       className="rounded-full bg-stone-100 px-2.5 py-1 text-xs font-medium text-zinc-700"
                     >
                       {INCIDENT_TAG_LABELS[tag]}
+                      {review.incidentSentiments?.[tag] === "positiva"
+                        ? " · bien"
+                        : review.incidentSentiments?.[tag] === "negativa"
+                          ? " · mal"
+                          : ""}
                     </li>
                   ))}
                 </ul>

@@ -1,4 +1,4 @@
-import type { IncidentTag } from "@/lib/domain/incidents";
+import type { IncidentSentiments, IncidentTag } from "@/lib/domain/incidents";
 import type { AgencyRoleRatings } from "@/lib/domain/ratings";
 
 export type UserRole = "inquilino" | "propietario";
@@ -146,6 +146,7 @@ export interface Review {
   wouldRecommend?: boolean;
   helpfulCount: number;
   incidentTags: IncidentTag[];
+  incidentSentiments: IncidentSentiments;
   experienceDate: Date;
   experienceType: ReviewExperienceType;
   firstHandAttested: boolean;

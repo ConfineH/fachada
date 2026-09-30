@@ -1,5 +1,6 @@
 import {
   INCIDENT_TAG_LABELS,
+  type IncidentSentiments,
   type IncidentTag,
 } from "@/lib/domain/incidents";
 import { reviewProsCons } from "@/lib/domain/review-copy";
@@ -86,6 +87,7 @@ type PatternReview = {
   cons?: string;
   body: string;
   incidentTags: IncidentTag[];
+  incidentSentiments?: IncidentSentiments;
   wouldRecommend?: boolean;
 };
 
@@ -169,6 +171,21 @@ function takeUnique(items: ReviewPattern[], limit: number) {
   return result;
 }
 
+function tagPatterns(
+  counts: Map<IncidentTag, number>,
+  kind: ReviewPattern["kind"],
+): ReviewPattern[] {
+  return [...counts.entries()]
+    .filter(([, count]) => count >= 2)
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .slice(0, 3)
+    .map(([tag, count]) => ({
+      text: INCIDENT_TAG_LABELS[tag],
+      count,
+      kind,
+    }));
+}
+
 export function summarizeReviewPatterns(
   reviews: PatternReview[],
 ): ReviewPatternSummary {
@@ -177,7 +194,8 @@ export function summarizeReviewPatterns(
     return { positives: [], negatives: [], reviewCount };
   }
 
-  const tagCounts = new Map<IncidentTag, number>();
+  const negativeTagCounts = new Map<IncidentTag, number>();
+  const positiveTagCounts = new Map<IncidentTag, number>();
   let recommendCount = 0;
   const pros: string[] = [];
   const cons: string[] = [];
@@ -189,7 +207,11 @@ export function summarizeReviewPatterns(
     cons.push(...splitSnippets(parts.cons));
     for (const tag of review.incidentTags) {
       if (tag === "otros") continue;
-      tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1);
+      const counts =
+        review.incidentSentiments?.[tag] === "positiva"
+          ? positiveTagCounts
+          : negativeTagCounts;
+      counts.set(tag, (counts.get(tag) ?? 0) + 1);
     }
   }
 
@@ -202,21 +224,14 @@ export function summarizeReviewPatterns(
     });
   }
   positives.push(
+    ...tagPatterns(positiveTagCounts, "positive"),
     ...clusterSnippets(pros, 3).map((item) => ({ ...item, kind: "positive" as const })),
   );
 
-  const negatives: ReviewPattern[] = [...tagCounts.entries()]
-    .filter(([, count]) => count >= 2)
-    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
-    .slice(0, 3)
-    .map(([tag, count]) => ({
-      text: INCIDENT_TAG_LABELS[tag],
-      count,
-      kind: "negative" as const,
-    }));
-  negatives.push(
+  const negatives: ReviewPattern[] = [
+    ...tagPatterns(negativeTagCounts, "negative"),
     ...clusterSnippets(cons, 3).map((item) => ({ ...item, kind: "negative" as const })),
-  );
+  ];
 
   return {
     positives: takeUnique(positives, 3),

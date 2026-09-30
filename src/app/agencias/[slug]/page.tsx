@@ -8,6 +8,7 @@ import { AgencyReviewList } from "@/components/agency-review-list";
 import { AgencyMetadataCard } from "@/components/agency-metadata-card";
 import { AgencyPresence } from "@/components/agency-presence";
 import { AgencyReviewPatterns } from "@/components/agency-review-patterns";
+import { IncidentSentimentSummary } from "@/components/incident-sentiment-summary";
 import { ClaimForm } from "@/components/claim-form";
 import { PublicShell } from "@/components/public-shell";
 import { ReviewForm } from "@/components/review-form";
@@ -84,6 +85,7 @@ export default async function AgencyPage({
     wouldRecommend: review.wouldRecommend,
     helpfulCount: review.helpfulCount,
     incidentTags: review.incidentTags,
+    incidentSentiments: review.incidentSentiments,
     experienceDate: review.experienceDate.toISOString(),
     experienceType: review.experienceType,
     verificationLevel: review.verificationLevel,
@@ -242,6 +244,7 @@ export default async function AgencyPage({
             />
           </div>
 
+          <IncidentSentimentSummary reviews={agency.reviews} />
           <h2 id="experiencias" className="mt-12 text-xl font-semibold tracking-tight">
             Registro de experiencias
           </h2>

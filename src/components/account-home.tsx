@@ -12,7 +12,7 @@ import {
   readSessionToken,
   writeSessionToken,
 } from "@/lib/auth/session-client";
-import type { IncidentTag } from "@/lib/domain/incidents";
+import type { IncidentSentiments, IncidentTag } from "@/lib/domain/incidents";
 
 type Dashboard = {
   user: { email?: string; emailVerified: boolean; phoneVerified: boolean };
@@ -26,6 +26,7 @@ type Dashboard = {
     publicName?: string;
     wouldRecommend?: boolean;
     incidentTags: IncidentTag[];
+    incidentSentiments?: IncidentSentiments;
     moderated: boolean;
     flagged: boolean;
     createdAt: string;

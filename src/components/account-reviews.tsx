@@ -3,12 +3,17 @@
 import Link from "next/link";
 import { FormEvent, useState } from "react";
 
+import { IncidentMarkFields } from "@/components/incident-mark-fields";
 import { AgencyLogo } from "@/components/agency-logo";
 import {
-  INCIDENT_TAG_LABELS,
-  INCIDENT_TAGS,
+  sentimentsFromMarks,
+  tagsFromSentiments,
+  unsetMarkMessage,
+  type IncidentMarks,
+  type IncidentSentiments,
   type IncidentTag,
 } from "@/lib/domain/incidents";
+import { publicApiUrl } from "@/lib/site-url";
 import { authHeaders } from "@/lib/auth/session-client";
 import { WHOLE_NUMBER_RATING_ERROR } from "@/lib/domain/review-authenticity";
 
@@ -22,6 +27,7 @@ export type AccountReviewItem = {
   publicName?: string;
   wouldRecommend?: boolean;
   incidentTags: IncidentTag[];
+  incidentSentiments?: IncidentSentiments;
   moderated: boolean;
   flagged: boolean;
   createdAt: string;
@@ -63,7 +69,7 @@ export function AccountReviews({
 
   async function remove(reviewId: string) {
     setBusyId(reviewId);
-    const res = await fetch(`/api/reviews/${reviewId}`, {
+    const res = await fetch(publicApiUrl(`/api/reviews/${reviewId}`), {
       method: "DELETE",
       headers: authHeaders(token),
     });
@@ -249,9 +255,13 @@ function AccountReviewEditor({
         ? "no"
         : "skip",
   );
-  const [incidentTags, setIncidentTags] = useState<IncidentTag[]>(
-    review.incidentTags,
-  );
+  const [marks, setMarks] = useState<IncidentMarks>(() => {
+    const next: IncidentMarks = {};
+    for (const tag of review.incidentTags) {
+      next[tag] = review.incidentSentiments?.[tag] ?? "unset";
+    }
+    return next;
+  });
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -259,8 +269,14 @@ function AccountReviewEditor({
       onError(WHOLE_NUMBER_RATING_ERROR);
       return;
     }
+    const unsetTheme = unsetMarkMessage(marks);
+    if (unsetTheme) {
+      onError(unsetTheme);
+      return;
+    }
     onBusy(true);
-    const res = await fetch(`/api/reviews/${review.id}`, {
+    const sentiments = sentimentsFromMarks(marks);
+    const res = await fetch(publicApiUrl(`/api/reviews/${review.id}`), {
       method: "PATCH",
       headers: {
         ...authHeaders(token),
@@ -275,7 +291,8 @@ function AccountReviewEditor({
         publicName: anonymous ? undefined : publicName,
         wouldRecommend:
           wouldRecommend === "skip" ? null : wouldRecommend === "yes",
-        incidentTags,
+        incidentTags: tagsFromSentiments(sentiments),
+        incidentSentiments: sentiments,
       }),
     });
     const data = (await res.json()) as { error?: string };
@@ -379,35 +396,7 @@ function AccountReviewEditor({
           className="input-field"
         />
       )}
-      <fieldset>
-        <legend className="text-xs font-medium text-zinc-600">
-          Incidencias (opcional)
-        </legend>
-        <ul className="mt-2 grid gap-2 sm:grid-cols-2">
-          {INCIDENT_TAGS.map((tag) => {
-            const checked = incidentTags.includes(tag);
-            return (
-              <li key={tag}>
-                <label className="flex cursor-pointer items-start gap-2 text-sm text-zinc-800">
-                  <input
-                    type="checkbox"
-                    className="mt-0.5"
-                    checked={checked}
-                    onChange={() =>
-                      setIncidentTags((current) =>
-                        checked
-                          ? current.filter((item) => item !== tag)
-                          : [...current, tag],
-                      )
-                    }
-                  />
-                  {INCIDENT_TAG_LABELS[tag]}
-                </label>
-              </li>
-            );
-          })}
-        </ul>
-      </fieldset>
+      <IncidentMarkFields marks={marks} onChange={setMarks} />
       <button
         type="submit"
         disabled={busy}

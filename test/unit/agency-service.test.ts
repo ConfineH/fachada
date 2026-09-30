@@ -55,6 +55,7 @@ describe("AgencyService.search", () => {
       anonymous: true,
       helpfulCount: 0,
       incidentTags: ["comunicacion"],
+      incidentSentiments: {},
       createdAt: new Date(),
       moderated: true,
       flagged: false,
@@ -72,6 +73,7 @@ describe("AgencyService.search", () => {
       anonymous: true,
       helpfulCount: 0,
       incidentTags: ["comunicacion"],
+      incidentSentiments: {},
       createdAt: new Date(),
       moderated: true,
       flagged: false,
@@ -111,6 +113,7 @@ describe("AgencyService.matchByName", () => {
       publicOnly: true,
     });
     expect(match?.agency.name).toBe("Inmobiliaria Sol");
+    expect(match?.matchedOn).toBe("Sol Inmobiliaria Madrid");
   });
 });
 

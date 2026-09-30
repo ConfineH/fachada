@@ -1,4 +1,4 @@
-import { parseIncidentTags } from "@/lib/domain/incidents";
+import { parseIncidentSentiments, parseIncidentTags } from "@/lib/domain/incidents";
 import { REVIEW_TERMS_VERSION } from "@/lib/domain/review-authenticity";
 import type {
   Agency,
@@ -62,6 +62,7 @@ type ReviewRow = {
   would_recommend: boolean | null;
   helpful_count: number | null;
   incident_tags: string[] | null;
+  incident_sentiments: unknown;
   experience_date: string | null;
   experience_type: Review["experienceType"] | null;
   first_hand_attested: boolean | null;
@@ -202,6 +203,7 @@ export function mapReview(row: ReviewRow): Review {
     wouldRecommend: row.would_recommend ?? undefined,
     helpfulCount: row.helpful_count ?? 0,
     incidentTags: parseIncidentTags(row.incident_tags),
+    incidentSentiments: parseIncidentSentiments(row.incident_sentiments),
     experienceDate: new Date(row.experience_date ?? row.created_at),
     experienceType: row.experience_type ?? "alquiler",
     firstHandAttested: row.first_hand_attested ?? false,

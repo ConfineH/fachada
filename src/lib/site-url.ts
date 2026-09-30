@@ -17,6 +17,13 @@ function withHttps(host: string) {
   return `https://${trimmed}`;
 }
 
+export function publicApiUrl(path: string) {
+  if (typeof window !== "undefined" && window.location.hostname === "fachada.app") {
+    return `https://www.fachada.app${path}`;
+  }
+  return path;
+}
+
 /** Canonical public origin. Override with NEXT_PUBLIC_SITE_URL when the domain changes. */
 export function getSiteUrl() {
   const explicit = process.env.NEXT_PUBLIC_SITE_URL?.trim();

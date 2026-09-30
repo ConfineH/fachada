@@ -3,16 +3,19 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
 
 import { AccountVerification } from "@/components/account-verification";
+import { IncidentMarkFields } from "@/components/incident-mark-fields";
 import {
   clearSessionToken,
   readSessionToken,
   writeSessionToken,
 } from "@/lib/auth/session-client";
 import {
-  INCIDENT_TAG_LABELS,
-  INCIDENT_TAGS,
-  type IncidentTag,
+  sentimentsFromMarks,
+  tagsFromSentiments,
+  unsetMarkMessage,
+  type IncidentMarks,
 } from "@/lib/domain/incidents";
+import { publicApiUrl } from "@/lib/site-url";
 import {
   REVIEW_TERMS_VERSION,
   WHOLE_NUMBER_RATING_ERROR,
@@ -42,7 +45,7 @@ export function ReviewForm({ agencySlug }: { agencySlug: string }) {
   const [noConflictAttested, setNoConflictAttested] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [evidence, setEvidence] = useState<File | null>(null);
-  const [incidentTags, setIncidentTags] = useState<IncidentTag[]>([]);
+  const [marks, setMarks] = useState<IncidentMarks>({});
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const feedbackRef = useRef<HTMLDivElement>(null);
@@ -111,6 +114,13 @@ export function ReviewForm({ agencySlug }: { agencySlug: string }) {
       scrollToFeedback();
       return;
     }
+    const unsetTheme = unsetMarkMessage(marks);
+    if (unsetTheme) {
+      setError(unsetTheme);
+      scrollToFeedback();
+      return;
+    }
+
     if (!experienceDate) {
       setError("Indica la fecha de tu última interacción.");
       scrollToFeedback();
@@ -129,51 +139,66 @@ export function ReviewForm({ agencySlug }: { agencySlug: string }) {
 
     setLoading(true);
     setError("");
+    const sentiments = sentimentsFromMarks(marks);
+    const payload = {
+      agencySlug,
+      role,
+      rating,
+      title: trimmedTitle,
+      pros: trimmedPros,
+      cons: trimmedCons,
+      anonymous,
+      publicName: anonymous ? "" : publicName.trim(),
+      wouldRecommend:
+        wouldRecommend === "skip" ? undefined : wouldRecommend === "yes",
+      incidentTags: tagsFromSentiments(sentiments),
+      incidentSentiments: sentiments,
+      experienceDate,
+      experienceType,
+      firstHandAttested,
+      noIncentiveAttested,
+      noConflictAttested,
+      termsAccepted,
+      termsVersion: REVIEW_TERMS_VERSION,
+    };
     try {
-      const formData = new FormData();
-      const fields = {
-        agencySlug,
-        role,
-        rating: String(rating),
-        title: trimmedTitle,
-        pros: trimmedPros,
-        cons: trimmedCons,
-        anonymous: String(anonymous),
-        publicName: anonymous ? "" : publicName.trim(),
-        wouldRecommend:
-          wouldRecommend === "skip"
-            ? "undefined"
-            : String(wouldRecommend === "yes"),
-        incidentTags: JSON.stringify(incidentTags),
-        experienceDate,
-        experienceType,
-        firstHandAttested: String(firstHandAttested),
-        noIncentiveAttested: String(noIncentiveAttested),
-        noConflictAttested: String(noConflictAttested),
-        termsAccepted: String(termsAccepted),
-        termsVersion: REVIEW_TERMS_VERSION,
+      const headers: Record<string, string> = {
+        Authorization: `Bearer ${token}`,
       };
-      for (const [key, value] of Object.entries(fields)) {
-        formData.set(key, value);
+      let body: BodyInit;
+      if (evidence) {
+        const formData = new FormData();
+        for (const [key, value] of Object.entries(payload)) {
+          if (value === undefined) continue;
+          formData.set(
+            key,
+            typeof value === "string" ? value : JSON.stringify(value),
+          );
+        }
+        formData.set("evidence", evidence);
+        body = formData;
+      } else {
+        headers["Content-Type"] = "application/json";
+        body = JSON.stringify(payload);
       }
-      if (evidence) formData.set("evidence", evidence);
-      const res = await fetch("/api/reviews", {
+      const res = await fetch(publicApiUrl("/api/reviews"), {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        body: formData,
+        headers,
+        body,
       });
 
+      const raw = await res.text();
       let data: { error?: string } = {};
       try {
-        data = (await res.json()) as { error?: string };
+        data = raw ? (JSON.parse(raw) as { error?: string }) : {};
       } catch {
         data = {
           error:
             window.location.hostname === "localhost"
               ? "El servidor no respondió correctamente. Revisa npm run dev."
-              : "No se pudo publicar la reseña. Inténtalo de nuevo.",
+              : res.status >= 300 && res.status < 400
+                ? "No se ha publicado la reseña porque el dominio ha redirigido la petición. Recarga la página e inténtalo."
+                : `No se ha publicado la reseña. El servidor respondió ${res.status}.`,
         };
       }
 
@@ -372,38 +397,7 @@ export function ReviewForm({ agencySlug }: { agencySlug: string }) {
               className="input-field"
             />
           )}
-          <fieldset>
-            <legend className="text-xs font-medium text-zinc-600">
-              Incidencias (opcional)
-            </legend>
-            <p className="mt-1 text-xs text-zinc-500">
-              Marca lo que afectó a tu experiencia. Ayuda a comparar agencias.
-            </p>
-            <ul className="mt-2 grid gap-2 sm:grid-cols-2">
-              {INCIDENT_TAGS.map((tag) => {
-                const checked = incidentTags.includes(tag);
-                return (
-                  <li key={tag}>
-                    <label className="flex cursor-pointer items-start gap-2 text-sm text-zinc-800">
-                      <input
-                        type="checkbox"
-                        className="mt-0.5"
-                        checked={checked}
-                        onChange={() =>
-                          setIncidentTags((current) =>
-                            checked
-                              ? current.filter((item) => item !== tag)
-                              : [...current, tag],
-                          )
-                        }
-                      />
-                      {INCIDENT_TAG_LABELS[tag]}
-                    </label>
-                  </li>
-                );
-              })}
-            </ul>
-          </fieldset>
+          <IncidentMarkFields marks={marks} onChange={setMarks} />
           <fieldset className="space-y-2 rounded-lg border border-stone-200 p-3">
             <legend className="px-1 text-xs font-semibold text-zinc-700">
               Declaraciones de autenticidad

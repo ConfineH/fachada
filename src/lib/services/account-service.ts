@@ -37,6 +37,7 @@ export class AccountService {
             publicName: review.publicName,
             wouldRecommend: review.wouldRecommend,
             incidentTags: review.incidentTags,
+            incidentSentiments: review.incidentSentiments,
             moderated: review.moderated,
             flagged: review.flagged,
             createdAt: review.createdAt,

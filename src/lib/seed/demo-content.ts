@@ -51,13 +51,18 @@ export const DEMO_ALIASES: SeedAlias[] = [
 ];
 
 function demoReview(
-  seed: Omit<SeedReview, "body" | "anonymous" | "helpfulCount"> & {
+  seed: Omit<
+    SeedReview,
+    "body" | "anonymous" | "helpfulCount" | "incidentSentiments"
+  > & {
     pros: string;
     cons: string;
+    incidentSentiments?: SeedReview["incidentSentiments"];
   },
 ): SeedReview {
   return {
     ...seed,
+    incidentSentiments: seed.incidentSentiments ?? {},
     body: composeReviewBody(seed.pros, seed.cons),
     anonymous: true,
     helpfulCount: 0,

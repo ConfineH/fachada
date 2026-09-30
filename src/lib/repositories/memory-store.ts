@@ -176,6 +176,7 @@ export class MemoryStore implements Repository {
         wouldRecommend: seed.wouldRecommend,
         helpfulCount: seed.helpfulCount,
         incidentTags: seed.incidentTags,
+        incidentSentiments: {},
         experienceDate: new Date(),
         experienceType: "alquiler",
         firstHandAttested: true,

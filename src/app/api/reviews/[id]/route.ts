@@ -5,6 +5,33 @@ import { sessionTokenFromRequest } from "@/lib/auth/bearer";
 import { reviewErrorMessage } from "@/lib/auth/review-errors";
 import { authService, reviewService } from "@/lib/container";
 
+const REVIEW_ORIGINS = new Set([
+  "https://fachada.app",
+  "https://www.fachada.app",
+  "http://localhost:3000",
+]);
+
+function withReviewCors(request: Request, response: NextResponse) {
+  const origin = request.headers.get("origin");
+  if (origin && REVIEW_ORIGINS.has(origin)) {
+    response.headers.set("Access-Control-Allow-Origin", origin);
+    response.headers.set(
+      "Access-Control-Allow-Headers",
+      "Authorization, Content-Type",
+    );
+    response.headers.set(
+      "Access-Control-Allow-Methods",
+      "PATCH, DELETE, OPTIONS",
+    );
+    response.headers.set("Vary", "Origin");
+  }
+  return response;
+}
+
+export async function OPTIONS(request: Request) {
+  return withReviewCors(request, new NextResponse(null, { status: 204 }));
+}
+
 function statusFor(message: string) {
   if (message.includes("verificación") || message.includes("verification")) {
     return 401;
@@ -31,10 +58,13 @@ export async function PATCH(
       sessionTokenFromRequest(request),
     );
     const review = await reviewService.update(user, id, await request.json());
-    return NextResponse.json({ review });
+    return withReviewCors(request, NextResponse.json({ review }));
   } catch (error) {
     const message = formatError(error);
-    return NextResponse.json({ error: message }, { status: statusFor(message) });
+    return withReviewCors(
+      request,
+      NextResponse.json({ error: message }, { status: statusFor(message) }),
+    );
   }
 }
 
@@ -48,9 +78,12 @@ export async function DELETE(
       sessionTokenFromRequest(request),
     );
     await reviewService.remove(user, id);
-    return NextResponse.json({ ok: true });
+    return withReviewCors(request, NextResponse.json({ ok: true }));
   } catch (error) {
     const message = formatError(error);
-    return NextResponse.json({ error: message }, { status: statusFor(message) });
+    return withReviewCors(
+      request,
+      NextResponse.json({ error: message }, { status: statusFor(message) }),
+    );
   }
 }

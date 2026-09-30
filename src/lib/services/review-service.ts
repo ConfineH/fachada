@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 
+import { tagsFromSentiments } from "@/lib/domain/incidents";
 import { isAccountVerified } from "@/lib/domain/identity";
 import { composeReviewBody } from "@/lib/domain/review-copy";
 import { isPublicReview } from "@/lib/domain/review-visibility";
@@ -55,6 +56,7 @@ export class ReviewService {
       throw new ReviewError("Rate limit: one review per agency every 7 days");
     }
 
+    const marked = markedExperience(data);
     const anonymous = data.anonymous ?? true;
     const review: Review = {
       id: randomUUID(),
@@ -70,7 +72,8 @@ export class ReviewService {
       publicName: anonymous ? undefined : data.publicName?.trim(),
       wouldRecommend: data.wouldRecommend,
       helpfulCount: 0,
-      incidentTags: data.incidentTags ?? [],
+      incidentTags: marked.incidentTags,
+      incidentSentiments: marked.incidentSentiments,
       experienceDate: data.experienceDate,
       experienceType: data.experienceType,
       firstHandAttested: data.firstHandAttested,
@@ -104,6 +107,7 @@ export class ReviewService {
     const review = await this.ownedReview(user.id, reviewId);
     const data = reviewEditSchema.parse(input);
     const anonymous = data.anonymous ?? true;
+    const marked = markedExperience(data);
     const next: Review = {
       ...review,
       rating: data.rating,
@@ -114,7 +118,8 @@ export class ReviewService {
       anonymous,
       publicName: anonymous ? undefined : data.publicName?.trim(),
       wouldRecommend: data.wouldRecommend ?? undefined,
-      incidentTags: data.incidentTags ?? [],
+      incidentTags: marked.incidentTags,
+      incidentSentiments: marked.incidentSentiments,
       editedAt: new Date(),
       moderated: false,
       flagged: false,
@@ -163,4 +168,17 @@ export class ReviewService {
     }
     return review;
   }
+}
+
+function markedExperience(data: {
+  incidentTags?: Review["incidentTags"];
+  incidentSentiments?: Review["incidentSentiments"];
+}) {
+  const incidentSentiments = data.incidentSentiments ?? {};
+  const fromSentiments = tagsFromSentiments(incidentSentiments);
+  return {
+    incidentSentiments,
+    incidentTags:
+      fromSentiments.length > 0 ? fromSentiments : (data.incidentTags ?? []),
+  };
 }
