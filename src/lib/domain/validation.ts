@@ -4,6 +4,7 @@ import { INCIDENT_TAGS } from "@/lib/domain/incidents";
 import {
   experienceDateError,
   REVIEW_TERMS_VERSION,
+  WHOLE_NUMBER_RATING_ERROR,
 } from "@/lib/domain/review-authenticity";
 import type {
   ClaimEvidenceType,
@@ -36,6 +37,12 @@ const reviewExperienceTypes = [
   "incidencia",
   "gestion",
 ] as const satisfies readonly ReviewExperienceType[];
+
+const ratingSchema = z.coerce
+  .number()
+  .int({ error: WHOLE_NUMBER_RATING_ERROR })
+  .min(1, { error: WHOLE_NUMBER_RATING_ERROR })
+  .max(5, { error: WHOLE_NUMBER_RATING_ERROR });
 
 const contentNoticeCategories = [
   "honor",
@@ -76,7 +83,7 @@ export const reviewInputSchema = z
     agencyId: z.string().uuid().optional(),
     agencySlug: z.string().trim().min(1).max(120).optional(),
     role: z.enum(["inquilino", "propietario"]),
-    rating: z.coerce.number().int().min(1).max(5),
+    rating: ratingSchema,
     title: z
       .string()
       .trim()
@@ -139,7 +146,7 @@ export const reviewInputSchema = z
 
 export const reviewEditSchema = z
   .object({
-    rating: z.coerce.number().int().min(1).max(5),
+    rating: ratingSchema,
     title: z
       .string()
       .trim()

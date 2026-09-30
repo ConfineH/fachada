@@ -2,10 +2,12 @@
   "manifest_version": 3,
   "name": "Fachada — capa independiente",
   "version": "0.1.0",
-  "description": "Prototipo local independiente y no afiliado que consulta valoraciones de Fachada.",
+  "description": "Prototipo local independiente: muestra si la inmobiliaria del anuncio tiene ficha en Fachada.",
   "permissions": [],
   "host_permissions": [
     "https://www.idealista.com/*",
+    "https://fachada.app/*",
+    "https://www.fachada.app/*",
     "https://*.vercel.app/*",
     "http://localhost:3000/*"
   ],

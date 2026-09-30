@@ -13,7 +13,10 @@ import {
   INCIDENT_TAGS,
   type IncidentTag,
 } from "@/lib/domain/incidents";
-import { REVIEW_TERMS_VERSION } from "@/lib/domain/review-authenticity";
+import {
+  REVIEW_TERMS_VERSION,
+  WHOLE_NUMBER_RATING_ERROR,
+} from "@/lib/domain/review-authenticity";
 import type { ReviewExperienceType } from "@/lib/domain/types";
 
 type Step = "verify" | "review" | "done";
@@ -103,8 +106,8 @@ export function ReviewForm({ agencySlug }: { agencySlug: string }) {
       scrollToFeedback();
       return;
     }
-    if (rating < 1 || rating > 5) {
-      setError("La valoración debe ser entre 1 y 5.");
+    if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+      setError(WHOLE_NUMBER_RATING_ERROR);
       scrollToFeedback();
       return;
     }
@@ -166,7 +169,12 @@ export function ReviewForm({ agencySlug }: { agencySlug: string }) {
       try {
         data = (await res.json()) as { error?: string };
       } catch {
-        data = { error: "El servidor no respondió correctamente. Revisa npm run dev." };
+        data = {
+          error:
+            window.location.hostname === "localhost"
+              ? "El servidor no respondió correctamente. Revisa npm run dev."
+              : "No se pudo publicar la reseña. Inténtalo de nuevo.",
+        };
       }
 
       if (!res.ok) {
@@ -183,7 +191,9 @@ export function ReviewForm({ agencySlug }: { agencySlug: string }) {
       scrollToFeedback();
     } catch {
       setError(
-        "No se pudo conectar con el servidor. ¿Sigue abierto npm run dev en localhost:3000?",
+        window.location.hostname === "localhost"
+          ? "No se pudo conectar con el servidor. ¿Sigue abierto npm run dev en localhost:3000?"
+          : "No se pudo conectar con el servidor. Inténtalo de nuevo.",
       );
       scrollToFeedback();
     } finally {
@@ -278,6 +288,7 @@ export function ReviewForm({ agencySlug }: { agencySlug: string }) {
               type="number"
               min={1}
               max={5}
+              step={1}
               required
               value={rating}
               onChange={(e) => setRating(Number(e.target.value))}

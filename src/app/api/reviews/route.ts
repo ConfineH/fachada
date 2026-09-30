@@ -68,15 +68,25 @@ export async function POST(request: Request) {
     const review = await reviewService.create(user, body, { evidencePath });
     return NextResponse.json({ review }, { status: 201 });
   } catch (error) {
-    if (evidencePath && isSupabaseConfigured()) {
-      await createServiceClient()
-        .storage.from("review-evidence")
-        .remove([evidencePath]);
+    try {
+      if (evidencePath && isSupabaseConfigured()) {
+        await createServiceClient()
+          .storage.from("review-evidence")
+          .remove([evidencePath]);
+      }
+      const message = formatReviewApiError(error);
+      const status =
+        message.includes("verificación") ||
+        message.includes("verification") ||
+        message.includes("caducado")
+          ? 401
+          : 400;
+      return NextResponse.json({ error: message }, { status });
+    } catch {
+      return NextResponse.json(
+        { error: "No se pudo publicar la reseña." },
+        { status: 500 },
+      );
     }
-    const message = formatReviewApiError(error);
-    const status = message.includes("verificación") || message.includes("verification")
-      ? 401
-      : 400;
-    return NextResponse.json({ error: message }, { status });
   }
 }

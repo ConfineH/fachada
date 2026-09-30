@@ -10,6 +10,7 @@ import {
   type IncidentTag,
 } from "@/lib/domain/incidents";
 import { authHeaders } from "@/lib/auth/session-client";
+import { WHOLE_NUMBER_RATING_ERROR } from "@/lib/domain/review-authenticity";
 
 export type AccountReviewItem = {
   id: string;
@@ -254,6 +255,10 @@ function AccountReviewEditor({
 
   async function submit(event: FormEvent) {
     event.preventDefault();
+    if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+      onError(WHOLE_NUMBER_RATING_ERROR);
+      return;
+    }
     onBusy(true);
     const res = await fetch(`/api/reviews/${review.id}`, {
       method: "PATCH",
@@ -294,6 +299,7 @@ function AccountReviewEditor({
           type="number"
           min={1}
           max={5}
+          step={1}
           required
           value={rating}
           onChange={(event) => setRating(Number(event.target.value))}

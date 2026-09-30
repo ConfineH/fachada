@@ -89,6 +89,13 @@ describe("ReviewService", () => {
     expect(review.publicName).toBe("Marta G.");
   });
 
+  it("rejects a decimal rating", async () => {
+    const user = await verifiedUser();
+    await expect(service.create(user, payload({ rating: 4.8 }))).rejects.toThrow(
+      /No se ha publicado la reseña porque la nota no es un número entero/,
+    );
+  });
+
   it("stores incident tags", async () => {
     const user = await verifiedUser();
     const review = await service.create(
