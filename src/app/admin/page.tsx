@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 
 import { AdminDashboard } from "@/components/admin-dashboard";
+import { AdminReviewSummary } from "@/components/admin-review-summary";
 import {
   AdminAddAliasForm,
   AdminCreateAgencyForm,
@@ -37,7 +38,7 @@ export default async function AdminPage() {
     );
   }
 
-  const [claims, reviews, submissions, locations, tips, contentNotices] =
+  const [claims, reviews, submissions, locations, tips, contentNotices, funnel] =
     await Promise.all([
       adminService.listPendingClaims(),
       adminService.listReviewsForModeration(),
@@ -45,6 +46,7 @@ export default async function AdminPage() {
       adminService.listPendingLocations(),
       adminService.listPendingTips(),
       adminService.listPendingContentNotices(),
+      adminService.reviewFunnel(),
     ]);
 
   const tipsWithEvidence = await Promise.all(
@@ -90,6 +92,7 @@ export default async function AdminPage() {
           </p>
         )}
         <div className="space-y-10">
+          <AdminReviewSummary funnel={funnel} />
           <AdminCreateAgencyForm />
           <AdminMatchProbe />
           <AdminAddAliasForm />

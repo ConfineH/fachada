@@ -11,7 +11,9 @@ import {
   agencyResponseSchema,
   claimInputSchema,
 } from "@/lib/domain/validation";
+import { notifyModerationQueue } from "@/lib/ops/moderation-alert";
 import type { Repository } from "@/lib/repositories/types";
+import type { EmailProvider } from "@/lib/services/email-provider";
 
 export class ClaimError extends Error {
   constructor(message: string) {
@@ -24,6 +26,7 @@ export class ClaimService {
   constructor(
     private readonly repo: Repository,
     private readonly businessSmsEnabled = false,
+    private readonly email?: EmailProvider,
   ) {}
 
   async submit(user: User | undefined, input: unknown): Promise<Claim> {
@@ -99,6 +102,10 @@ export class ClaimService {
     };
 
     await this.repo.createClaim(claim);
+    await notifyModerationQueue(this.email, {
+      kind: "Reclamación",
+      detail: `${agency.name} (${agency.city}).`,
+    });
     if (needsBusinessPhone) {
       await this.repo.clearBusinessLineVerified(user.id, data.agencyId);
     }

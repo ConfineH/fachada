@@ -39,11 +39,11 @@ export const authService = new AuthService(
   email,
   exposeEmailDevCode,
 );
-export const agencyService = new AgencyService(repo);
-export const agencySubmissionService = new AgencySubmissionService(repo);
-export const reviewService = new ReviewService(repo);
+export const agencyService = new AgencyService(repo, email);
+export const agencySubmissionService = new AgencySubmissionService(repo, email);
+export const reviewService = new ReviewService(repo, email);
 export const accountService = new AccountService(repo);
-export const claimService = new ClaimService(repo, isTwilioConfigured());
+export const claimService = new ClaimService(repo, isTwilioConfigured(), email);
 export const adminService = new AdminService(
   repo,
   claimService,

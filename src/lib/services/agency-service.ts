@@ -21,7 +21,9 @@ import {
   agencyLocationInputSchema,
   agencyTipInputSchema,
 } from "@/lib/domain/validation";
+import { notifyModerationQueue } from "@/lib/ops/moderation-alert";
 import type { Repository } from "@/lib/repositories/types";
+import type { EmailProvider } from "@/lib/services/email-provider";
 
 export class AgencyError extends Error {
   constructor(message: string) {
@@ -34,6 +36,7 @@ export type AgencyMatchResult = {
   agency: Agency;
   slug: string;
   confidence: number;
+  matchedOn: string;
   roleRatings: ReturnType<typeof summarizeRoleRatings>;
   url: string;
 };
@@ -46,7 +49,10 @@ export type CityExploreSummary = {
 };
 
 export class AgencyService {
-  constructor(private readonly repo: Repository) {}
+  constructor(
+    private readonly repo: Repository,
+    private readonly email?: EmailProvider,
+  ) {}
 
   async search(
     query?: string,
@@ -119,7 +125,8 @@ export class AgencyService {
     const aliases = await this.repo.listAllAliases();
     const normalizedCity = city?.trim().toLowerCase();
 
-    let best: { agency: Agency; confidence: number } | null = null;
+    let best: { agency: Agency; confidence: number; matchedOn: string } | null =
+      null;
 
     for (const agency of agencies) {
       if (normalizedCity && agency.city.toLowerCase() !== normalizedCity) {
@@ -136,7 +143,7 @@ export class AgencyService {
       for (const candidate of candidates) {
         const confidence = matchScore(name, candidate);
         if (!best || confidence > best.confidence) {
-          best = { agency, confidence };
+          best = { agency, confidence, matchedOn: candidate };
         }
       }
     }
@@ -148,6 +155,7 @@ export class AgencyService {
       agency: best.agency,
       slug: best.agency.slug,
       confidence: best.confidence,
+      matchedOn: best.matchedOn,
       roleRatings: stats.roleRatings,
       url: `/agencias/${best.agency.slug}`,
     };
@@ -222,6 +230,13 @@ export class AgencyService {
       createdAt: new Date(),
     };
     await this.repo.createLocation(location);
+    if (location.status === "pendiente") {
+      const agency = await this.repo.findAgencyById(location.agencyId);
+      await notifyModerationQueue(this.email, {
+        kind: "Ubicación",
+        detail: `${location.address}, ${location.city}, en ${agency?.name ?? "una ficha"}.`,
+      });
+    }
     return location;
   }
 
@@ -285,6 +300,12 @@ export class AgencyService {
         options?.publishNow && data.kind !== "logo" ? new Date() : undefined,
     };
     await this.repo.createTip(tip);
+    if (tip.status === "pendiente") {
+      await notifyModerationQueue(this.email, {
+        kind: "Aporte a una ficha",
+        detail: `${tip.kind} en ${agency.name} (${agency.city}).`,
+      });
+    }
     if (options?.publishNow && data.kind !== "logo") {
       await this.applyTip(tip);
     }

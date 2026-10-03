@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 
 import { buildAgencySlug } from "@/lib/domain/agency-slug";
+import { summarizeReviewFunnel } from "@/lib/domain/review-funnel";
 import type { Agency, AgencyLocation, AgencySubmission, AgencyTip, Claim, ContentNotice, Review } from "@/lib/domain/types";
 import {
   adminAddAliasSchema,
@@ -77,6 +78,10 @@ export class AdminService {
         };
       }),
     );
+  }
+
+  async reviewFunnel() {
+    return summarizeReviewFunnel(await this.repo.listAllReviews());
   }
 
   async listReviewsForModeration(): Promise<ReviewWithAgency[]> {

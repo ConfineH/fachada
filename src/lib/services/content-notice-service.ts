@@ -6,6 +6,7 @@ import {
   contentNoticeDecisionSchema,
   contentNoticeInputSchema,
 } from "@/lib/domain/validation";
+import { notifyModerationQueue } from "@/lib/ops/moderation-alert";
 import type { Repository } from "@/lib/repositories/types";
 import type { EmailProvider } from "@/lib/services/email-provider";
 
@@ -58,6 +59,10 @@ export class ContentNoticeService {
     };
 
     await this.repo.createContentNotice(notice);
+    await notifyModerationQueue(this.email, {
+      kind: "Aviso de contenido",
+      detail: `Sobre la reseña «${review.title}». Referencia ${notice.id}.`,
+    });
     await Promise.allSettled([
       this.email.sendMessage(
         notice.reporterEmail,

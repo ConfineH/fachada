@@ -6,7 +6,9 @@ import { composeReviewBody } from "@/lib/domain/review-copy";
 import { isPublicReview } from "@/lib/domain/review-visibility";
 import type { Review, User } from "@/lib/domain/types";
 import { reviewEditSchema, reviewInputSchema } from "@/lib/domain/validation";
+import { notifyModerationQueue } from "@/lib/ops/moderation-alert";
 import type { Repository } from "@/lib/repositories/types";
+import type { EmailProvider } from "@/lib/services/email-provider";
 
 const RATE_LIMIT_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -18,7 +20,10 @@ export class ReviewError extends Error {
 }
 
 export class ReviewService {
-  constructor(private readonly repo: Repository) {}
+  constructor(
+    private readonly repo: Repository,
+    private readonly email?: EmailProvider,
+  ) {}
 
   async create(
     user: User | undefined,
@@ -93,6 +98,10 @@ export class ReviewService {
     };
 
     await this.repo.createReview(review);
+    await notifyModerationQueue(this.email, {
+      kind: "Reseña",
+      detail: `«${review.title}» sobre ${agency.name} (${agency.city}).`,
+    });
     return review;
   }
 
@@ -126,6 +135,11 @@ export class ReviewService {
       verificationLevel: "declarada",
     };
     await this.repo.updateReview(next);
+    const editedAgency = await this.repo.findAgencyById(next.agencyId);
+    await notifyModerationQueue(this.email, {
+      kind: "Reseña editada",
+      detail: `«${next.title}» sobre ${editedAgency?.name ?? "una ficha"} vuelve a la cola.`,
+    });
     return next;
   }
 

@@ -4,7 +4,9 @@ import { buildAgencySlug } from "@/lib/domain/agency-slug";
 import { isAccountVerified } from "@/lib/domain/identity";
 import type { Agency, AgencySubmission, User } from "@/lib/domain/types";
 import { agencySubmissionInputSchema } from "@/lib/domain/validation";
+import { notifyModerationQueue } from "@/lib/ops/moderation-alert";
 import type { Repository } from "@/lib/repositories/types";
+import type { EmailProvider } from "@/lib/services/email-provider";
 
 export class AgencySubmissionError extends Error {
   constructor(message: string) {
@@ -14,7 +16,10 @@ export class AgencySubmissionError extends Error {
 }
 
 export class AgencySubmissionService {
-  constructor(private readonly repo: Repository) {}
+  constructor(
+    private readonly repo: Repository,
+    private readonly email?: EmailProvider,
+  ) {}
 
   async submit(user: User | undefined, input: unknown): Promise<AgencySubmission> {
     if (!isAccountVerified(user)) {
@@ -68,6 +73,10 @@ export class AgencySubmissionService {
     };
 
     await this.repo.createAgencySubmission(submission);
+    await notifyModerationQueue(this.email, {
+      kind: "Inmobiliaria sugerida",
+      detail: `${submission.name} (${submission.city}).`,
+    });
     return submission;
   }
 
