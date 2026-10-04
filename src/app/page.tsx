@@ -102,7 +102,33 @@ export default async function Home({
         </div>
       </section>
 
-      <main className="mx-auto max-w-6xl px-6 py-14">
+      <main className="mx-auto max-w-6xl space-y-20 px-6 py-14">
+        {documented.preview.length > 0 && (
+          <section>
+            <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
+              <div>
+                <h2 className="text-2xl font-semibold tracking-tight">
+                  Fichas con reseñas
+                </h2>
+                <p className="mt-1 text-sm text-zinc-600">
+                  {documented.hidden > 0
+                    ? `Las más documentadas. Hay ${documented.total} fichas con reseñas.`
+                    : "Todas las fichas que ya tienen reseñas."}
+                </p>
+              </div>
+              <Link href="/agencias" className="link-brand text-sm">
+                {documented.hidden > 0
+                  ? `Ver las ${documented.total} en el registro`
+                  : "Ver el registro"}
+              </Link>
+            </div>
+            <AgencyResultList
+              agencies={documented.preview}
+              empty="Aún no hay reseñas publicadas."
+            />
+          </section>
+        )}
+
         {featuredCities.length > 0 && (
           <Reveal>
             <section>
@@ -134,7 +160,7 @@ export default async function Home({
           </Reveal>
         )}
 
-        <Reveal className="mt-20">
+        <Reveal>
           <section className="grid gap-10 lg:grid-cols-2 lg:items-center">
             <div>
               <h2 className="text-2xl font-semibold tracking-tight">
@@ -196,7 +222,7 @@ export default async function Home({
           </section>
         </Reveal>
 
-        <Reveal className="mt-20">
+        <Reveal>
           <section>
             <h2 className="text-2xl font-semibold tracking-tight">
               Preguntas frecuentes
@@ -214,31 +240,6 @@ export default async function Home({
           </section>
         </Reveal>
 
-        {documented.preview.length > 0 && (
-          <section className="mt-16">
-            <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
-              <div>
-                <h2 className="text-2xl font-semibold tracking-tight">
-                  Fichas con reseñas
-                </h2>
-                <p className="mt-1 text-sm text-zinc-600">
-                  {documented.hidden > 0
-                    ? `Las más documentadas. Hay ${documented.total} fichas con reseñas.`
-                    : "Todas las fichas que ya tienen reseñas."}
-                </p>
-              </div>
-              <Link href="/agencias" className="link-brand text-sm">
-                {documented.hidden > 0
-                  ? `Ver las ${documented.total} en el registro`
-                  : "Ver el registro"}
-              </Link>
-            </div>
-            <AgencyResultList
-              agencies={documented.preview}
-              empty="Aún no hay reseñas publicadas."
-            />
-          </section>
-        )}
       </main>
 
       <section className="bg-brand text-white">

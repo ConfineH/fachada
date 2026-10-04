@@ -32,7 +32,7 @@ export function ReviewForm({ agencySlug }: { agencySlug: string }) {
   const [step, setStep] = useState<Step>("verify");
   const [token, setToken] = useState("");
   const [role, setRole] = useState<"inquilino" | "propietario">("inquilino");
-  const [rating, setRating] = useState(5);
+  const [rating, setRating] = useState<number | null>(null);
   const [title, setTitle] = useState("");
   const [pros, setPros] = useState("");
   const [cons, setCons] = useState("");
@@ -52,6 +52,18 @@ export function ReviewForm({ agencySlug }: { agencySlug: string }) {
   const [evidenceNote, setEvidenceNote] = useState("");
   const [marks, setMarks] = useState<IncidentMarks>({});
   const [error, setError] = useState("");
+  const [errorField, setErrorField] = useState<
+    | "date"
+    | "rating"
+    | "title"
+    | "pros"
+    | "cons"
+    | "name"
+    | "themes"
+    | "declarations"
+    | "form"
+    | ""
+  >("");
   const [loading, setLoading] = useState(false);
   const feedbackRef = useRef<HTMLDivElement>(null);
 
@@ -63,8 +75,26 @@ export function ReviewForm({ agencySlug }: { agencySlug: string }) {
     }
   }, []);
 
-  function scrollToFeedback() {
-    feedbackRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  function showError(
+    field:
+      | "date"
+      | "rating"
+      | "title"
+      | "pros"
+      | "cons"
+      | "name"
+      | "themes"
+      | "declarations"
+      | "form",
+    message: string,
+  ) {
+    setError(message);
+    setErrorField(field);
+    requestAnimationFrame(() => {
+      document
+        .getElementById(field === "form" ? "review-form-error" : `review-${field}`)
+        ?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
   }
 
   function persistToken(sessionToken: string) {
@@ -72,6 +102,7 @@ export function ReviewForm({ agencySlug }: { agencySlug: string }) {
     writeSessionToken(sessionToken);
     setStep("review");
     setError("");
+    setErrorField("");
   }
 
   function clearSession() {
@@ -83,52 +114,48 @@ export function ReviewForm({ agencySlug }: { agencySlug: string }) {
   async function submitReview(event: FormEvent) {
     event.preventDefault();
     if (!token) {
-      setError(
+      showError(
+        "form",
         "Identifícate otra vez. Pide un código al correo (o entra con Google) y publica sin recargar.",
       );
       clearSession();
-      scrollToFeedback();
       return;
     }
 
     const trimmedTitle = title.trim();
     const trimmedPros = pros.trim();
     const trimmedCons = cons.trim();
-    if (!trimmedTitle) {
-      setError("Añade un título a la reseña.");
-      scrollToFeedback();
+    if (!experienceDate) {
+      showError("date", "Indica la fecha de tu última interacción.");
       return;
     }
-    if (trimmedPros.length < 10) {
-      setError("Las ventajas deben tener al menos 10 caracteres.");
-      scrollToFeedback();
-      return;
-    }
-    if (trimmedCons.length < 10) {
-      setError("Las desventajas deben tener al menos 10 caracteres.");
-      scrollToFeedback();
-      return;
-    }
-    if (!anonymous && !publicName.trim()) {
-      setError("Indica un nombre público o publica de forma anónima.");
-      scrollToFeedback();
+    if (rating === null) {
+      showError("rating", "Elige una nota del 1 al 5.");
       return;
     }
     if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
-      setError(WHOLE_NUMBER_RATING_ERROR);
-      scrollToFeedback();
+      showError("rating", WHOLE_NUMBER_RATING_ERROR);
+      return;
+    }
+    if (!trimmedTitle) {
+      showError("title", "Añade un título a la reseña.");
+      return;
+    }
+    if (trimmedCons.length < 10) {
+      showError("cons", "Las desventajas deben tener al menos 10 caracteres.");
+      return;
+    }
+    if (trimmedPros.length < 10) {
+      showError("pros", "Las ventajas deben tener al menos 10 caracteres.");
+      return;
+    }
+    if (!anonymous && !publicName.trim()) {
+      showError("name", "Indica un nombre público o publica de forma anónima.");
       return;
     }
     const unsetTheme = unsetMarkMessage(marks);
     if (unsetTheme) {
-      setError(unsetTheme);
-      scrollToFeedback();
-      return;
-    }
-
-    if (!experienceDate) {
-      setError("Indica la fecha de tu última interacción.");
-      scrollToFeedback();
+      showError("themes", unsetTheme);
       return;
     }
     if (
@@ -137,13 +164,16 @@ export function ReviewForm({ agencySlug }: { agencySlug: string }) {
       !noConflictAttested ||
       !termsAccepted
     ) {
-      setError("Confirma las declaraciones de autenticidad y las normas.");
-      scrollToFeedback();
+      showError(
+        "declarations",
+        "Confirma las declaraciones de autenticidad y las normas.",
+      );
       return;
     }
 
     setLoading(true);
     setError("");
+    setErrorField("");
     setEvidenceNote("");
     const sentiments = sentimentsFromMarks(marks);
     const payload = {
@@ -237,11 +267,10 @@ export function ReviewForm({ agencySlug }: { agencySlug: string }) {
 
       if (!res.ok) {
         const message = data.error ?? "No se pudo publicar la reseña";
-        setError(message);
+        showError("form", message);
         if (res.status === 401 || message.includes("verificación")) {
           clearSession();
         }
-        scrollToFeedback();
         return;
       }
 
@@ -251,14 +280,14 @@ export function ReviewForm({ agencySlug }: { agencySlug: string }) {
         );
       }
       setStep("done");
-      scrollToFeedback();
+      feedbackRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
     } catch {
-      setError(
+      showError(
+        "form",
         window.location.hostname === "localhost"
           ? "No se pudo conectar con el servidor. ¿Sigue abierto npm run dev en localhost:3000?"
           : "No se pudo conectar con el servidor. Inténtalo de nuevo.",
       );
-      scrollToFeedback();
     } finally {
       setLoading(false);
     }
@@ -276,7 +305,10 @@ export function ReviewForm({ agencySlug }: { agencySlug: string }) {
       </p>
 
       {error && (
-        <p className="motion-fade-in mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p
+          id="review-form-error"
+          className="motion-fade-in mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700"
+        >
           {error}
         </p>
       )}
@@ -300,27 +332,41 @@ export function ReviewForm({ agencySlug }: { agencySlug: string }) {
           <p className="text-xs text-emerald-800">
             Cuenta identificada. Publica ahora, sin recargar la página.
           </p>
-          <select
-            value={role}
-            onChange={(e) =>
-              setRole(e.target.value as "inquilino" | "propietario")
-            }
-            className="input-field"
-          >
-            <option value="inquilino">Inquilino</option>
-            <option value="propietario">Propietario</option>
-          </select>
+          <fieldset className="space-y-3">
+            <legend className="text-sm font-medium text-zinc-900">
+              Tu experiencia
+            </legend>
+          <label className="block text-xs font-medium text-zinc-600">
+            Tu papel
+            <select
+              value={role}
+              onChange={(e) =>
+                setRole(e.target.value as "inquilino" | "propietario")
+              }
+              className="input-field mt-1"
+            >
+              <option value="inquilino">Inquilino</option>
+              <option value="propietario">Propietario</option>
+            </select>
+          </label>
           <div className="grid gap-3 sm:grid-cols-2">
-            <label className="block text-xs font-medium text-zinc-600">
+            <label id="review-date" className="block text-xs font-medium text-zinc-600">
               Último contacto
               <input
                 type="date"
                 required
                 max={new Date().toISOString().slice(0, 10)}
                 value={experienceDate}
+                aria-invalid={errorField === "date"}
+                aria-describedby={errorField === "date" ? "review-date-error" : undefined}
                 onChange={(event) => setExperienceDate(event.target.value)}
                 className="input-field mt-1"
               />
+              {errorField === "date" && error ? (
+                <span id="review-date-error" className="mt-1 block text-sm font-normal text-red-700">
+                  {error}
+                </span>
+              ) : null}
             </label>
             <label className="block text-xs font-medium text-zinc-600">
               Tipo de experiencia
@@ -345,7 +391,7 @@ export function ReviewForm({ agencySlug }: { agencySlug: string }) {
             La fecha debe ser de los últimos 30 días. Si sigues de alquiler o
             de gestión, indica el último contacto que importe.
           </p>
-          <label className="block text-xs text-zinc-500">
+          <label id="review-rating" className="block text-xs font-medium text-zinc-600">
             Nota (1–5)
             <input
               type="number"
@@ -353,33 +399,40 @@ export function ReviewForm({ agencySlug }: { agencySlug: string }) {
               max={5}
               step={1}
               required
-              value={rating}
-              onChange={(e) => setRating(Number(e.target.value))}
+              value={rating ?? ""}
+              aria-invalid={errorField === "rating"}
+              aria-describedby={errorField === "rating" ? "review-rating-error" : undefined}
+              onChange={(e) => {
+                const next = e.target.value;
+                setRating(next === "" ? null : Number(next));
+              }}
               className="input-field mt-1"
             />
+            {errorField === "rating" && error ? (
+              <span id="review-rating-error" className="mt-1 block text-sm font-normal text-red-700">
+                {error}
+              </span>
+            ) : null}
           </label>
-          <input
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Ej. La fianza tardó semanas en volver"
-            required
-            maxLength={100}
-            className="input-field"
-          />
-          <label className="block text-xs font-medium text-zinc-600">
-            Ventajas
-            <textarea
-              value={pros}
-              onChange={(e) => setPros(e.target.value)}
-              placeholder="Qué funcionó: plazos, trato, contrato…"
+          <label id="review-title" className="block text-xs font-medium text-zinc-600">
+            Título
+            <input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Ej. La fianza tardó semanas en volver"
               required
-              minLength={10}
-              maxLength={450}
-              rows={3}
+              maxLength={100}
+              aria-invalid={errorField === "title"}
+              aria-describedby={errorField === "title" ? "review-title-error" : undefined}
               className="input-field mt-1"
             />
+            {errorField === "title" && error ? (
+              <span id="review-title-error" className="mt-1 block text-sm font-normal text-red-700">
+                {error}
+              </span>
+            ) : null}
           </label>
-          <label className="block text-xs font-medium text-zinc-600">
+          <label id="review-cons" className="block text-xs font-medium text-zinc-600">
             Desventajas
             <textarea
               value={cons}
@@ -389,9 +442,41 @@ export function ReviewForm({ agencySlug }: { agencySlug: string }) {
               minLength={10}
               maxLength={450}
               rows={3}
+              aria-invalid={errorField === "cons"}
+              aria-describedby={errorField === "cons" ? "review-cons-error" : undefined}
               className="input-field mt-1"
             />
+            {errorField === "cons" && error ? (
+              <span id="review-cons-error" className="mt-1 block text-sm font-normal text-red-700">
+                {error}
+              </span>
+            ) : null}
           </label>
+          <label id="review-pros" className="block text-xs font-medium text-zinc-600">
+            Ventajas
+            <textarea
+              value={pros}
+              onChange={(e) => setPros(e.target.value)}
+              placeholder="Qué funcionó: plazos, trato, contrato…"
+              required
+              minLength={10}
+              maxLength={450}
+              rows={3}
+              aria-invalid={errorField === "pros"}
+              aria-describedby={errorField === "pros" ? "review-pros-error" : undefined}
+              className="input-field mt-1"
+            />
+            {errorField === "pros" && error ? (
+              <span id="review-pros-error" className="mt-1 block text-sm font-normal text-red-700">
+                {error}
+              </span>
+            ) : null}
+          </label>
+          </fieldset>
+          <fieldset className="space-y-3">
+            <legend className="text-sm font-medium text-zinc-900">
+              Antes de enviar
+            </legend>
           <fieldset>
             <legend className="text-xs font-medium text-zinc-600">
               ¿Recomendarías esta inmobiliaria?
@@ -427,16 +512,31 @@ export function ReviewForm({ agencySlug }: { agencySlug: string }) {
             qué cuenta escribió, en sus registros.
           </label>
           {!anonymous && (
-            <input
-              value={publicName}
-              onChange={(e) => setPublicName(e.target.value)}
-              placeholder="Nombre público (no uses un correo)"
-              maxLength={40}
-              className="input-field"
-            />
+            <label id="review-name" className="block text-xs font-medium text-zinc-600">
+              Nombre público
+              <input
+                value={publicName}
+                onChange={(e) => setPublicName(e.target.value)}
+                placeholder="No uses un correo"
+                maxLength={40}
+                aria-invalid={errorField === "name"}
+                aria-describedby={errorField === "name" ? "review-name-error" : undefined}
+                className="input-field mt-1"
+              />
+              {errorField === "name" && error ? (
+                <span id="review-name-error" className="mt-1 block text-sm font-normal text-red-700">
+                  {error}
+                </span>
+              ) : null}
+            </label>
           )}
-          <IncidentMarkFields marks={marks} onChange={setMarks} />
-          <fieldset className="space-y-2 rounded-lg border border-stone-200 p-3">
+          <div id="review-themes">
+            <IncidentMarkFields marks={marks} onChange={setMarks} />
+            {errorField === "themes" && error ? (
+              <p className="mt-1 text-sm text-red-700">{error}</p>
+            ) : null}
+          </div>
+          <fieldset id="review-declarations" className="space-y-2 rounded-lg border border-stone-200 p-3">
             <legend className="px-1 text-xs font-semibold text-zinc-700">
               Declaraciones de autenticidad
             </legend>
@@ -492,6 +592,9 @@ export function ReviewForm({ agencySlug }: { agencySlug: string }) {
               </a>
               .
             </label>
+            {errorField === "declarations" && error ? (
+              <p className="text-sm text-red-700">{error}</p>
+            ) : null}
           </fieldset>
           <label className="block text-xs font-medium text-zinc-600">
             Foto de una página (opcional)
@@ -513,6 +616,7 @@ export function ReviewForm({ agencySlug }: { agencySlug: string }) {
                 : ""}
             </span>
           </label>
+          </fieldset>
           <button
             type="submit"
             disabled={loading}

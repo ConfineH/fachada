@@ -111,8 +111,8 @@ export function ClaimForm({
   }
 
   return (
-    <div className="rounded-xl border border-stone-200 bg-white p-5">
-      <h3 className="font-medium">Reclamar perfil</h3>
+    <div className="rounded-xl border border-dashed border-stone-300 bg-stone-50 p-5">
+      <h3 className="text-sm font-medium text-zinc-700">Reclamar perfil</h3>
       <p className="mt-1 text-sm text-stone-600">
         {needsBusinessPhone
           ? "Pedimos cuenta identificada, teléfono de la ficha, correo corporativo y documentos."

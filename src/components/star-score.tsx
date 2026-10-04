@@ -1,9 +1,11 @@
 export function StarScore({
   score,
   size = "md",
+  tone = "rating",
 }: {
   score: number;
   size?: "sm" | "md" | "lg";
+  tone?: "rating" | "neutral";
 }) {
   const slotClass =
     size === "lg" ? "size-6" : size === "sm" ? "size-3.5" : "size-4";
@@ -16,6 +18,7 @@ export function StarScore({
           key={index}
           fill={Math.min(1, Math.max(0, score - index))}
           slotClass={slotClass}
+          tone={tone}
         />
       ))}
     </span>
@@ -25,9 +28,11 @@ export function StarScore({
 function StarSlot({
   fill,
   slotClass,
+  tone,
 }: {
   fill: number;
   slotClass: string;
+  tone: "rating" | "neutral";
 }) {
   const amount = Math.round(fill * 1000) / 1000;
 
@@ -38,7 +43,9 @@ function StarSlot({
         className="absolute inset-y-0 left-0 overflow-hidden"
         style={{ width: `${amount * 100}%` }}
       >
-        <StarIcon className={`absolute top-0 left-0 ${slotClass} text-rating`} />
+        <StarIcon
+          className={`absolute top-0 left-0 ${slotClass} ${tone === "neutral" ? "text-zinc-700" : "text-rating"}`}
+        />
       </span>
     </span>
   );

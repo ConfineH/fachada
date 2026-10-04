@@ -77,14 +77,14 @@ function RatingCard({
       {variant === "profile" && score !== null ? (
         <div className="mt-2 flex flex-wrap items-center gap-3">
           <ScoreValue score={score} className="" />
-          <StarScore score={score} size="lg" />
+          <StarScore score={score} size="lg" tone="neutral" />
         </div>
       ) : (
         <>
           <ScoreValue score={score} />
           {score !== null ? (
             <div className="mt-2">
-              <StarScore score={score} size="md" />
+              <StarScore score={score} size="md" tone="neutral" />
             </div>
           ) : null}
         </>
@@ -111,7 +111,7 @@ function ScoreValue({
 }) {
   return (
     <p
-      className={`${className} text-3xl font-semibold tabular-nums tracking-tight text-zinc-900`}
+      className={`${className} text-3xl font-semibold tabular-nums tracking-tight ${score !== null ? "text-rating" : "text-zinc-900"}`}
     >
       {score !== null ? score.toFixed(1) : "—"}
       {score !== null ? <span className="sr-only"> de 5</span> : null}

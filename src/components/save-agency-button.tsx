@@ -5,7 +5,13 @@ import Link from "next/link";
 
 import { authHeaders, readSessionToken } from "@/lib/auth/session-client";
 
-export function SaveAgencyButton({ agencyId }: { agencyId: string }) {
+export function SaveAgencyButton({
+  agencyId,
+  variant = "button",
+}: {
+  agencyId: string;
+  variant?: "button" | "link";
+}) {
   const [saved, setSaved] = useState(false);
   const [hint, setHint] = useState("");
 
@@ -51,7 +57,15 @@ export function SaveAgencyButton({ agencyId }: { agencyId: string }) {
 
   return (
     <div>
-      <button type="button" onClick={toggle} className="btn-secondary min-h-11">
+      <button
+        type="button"
+        onClick={toggle}
+        className={
+          variant === "link"
+            ? "link-brand inline-flex min-h-11 items-center text-sm"
+            : "btn-secondary min-h-11"
+        }
+      >
         {saved ? "Guardada" : "Guardar inmobiliaria"}
       </button>
       {hint && (

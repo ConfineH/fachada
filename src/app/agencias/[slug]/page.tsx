@@ -101,6 +101,12 @@ export default async function AgencyPage({
   }));
 
   const totalReviews = agency.reviews.length;
+  const inquilinoReviews = agency.reviews.filter(
+    (review) => review.role === "inquilino",
+  ).length;
+  const propietarioReviews = agency.reviews.filter(
+    (review) => review.role === "propietario",
+  ).length;
   const patterns = summarizeReviewPatterns(agency.reviews);
 
   return (
@@ -166,22 +172,24 @@ export default async function AgencyPage({
               </div>
               </div>
             </div>
-            <div className="flex flex-col gap-3 sm:flex-row">
-              <SaveAgencyButton agencyId={agency.id} />
-              {totalReviews > 0 ? (
-                <a
-                  href="#experiencias"
-                  className="btn-primary inline-flex min-h-11 shrink-0 items-center justify-center px-6"
-                >
-                  Leer experiencias
-                </a>
-              ) : null}
+            <div className="flex w-full flex-col gap-2 sm:w-auto sm:items-end">
               <a
-                href="#dejar-resena"
-                className={`${totalReviews > 0 ? "btn-secondary" : "btn-primary"} inline-flex min-h-11 shrink-0 items-center justify-center px-6`}
+                href={totalReviews > 0 ? "#experiencias" : "#dejar-resena"}
+                className="btn-primary inline-flex min-h-11 w-full items-center justify-center px-6 sm:w-auto"
               >
-                {totalReviews > 0 ? "Dejar una reseña" : "Dejar la primera reseña"}
+                {totalReviews > 0 ? "Leer experiencias" : "Dejar la primera reseña"}
               </a>
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 sm:justify-end">
+                {totalReviews > 0 ? (
+                  <a
+                    href="#dejar-resena"
+                    className="link-brand inline-flex min-h-11 items-center text-sm"
+                  >
+                    Dejar una reseña
+                  </a>
+                ) : null}
+                <SaveAgencyButton agencyId={agency.id} variant="link" />
+              </div>
             </div>
           </div>
         </div>
@@ -209,19 +217,19 @@ export default async function AgencyPage({
               href={`/agencias/${slug}`}
               className={`filter-chip ${perspective ? "filter-chip-idle" : "filter-chip-active"}`}
             >
-              Las dos notas
+              Las dos notas ({totalReviews})
             </Link>
             <Link
               href={`/agencias/${slug}?perspectiva=inquilino`}
               className={`filter-chip ${perspective === "inquilino" ? "filter-chip-active" : "filter-chip-idle"}`}
             >
-              Solo inquilinos
+              Solo inquilinos ({inquilinoReviews})
             </Link>
             <Link
               href={`/agencias/${slug}?perspectiva=propietario`}
               className={`filter-chip ${perspective === "propietario" ? "filter-chip-active" : "filter-chip-idle"}`}
             >
-              Solo propietarios
+              Solo propietarios ({propietarioReviews})
             </Link>
           </div>
           {perspectiveHint ? (
@@ -237,12 +245,6 @@ export default async function AgencyPage({
             locations={agency.locations}
             aliases={agency.aliases}
           />
-          <div className="mt-4">
-            <SuggestFichaTipForm
-              agencySlug={agency.slug}
-              agencyCity={agency.city}
-            />
-          </div>
 
           <IncidentSentimentSummary reviews={agency.reviews} />
           <h2 id="experiencias" className="mt-12 text-xl font-semibold tracking-tight">
@@ -260,6 +262,29 @@ export default async function AgencyPage({
               initialFilter={perspective ?? undefined}
             />
           </div>
+          <div className="mt-10">
+            <SuggestFichaTipForm
+              agencySlug={agency.slug}
+              agencyCity={agency.city}
+            />
+          </div>
+          <div className="mt-6">
+            <ClaimForm
+              agencyId={agency.id}
+              agencyClaimed={agency.claimed}
+              agencyPhonePublished={agencyHasPublishedPhone(agency)}
+              agencyPhoneHint={maskSpanishPhone(agency.phone)}
+              agencyEmailDomainHint={emailDomainHint}
+              requiresCif={Boolean(agency.cif)}
+              businessSmsEnabled={isTwilioConfigured()}
+            />
+            <Link
+              href={`/agencia/${slug}/panel`}
+              className="link-brand mt-3 block text-sm"
+            >
+              Ya reclamé la ficha: ir al panel
+            </Link>
+          </div>
         </section>
 
         <aside className="space-y-6">
@@ -267,21 +292,6 @@ export default async function AgencyPage({
           <div id="dejar-resena">
             <ReviewForm agencySlug={agency.slug} />
           </div>
-          <ClaimForm
-            agencyId={agency.id}
-            agencyClaimed={agency.claimed}
-            agencyPhonePublished={agencyHasPublishedPhone(agency)}
-            agencyPhoneHint={maskSpanishPhone(agency.phone)}
-            agencyEmailDomainHint={emailDomainHint}
-            requiresCif={Boolean(agency.cif)}
-            businessSmsEnabled={isTwilioConfigured()}
-          />
-          <Link
-            href={`/agencia/${slug}/panel`}
-            className="link-brand block text-center text-sm"
-          >
-            Ya reclamé la ficha: ir al panel
-          </Link>
           {(agency.idealistaUrl || agency.fotocasaUrl) && (
             <p className="text-center text-sm text-zinc-600">
               Portales:{" "}

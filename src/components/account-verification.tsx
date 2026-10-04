@@ -64,7 +64,6 @@ export function AccountVerification({
 
     function handleCredential(response: { credential: string }) {
       setLoading(true);
-      setError("");
       void fetch("/api/auth/google", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -76,6 +75,7 @@ export function AccountVerification({
             setError(data.error ?? "No se pudo entrar con Google");
             return;
           }
+          setError("");
           onVerifiedRef.current(data.token);
         })
         .catch(() => {
@@ -125,7 +125,6 @@ export function AccountVerification({
 
   async function sendCode() {
     setLoading(true);
-    setError("");
     setNotice("");
     setDevCode(null);
     setCode("");
@@ -143,6 +142,7 @@ export function AccountVerification({
       return false;
     }
 
+    setError("");
     if (typeof data.devCode === "string") {
       setDevCode(data.devCode);
     }
@@ -158,7 +158,6 @@ export function AccountVerification({
   async function verifyCode(event: FormEvent) {
     event.preventDefault();
     setLoading(true);
-    setError("");
 
     const res = await fetch("/api/auth/verify-email-code", {
       method: "POST",
@@ -264,7 +263,7 @@ export function AccountVerification({
             disabled={loading}
             className="btn-primary w-full min-h-11"
           >
-            Enviar código
+            {loading ? "Enviando…" : "Enviar código"}
           </button>
         </form>
       )}
@@ -293,7 +292,7 @@ export function AccountVerification({
             disabled={loading}
             className="btn-primary w-full min-h-11"
           >
-            Verificar
+            {loading ? "Verificando…" : "Verificar"}
           </button>
           <div className="flex flex-wrap gap-3 text-sm">
             <button
@@ -302,7 +301,7 @@ export function AccountVerification({
               onClick={() => void sendCode()}
               className="link-brand"
             >
-              Reenviar código
+              {loading ? "Reenviando…" : "Reenviar código"}
             </button>
             <button
               type="button"

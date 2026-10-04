@@ -54,23 +54,12 @@ export function AgencyReviewList({
   reviews: PublicReview[];
   initialFilter?: string;
 }) {
-  const [filter, setFilter] = useState<Filter>(
-    initialFilterFromPerspective(initialFilter),
-  );
+  const filter = initialFilterFromPerspective(initialFilter);
   const [helpful, setHelpful] = useState<Record<string, number>>(() =>
     Object.fromEntries(reviews.map((review) => [review.id, review.helpfulCount])),
   );
   const [voted, setVoted] = useState<Record<string, boolean>>({});
   const [hint, setHint] = useState("");
-
-  const counts = useMemo(
-    () => ({
-      all: reviews.length,
-      inquilino: reviews.filter((r) => r.role === "inquilino").length,
-      propietario: reviews.filter((r) => r.role === "propietario").length,
-    }),
-    [reviews],
-  );
 
   const filtered = useMemo(() => {
     if (filter === "all") return reviews;
@@ -112,27 +101,6 @@ export function AgencyReviewList({
           </Link>
         </p>
       )}
-      <div className="mb-4 flex flex-wrap gap-2">
-        {(
-          [
-            ["all", `Todas (${counts.all})`],
-            ["inquilino", `Solo inquilinos (${counts.inquilino})`],
-            ["propietario", `Solo propietarios (${counts.propietario})`],
-          ] as const
-        ).map(([value, label]) => (
-          <button
-            key={value}
-            type="button"
-            onClick={() => setFilter(value)}
-            className={`filter-chip ${
-              filter === value ? "filter-chip-active" : "filter-chip-idle"
-            }`}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
-
       <ul key={filter} className="motion-stagger space-y-4">
         {filtered.length === 0 && (
           <li className="rounded-xl border border-dashed border-stone-300 bg-white p-6 text-stone-600">
