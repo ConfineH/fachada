@@ -102,6 +102,13 @@ function RatingCard({
   );
 }
 
+function scoreClass(score: number | null) {
+  if (score === null) return "text-zinc-900";
+  if (score >= 4) return "text-rating";
+  if (score >= 3) return "text-zinc-800";
+  return "text-slate-600";
+}
+
 function ScoreValue({
   score,
   className = "mt-2",
@@ -111,7 +118,7 @@ function ScoreValue({
 }) {
   return (
     <p
-      className={`${className} text-3xl font-semibold tabular-nums tracking-tight ${score !== null ? "text-rating" : "text-zinc-900"}`}
+      className={`${className} text-3xl font-semibold tabular-nums tracking-tight ${scoreClass(score)}`}
     >
       {score !== null ? score.toFixed(1) : "—"}
       {score !== null ? <span className="sr-only"> de 5</span> : null}

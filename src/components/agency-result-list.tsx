@@ -10,9 +10,11 @@ import type { AgencyWithStats } from "@/lib/domain/types";
 export function AgencyResultList({
   agencies,
   empty,
+  layout = "list",
 }: {
   agencies: AgencyWithStats[];
   empty: ReactNode;
+  layout?: "list" | "board";
 }) {
   if (agencies.length === 0) {
     return (
@@ -23,14 +25,24 @@ export function AgencyResultList({
   }
 
   return (
-    <ul className="grid gap-4">
+    <ul
+      className={
+        layout === "board" ? "grid gap-4 md:grid-cols-2" : "grid gap-4"
+      }
+    >
       {agencies.map((agency) => (
         <li key={agency.id}>
           <Link
             href={`/agencias/${agency.slug}`}
-            className="card-interactive block p-5"
+            className="card-interactive block h-full p-5"
           >
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div
+              className={
+                layout === "board"
+                  ? "flex h-full flex-col gap-4"
+                  : "flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"
+              }
+            >
               <div className="flex items-start gap-3">
                 <AgencyLogo
                   name={agency.name}
@@ -43,7 +55,7 @@ export function AgencyResultList({
                   </p>
                 </div>
               </div>
-              <div className="min-w-[240px]">
+              <div className={layout === "board" ? "mt-auto w-full" : "min-w-[240px]"}>
                 <RoleRatingSummary roleRatings={agency.roleRatings} />
               </div>
             </div>

@@ -102,7 +102,7 @@ export default async function Home({
         </div>
       </section>
 
-      <main className="mx-auto max-w-6xl space-y-20 px-6 py-14">
+      <main className="mx-auto max-w-6xl space-y-14 px-6 py-14">
         {documented.preview.length > 0 && (
           <section>
             <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
@@ -125,6 +125,7 @@ export default async function Home({
             <AgencyResultList
               agencies={documented.preview}
               empty="Aún no hay reseñas publicadas."
+              layout="board"
             />
           </section>
         )}
