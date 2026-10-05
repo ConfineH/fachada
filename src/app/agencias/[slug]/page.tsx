@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { JsonLd } from "@/components/json-ld";
@@ -12,11 +12,12 @@ import { IncidentSentimentSummary } from "@/components/incident-sentiment-summar
 import { ClaimForm } from "@/components/claim-form";
 import { PublicShell } from "@/components/public-shell";
 import { ReviewForm } from "@/components/review-form";
+import { BrandRollup } from "@/components/brand-rollup";
 import { RoleRatingSummary } from "@/components/role-rating-summary";
+import { formatCityList } from "@/lib/domain/company-presence";
 import { SaveAgencyButton } from "@/components/save-agency-button";
 import { SuggestFichaTipForm } from "@/components/suggest-ficha-tip-form";
 import { agencyHasPublishedPhone, publicAgencyEmail } from "@/lib/domain/agency-contact";
-import { publicStreetLine } from "@/lib/domain/agency-presence";
 import { summarizeReviewPatterns } from "@/lib/domain/review-patterns";
 import {
   agencyTrustedDomains,
@@ -28,20 +29,40 @@ import { agencyJsonLd, pageMeta } from "@/lib/seo";
 import { agencyLogoUrl } from "@/lib/ops/agency-logos";
 import { isTwilioConfigured } from "@/lib/services/sms-provider";
 
+function fichaQuery(
+  slug: string,
+  perspective: "inquilino" | "propietario" | null,
+  city: string | null,
+) {
+  const params = new URLSearchParams();
+  if (perspective) params.set("perspectiva", perspective);
+  if (city) params.set("ciudad", city);
+  const query = params.toString();
+  return query ? `/agencias/${slug}?${query}` : `/agencias/${slug}`;
+}
+
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const agency = await agencyService.getBySlug(slug, { publicOnly: true });
+  const direct = await agencyService.getBySlug(slug, { publicOnly: true });
+  const canonical = direct
+    ? slug
+    : await agencyService.findCanonicalSlug(slug);
+  const agency = direct
+    ?? (canonical
+      ? await agencyService.getBySlug(canonical, { publicOnly: true })
+      : undefined);
   if (!agency) return { title: "Inmobiliaria no encontrada" };
   const reviewHint =
     agency.reviewCount > 0
       ? `${agency.reviewCount} experiencias publicadas`
       : "aún sin experiencias publicadas";
-  const title = `${agency.name} en ${agency.city}`;
-  const description = `Cómo gestionan el alquiler en ${agency.name} (${agency.city}): fianzas, reparaciones y comunicación. ${reviewHint}.`;
+  const cities = agency.presenceCities ?? [agency.city];
+  const title = cities.length > 1 ? agency.name : `${agency.name} en ${agency.city}`;
+  const description = `Cómo gestionan el alquiler en ${agency.name} (${formatCityList(cities)}): fianzas, reparaciones y comunicación. ${reviewHint}.`;
   return pageMeta(title, description, `/agencias/${agency.slug}`);
 }
 
@@ -50,12 +71,19 @@ export default async function AgencyPage({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ perspectiva?: string }>;
+  searchParams: Promise<{ perspectiva?: string; ciudad?: string }>;
 }) {
   const { slug } = await params;
-  const { perspectiva } = await searchParams;
+  const { perspectiva, ciudad } = await searchParams;
   const agency = await agencyService.getBySlug(slug, { publicOnly: true });
-  if (!agency) notFound();
+  if (!agency) {
+    const canonical = await agencyService.findCanonicalSlug(slug);
+    if (canonical && canonical !== slug) redirect(`/agencias/${canonical}`);
+    notFound();
+  }
+  const cities = agency.presenceCities ?? [agency.city];
+  const cityFilter = ciudad?.trim() || null;
+  const brand = await agencyService.brandRollup(agency);
 
   const perspective =
     perspectiva === "inquilino" || perspectiva === "propietario"
@@ -88,6 +116,7 @@ export default async function AgencyPage({
     incidentSentiments: review.incidentSentiments,
     experienceDate: review.experienceDate.toISOString(),
     experienceType: review.experienceType,
+    experienceCity: review.experienceCity,
     verificationLevel: review.verificationLevel,
     identityVerification: review.identityVerification,
     createdAt: review.createdAt.toISOString(),
@@ -125,16 +154,23 @@ export default async function AgencyPage({
       />
       <header className="border-b border-stone-200 bg-white">
         <div className="mx-auto max-w-6xl px-6 py-10">
-          <Breadcrumbs
-            items={[
-              { name: "Ciudades", href: "/explorar" },
-              {
-                name: agency.city,
-                href: `/ciudades/${cityToSlug(agency.city)}`,
-              },
-              { name: agency.name, href: `/agencias/${agency.slug}` },
-            ]}
-          />
+            <Breadcrumbs
+              items={
+                cities.length > 1
+                  ? [
+                      { name: "Registro", href: "/agencias" },
+                      { name: agency.name, href: `/agencias/${agency.slug}` },
+                    ]
+                  : [
+                      { name: "Ciudades", href: "/explorar" },
+                      {
+                        name: agency.city,
+                        href: `/ciudades/${cityToSlug(agency.city)}`,
+                      },
+                      { name: agency.name, href: `/agencias/${agency.slug}` },
+                    ]
+              }
+            />
           <div className="motion-fade-rise mt-6 flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
             <div className="flex items-start gap-4">
               <AgencyLogo
@@ -145,7 +181,7 @@ export default async function AgencyPage({
               <div>
                 <div className="flex flex-wrap items-center gap-3">
                 <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-                  {agency.name} en {agency.city}
+                  {agency.name}
                 </h1>
                 {agency.verified && (
                   <span className="badge-trust">Ficha reclamada</span>
@@ -158,7 +194,7 @@ export default async function AgencyPage({
                 </p>
               )}
               <p className="mt-4 text-sm text-zinc-700">
-                {publicStreetLine(agency)}
+                {formatCityList(cities)}
               </p>
               <div className="mt-3 flex flex-wrap gap-4 text-sm text-zinc-600">
                 {agencyHasPublishedPhone(agency) ? (
@@ -209,24 +245,34 @@ export default async function AgencyPage({
             />
           </div>
           <p className="mt-6 text-sm text-zinc-600">
-            Las dos notas no se mezclan. Elige un lado si quieres leer solo esas
-            experiencias.
+            Las dos notas son de toda la empresa, en todas sus ciudades. Elige un
+            lado si quieres leer solo esas experiencias. La ciudad solo cambia
+            la lista de abajo.
           </p>
+          {brand ? (
+            <div className="mt-6">
+              <BrandRollup
+                brandName={brand.brandName}
+                companyCount={brand.companyCount}
+                roleRatings={brand.roleRatings}
+              />
+            </div>
+          ) : null}
           <div className="mt-3 flex flex-wrap gap-2 text-sm">
             <Link
-              href={`/agencias/${slug}`}
+              href={fichaQuery(slug, null, cityFilter)}
               className={`filter-chip ${perspective ? "filter-chip-idle" : "filter-chip-active"}`}
             >
               Las dos notas ({totalReviews})
             </Link>
             <Link
-              href={`/agencias/${slug}?perspectiva=inquilino`}
+              href={fichaQuery(slug, "inquilino", cityFilter)}
               className={`filter-chip ${perspective === "inquilino" ? "filter-chip-active" : "filter-chip-idle"}`}
             >
               Solo inquilinos ({inquilinoReviews})
             </Link>
             <Link
-              href={`/agencias/${slug}?perspectiva=propietario`}
+              href={fichaQuery(slug, "propietario", cityFilter)}
               className={`filter-chip ${perspective === "propietario" ? "filter-chip-active" : "filter-chip-idle"}`}
             >
               Solo propietarios ({propietarioReviews})
@@ -255,10 +301,36 @@ export default async function AgencyPage({
             {totalReviews === 1
               ? "reseña publicada tras moderación."
               : "reseñas publicadas tras moderación."}
+            {cityFilter
+              ? ` La nota de arriba es de toda la empresa. Abajo, lo contado en ${cityFilter}.`
+              : ""}
           </p>
+          {cities.length > 1 ? (
+            <div className="mt-3 flex flex-wrap gap-2 text-sm">
+              <Link
+                href={fichaQuery(agency.slug, perspective, null)}
+                className={`filter-chip ${cityFilter ? "filter-chip-idle" : "filter-chip-active"}`}
+              >
+                Todas las ciudades
+              </Link>
+              {cities.map((city) => (
+                <Link
+                  key={city}
+                  href={fichaQuery(agency.slug, perspective, city)}
+                  className={`filter-chip ${cityFilter?.toLowerCase() === city.toLowerCase() ? "filter-chip-active" : "filter-chip-idle"}`}
+                >
+                  {city}
+                </Link>
+              ))}
+            </div>
+          ) : null}
           <div className="mt-6">
             <AgencyReviewList
-              reviews={reviewsForClient}
+              reviews={reviewsForClient.filter((review) =>
+                cityFilter
+                  ? review.experienceCity?.toLowerCase() === cityFilter.toLowerCase()
+                  : true,
+              )}
               initialFilter={perspective ?? undefined}
             />
           </div>
@@ -290,7 +362,7 @@ export default async function AgencyPage({
         <aside className="space-y-6">
           <AgencyMetadataCard agency={agency} aliases={agency.aliases} />
           <div id="dejar-resena">
-            <ReviewForm agencySlug={agency.slug} />
+            <ReviewForm agencySlug={agency.slug} cities={cities} />
           </div>
           {(agency.idealistaUrl || agency.fotocasaUrl) && (
             <p className="text-center text-sm text-zinc-600">

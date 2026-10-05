@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 
 import { buildAgencySlug } from "@/lib/domain/agency-slug";
+import { brandSlugFromName, companyKey, servesCity } from "@/lib/domain/company-presence";
 import { summarizeReviewFunnel } from "@/lib/domain/review-funnel";
 import type { Agency, AgencyLocation, AgencySubmission, AgencyTip, Claim, ContentNotice, Review } from "@/lib/domain/types";
 import {
@@ -182,22 +183,32 @@ export class AdminService {
 
   async createAgency(input: unknown): Promise<Agency> {
     const data = adminCreateAgencySchema.parse(input);
-    const normalizedName = data.name.trim().toLowerCase();
-    const normalizedCity = data.city.trim().toLowerCase();
-
     const agencies = await this.repo.listAgencies();
-    const duplicate = agencies.some(
-      (a) =>
-        a.name.trim().toLowerCase() === normalizedName &&
-        a.city.trim().toLowerCase() === normalizedCity,
+    const existing = agencies.find(
+      (agency) => companyKey(agency.name) === companyKey(data.name),
     );
-    if (duplicate) {
-      throw new AdminError(
-        "Ya existe una inmobiliaria con ese nombre en esa ciudad.",
-      );
+    if (existing) {
+      const locations = await this.repo.listLocationsByAgency(existing.id);
+      if (servesCity(existing, locations, data.city)) {
+        throw new AdminError(
+          "Esa inmobiliaria ya está en esa ciudad. La ficha es una sola.",
+        );
+      }
+      const location: AgencyLocation = {
+        id: randomUUID(),
+        agencyId: existing.id,
+        kind: "branch",
+        status: "publicado",
+        address: data.address.trim(),
+        city: data.city.trim(),
+        postalCode: data.postalCode.trim(),
+        createdAt: new Date(),
+      };
+      await this.repo.createLocation(location);
+      return existing;
     }
 
-    const baseSlug = buildAgencySlug(data.name, data.city);
+    const baseSlug = buildAgencySlug(data.name);
     let slug = baseSlug;
     let i = 2;
     while (await this.repo.findAgencyBySlug(slug)) {
@@ -210,6 +221,8 @@ export class AdminService {
       id: randomUUID(),
       slug,
       name: data.name.trim(),
+      brandSlug: brandSlugFromName(data.name),
+      brandName: data.name.trim(),
       address: data.address.trim(),
       city: data.city.trim(),
       postalCode: data.postalCode.trim(),

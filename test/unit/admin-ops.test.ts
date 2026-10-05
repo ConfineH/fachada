@@ -44,7 +44,7 @@ describe("AdminService.createAgency", () => {
     });
 
     expect(agency.phonePublished).toBe(false);
-    expect(agency.slug).toBe("inmobiliaria-norte-madrid");
+    expect(agency.slug).toBe("inmobiliaria-norte");
 
     const match = await agencies.matchByName("Norte Madrid", "Madrid");
     expect(match?.slug).toBe(agency.slug);
@@ -59,7 +59,23 @@ describe("AdminService.createAgency", () => {
         address: "Plaza Mayor 1",
         noPhoneOnline: true,
       }),
-    ).rejects.toThrow(/Ya existe/);
+    ).rejects.toThrow(/ya está en esa ciudad/);
+  });
+
+  it("adds a city to the existing company instead of a second ficha", async () => {
+    const agency = await admin.createAgency({
+      name: "Inmobiliaria Sol",
+      city: "Barcelona",
+      postalCode: "08001",
+      address: "Oficina en Barcelona",
+      noPhoneOnline: true,
+    });
+
+    expect(agency.slug).toBe("inmobiliaria-sol-madrid");
+    const locations = await store.listLocationsByAgency(agency.id);
+    expect(locations.some((location) => location.city === "Barcelona")).toBe(true);
+    const barcelona = await agencies.listByCity("barcelona");
+    expect(barcelona.some((item) => item.id === agency.id)).toBe(true);
   });
 
   it("adds an alias by slug", async () => {

@@ -4,6 +4,11 @@ import { isAccountVerified } from "@/lib/domain/identity";
 import { isPublicReview } from "@/lib/domain/review-visibility";
 import { cityToSlug } from "@/lib/domain/city";
 import {
+  brandScoreApplies,
+  presenceCities,
+  servesCity,
+} from "@/lib/domain/company-presence";
+import {
   sortAgencies,
   type AgencySort,
 } from "@/lib/domain/agency-browse";
@@ -60,20 +65,29 @@ export class AgencyService {
   ) {
     const normalized = query?.trim().toLowerCase() ?? "";
     const agencies = await this.repo.listAgencies();
+    const locations = await this.locationsByAgency();
 
     const filtered = normalized
-      ? agencies.filter(
-          (a) =>
-            a.name.toLowerCase().includes(normalized) ||
-            a.city.toLowerCase().includes(normalized),
-        )
+      ? agencies.filter((agency) => {
+          const cities = presenceCities(agency, locations.get(agency.id) ?? []);
+          return (
+            agency.name.toLowerCase().includes(normalized) ||
+            cities.some((city) => city.toLowerCase().includes(normalized))
+          );
+        })
       : agencies;
 
     const withStats = await Promise.all(
       filtered.map((agency) => this.withStats(agency, options)),
     );
 
-    return sortAgencies(withStats, options?.sort ?? "reviews");
+    return sortAgencies(
+      withStats.map((agency) => ({
+        ...agency,
+        presenceCities: presenceCities(agency, locations.get(agency.id) ?? []),
+      })),
+      options?.sort ?? "reviews",
+    );
   }
 
   async listByCity(
@@ -81,7 +95,10 @@ export class AgencyService {
     options?: { publicOnly?: boolean; query?: string; sort?: AgencySort },
   ) {
     const agencies = await this.repo.listAgencies();
-    const inCity = agencies.filter((a) => cityToSlug(a.city) === citySlug);
+    const locations = await this.locationsByAgency();
+    const inCity = agencies.filter((agency) =>
+      servesCity(agency, locations.get(agency.id) ?? [], citySlug),
+    );
     const normalized = options?.query?.trim().toLowerCase() ?? "";
     const filtered = normalized
       ? inCity.filter((a) => a.name.toLowerCase().includes(normalized))
@@ -89,28 +106,37 @@ export class AgencyService {
     const withStats = await Promise.all(
       filtered.map((a) => this.withStats(a, options)),
     );
-    return sortAgencies(withStats, options?.sort ?? "reviews");
+    return sortAgencies(
+      withStats.map((agency) => ({
+        ...agency,
+        presenceCities: presenceCities(agency, locations.get(agency.id) ?? []),
+      })),
+      options?.sort ?? "reviews",
+    );
   }
 
   async exploreCities(options?: { publicOnly?: boolean }) {
     const agencies = await this.repo.listAgencies();
+    const locations = await this.locationsByAgency();
     const map = new Map<string, CityExploreSummary>();
 
     for (const agency of agencies) {
-      const slug = cityToSlug(agency.city);
       const reviews = await this.filterReviews(
         await this.repo.listReviewsByAgency(agency.id),
         options,
       );
-      const current = map.get(slug) ?? {
-        city: agency.city,
-        slug,
-        agencyCount: 0,
-        reviewCount: 0,
-      };
-      current.agencyCount += 1;
-      current.reviewCount += reviews.length;
-      map.set(slug, current);
+      for (const city of presenceCities(agency, locations.get(agency.id) ?? [])) {
+        const slug = cityToSlug(city);
+        const current = map.get(slug) ?? {
+          city,
+          slug,
+          agencyCount: 0,
+          reviewCount: 0,
+        };
+        current.agencyCount += 1;
+        current.reviewCount += reviews.length;
+        map.set(slug, current);
+      }
     }
 
     return [...map.values()].sort((a, b) => a.city.localeCompare(b.city, "es"));
@@ -123,13 +149,17 @@ export class AgencyService {
   ): Promise<AgencyMatchResult | null> {
     const agencies = await this.repo.listAgencies();
     const aliases = await this.repo.listAllAliases();
-    const normalizedCity = city?.trim().toLowerCase();
+    const locations = await this.locationsByAgency();
+    const normalizedCity = city?.trim();
 
     let best: { agency: Agency; confidence: number; matchedOn: string } | null =
       null;
 
     for (const agency of agencies) {
-      if (normalizedCity && agency.city.toLowerCase() !== normalizedCity) {
+      if (
+        normalizedCity &&
+        !servesCity(agency, locations.get(agency.id) ?? [], normalizedCity)
+      ) {
         continue;
       }
 
@@ -389,12 +419,69 @@ export class AgencyService {
 
     return {
       ...(await this.withStats(agency, options)),
+      presenceCities: presenceCities(agency, visibleLocations),
       aliases,
       locations: visibleLocations,
       reviews: reviewsWithResponses.sort(
         (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
       ),
     };
+  }
+
+  async findCanonicalSlug(slug: string) {
+    const current = await this.repo.findAgencyBySlug(slug);
+    if (current) return current.slug;
+    const id = await this.repo.findAgencyIdByLegacySlug(slug);
+    if (!id) return null;
+    const agency = await this.repo.findAgencyById(id);
+    return agency?.slug ?? null;
+  }
+
+  async brandBanners(agencies: { brandSlug?: string; brandName?: string; name: string; id: string; cif?: string }[]) {
+    const groups = new Map<string, typeof agencies>();
+    for (const agency of agencies) {
+      if (!agency.brandSlug) continue;
+      const group = groups.get(agency.brandSlug) ?? [];
+      group.push(agency);
+      groups.set(agency.brandSlug, group);
+    }
+    const banners = [];
+    for (const group of groups.values()) {
+      if (!brandScoreApplies(group)) continue;
+      const rollup = await this.brandRollup(group[0]!);
+      if (rollup) banners.push(rollup);
+    }
+    return banners;
+  }
+
+  async brandRollup(agency: { id: string; brandSlug?: string; brandName?: string; name: string }) {
+    if (!agency.brandSlug) return null;
+    const agencies = (await this.repo.listAgencies()).filter(
+      (item) => item.brandSlug === agency.brandSlug,
+    );
+    if (!brandScoreApplies(agencies)) return null;
+    const reviews = (
+      await Promise.all(
+        agencies.map((item) => this.repo.listReviewsByAgency(item.id)),
+      )
+    ).flat();
+    const visible = await this.filterReviews(reviews, { publicOnly: true });
+    return {
+      brandName: agency.brandName || agency.name,
+      companyCount: agencies.length,
+      roleRatings: summarizeRoleRatings(visible),
+    };
+  }
+
+  private async locationsByAgency() {
+    const locations = await this.repo.listPublishedLocations();
+    const map = new Map<string, typeof locations>();
+    for (const location of locations) {
+      const current = map.get(location.agencyId) ?? [];
+      current.push(location);
+      map.set(location.agencyId, current);
+    }
+    return map;
   }
 
   private async filterReviews(reviews: Review[], options?: { publicOnly?: boolean }) {

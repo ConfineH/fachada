@@ -29,6 +29,7 @@ describe("ContentNoticeService", () => {
       cons: "La comunicación posterior fue lenta durante varios días.",
       experienceDate: new Date().toISOString().slice(0, 10),
       experienceType: "alquiler",
+      experienceCity: "Madrid",
       firstHandAttested: true,
       noIncentiveAttested: true,
       noConflictAttested: true,

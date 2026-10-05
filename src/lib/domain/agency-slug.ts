@@ -1,7 +1,9 @@
 import { normalizeAgencyName } from "@/lib/domain/match";
 
-export function buildAgencySlug(name: string, city: string) {
-  const slug = `${normalizeAgencyName(name)}-${normalizeAgencyName(city)}`
+export function buildAgencySlug(name: string, city?: string) {
+  const slug = [normalizeAgencyName(name), city ? normalizeAgencyName(city) : ""]
+    .filter(Boolean)
+    .join("-")
     .replace(/\s+/g, "-")
     .replace(/-+/g, "-")
     .replace(/^-|-$/g, "");

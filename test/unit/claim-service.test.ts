@@ -80,6 +80,7 @@ describe("ClaimService and AdminService", () => {
       cons: "Mejoraría la velocidad al contestar emails.",
       experienceDate: new Date().toISOString().slice(0, 10),
       experienceType: "alquiler",
+      experienceCity: "Madrid",
       firstHandAttested: true,
       noIncentiveAttested: true,
       noConflictAttested: true,

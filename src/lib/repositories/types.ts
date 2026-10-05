@@ -60,6 +60,7 @@ export interface Repository {
   listAgencies(): Promise<Agency[]>;
   findAgencyById(id: string): Promise<Agency | null>;
   findAgencyBySlug(slug: string): Promise<Agency | null>;
+  findAgencyIdByLegacySlug(slug: string): Promise<string | null>;
   createAgency(agency: Agency): Promise<void>;
   updateAgency(agency: Agency): Promise<void>;
 
@@ -102,6 +103,7 @@ export interface Repository {
   createAlias(alias: AgencyNameAlias): Promise<void>;
 
   listLocationsByAgency(agencyId: string): Promise<AgencyLocation[]>;
+  listPublishedLocations(): Promise<AgencyLocation[]>;
   listPendingLocations(): Promise<AgencyLocation[]>;
   createLocation(location: AgencyLocation): Promise<void>;
   updateLocation(location: AgencyLocation): Promise<void>;

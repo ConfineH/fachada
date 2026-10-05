@@ -1,8 +1,9 @@
 import { randomUUID } from "node:crypto";
 
 import { buildAgencySlug } from "@/lib/domain/agency-slug";
+import { brandSlugFromName, companyKey, servesCity } from "@/lib/domain/company-presence";
 import { isAccountVerified } from "@/lib/domain/identity";
-import type { Agency, AgencySubmission, User } from "@/lib/domain/types";
+import type { Agency, AgencyLocation, AgencySubmission, User } from "@/lib/domain/types";
 import { agencySubmissionInputSchema } from "@/lib/domain/validation";
 import { notifyModerationQueue } from "@/lib/ops/moderation-alert";
 import type { Repository } from "@/lib/repositories/types";
@@ -27,27 +28,23 @@ export class AgencySubmissionService {
     }
 
     const data = agencySubmissionInputSchema.parse(input);
-    const normalizedName = data.name.trim().toLowerCase();
-    const normalizedCity = data.city.trim().toLowerCase();
 
-    const agencies = await this.repo.listAgencies();
-    const duplicate = agencies.some(
-      (a) =>
-        a.name.trim().toLowerCase() === normalizedName &&
-        a.city.trim().toLowerCase() === normalizedCity,
-    );
-    if (duplicate) {
-      throw new AgencySubmissionError(
-        "Ya existe una inmobiliaria con ese nombre en esa ciudad. Búscala y deja tu reseña.",
-      );
+    const existing = await this.findSameCompany(data.name);
+    if (existing) {
+      const locations = await this.repo.listLocationsByAgency(existing.id);
+      if (servesCity(existing, locations, data.city)) {
+        throw new AgencySubmissionError(
+          "Esa inmobiliaria ya está en esa ciudad. Búscala y deja tu reseña.",
+        );
+      }
     }
 
     const pending = await this.repo.listAgencySubmissions();
     const duplicatePending = pending.some(
       (s) =>
         s.status === "pendiente" &&
-        s.name.trim().toLowerCase() === normalizedName &&
-        s.city.trim().toLowerCase() === normalizedCity,
+        companyKey(s.name) === companyKey(data.name) &&
+        s.city.trim().toLowerCase() === data.city.trim().toLowerCase(),
     );
     if (duplicatePending) {
       throw new AgencySubmissionError(
@@ -87,7 +84,32 @@ export class AgencySubmissionService {
       throw new AgencySubmissionError("Submission already resolved");
     }
 
-    const baseSlug = buildAgencySlug(submission.name, submission.city);
+    const existing = await this.findSameCompany(submission.name);
+    if (existing) {
+      const locations = await this.repo.listLocationsByAgency(existing.id);
+      if (!servesCity(existing, locations, submission.city)) {
+        const location: AgencyLocation = {
+          id: randomUUID(),
+          agencyId: existing.id,
+          kind: "branch",
+          status: "publicado",
+          address: submission.address.trim(),
+          city: submission.city.trim(),
+          postalCode: submission.postalCode.trim(),
+          note: submission.note,
+          createdAt: new Date(),
+        };
+        await this.repo.createLocation(location);
+      }
+      submission.status = "aprobado";
+      submission.resolvedAt = new Date();
+      submission.createdAgencyId = existing.id;
+      submission.createdAgencySlug = existing.slug;
+      await this.repo.updateAgencySubmission(submission);
+      return existing;
+    }
+
+    const baseSlug = buildAgencySlug(submission.name);
     const slugFinal = await this.resolveUniqueSlug(baseSlug);
 
     const phonePublished = !submission.noPhoneOnline;
@@ -95,6 +117,8 @@ export class AgencySubmissionService {
       id: randomUUID(),
       slug: slugFinal,
       name: submission.name.trim(),
+      brandSlug: brandSlugFromName(submission.name),
+      brandName: submission.name.trim(),
       address: submission.address.trim(),
       city: submission.city.trim(),
       postalCode: submission.postalCode.trim(),
@@ -118,6 +142,12 @@ export class AgencySubmissionService {
     await this.repo.updateAgencySubmission(submission);
 
     return agency;
+  }
+
+  private async findSameCompany(name: string) {
+    const key = companyKey(name);
+    const agencies = await this.repo.listAgencies();
+    return agencies.find((agency) => companyKey(agency.name) === key) ?? null;
   }
 
   private async resolveUniqueSlug(base: string) {

@@ -16,31 +16,51 @@ function normalize(value) {
     .trim();
 }
 
-function slugFor(name, city) {
-  return `${normalize(name)}-${normalize(city)}`
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "");
+function slugForName(name) {
+  return normalize(name).replace(/\s+/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
 }
 
 function sqlStr(value) {
   return `'${String(value).replace(/'/g, "''")}'`;
 }
 
-const agencyRows = [];
-const aliasRows = [];
+const companies = new Map();
 
 for (const group of catalog) {
   for (const agency of group.agencies) {
-    const slug = slugFor(agency.name, group.city);
-    const address = agency.address ?? `Oficina en ${group.city}`;
-    const postalCode = agency.postalCode ?? group.postalCode;
-    agencyRows.push(
-      `  (${sqlStr(slug)}, ${sqlStr(agency.name)}, ${sqlStr(address)}, ${sqlStr(group.city)}, ${sqlStr(postalCode)}, ${sqlStr(agency.website)})`,
+    const key = normalize(agency.name);
+    const current = companies.get(key) ?? {
+      name: agency.name,
+      website: agency.website,
+      aliases: new Set(),
+      places: [],
+    };
+    current.places.push({
+      city: group.city,
+      postalCode: agency.postalCode ?? group.postalCode,
+      address: agency.address ?? `Oficina en ${group.city}`,
+    });
+    for (const alias of agency.aliases ?? []) current.aliases.add(alias);
+    companies.set(key, current);
+  }
+}
+
+const agencyRows = [];
+const locationRows = [];
+const aliasRows = [];
+
+for (const company of companies.values()) {
+  const principal = company.places[0];
+  agencyRows.push(
+    `  (${sqlStr(slugForName(company.name))}, ${sqlStr(company.name)}, ${sqlStr(principal.address)}, ${sqlStr(principal.city)}, ${sqlStr(principal.postalCode)}, ${sqlStr(company.website)})`,
+  );
+  for (const place of company.places) {
+    locationRows.push(
+      `  (${sqlStr(company.name)}, ${sqlStr(place.address)}, ${sqlStr(place.city)}, ${sqlStr(place.postalCode)})`,
     );
-    for (const alias of agency.aliases ?? []) {
-      aliasRows.push(`  (${sqlStr(slug)}, ${sqlStr(alias)})`);
-    }
+  }
+  for (const alias of company.aliases) {
+    aliasRows.push(`  (${sqlStr(company.name)}, ${sqlStr(alias)})`);
   }
 }
 
@@ -82,20 +102,38 @@ from (
   values
 ${agencyRows.join(",\n")}
 ) as v(slug, name, address, city, postal_code, website)
-on conflict (slug) do update set
-  name = excluded.name,
-  address = excluded.address,
-  city = excluded.city,
-  postal_code = excluded.postal_code,
-  website = excluded.website;
+where not exists (
+  select 1 from agencies existing
+  where lower(btrim(existing.name)) = lower(btrim(v.name))
+)
+on conflict (slug) do nothing;
+
+insert into agency_locations (agency_id, kind, status, address, city, postal_code)
+select a.id, 'branch', 'publicado', v.address, v.city, v.postal_code
+from (
+  values
+${locationRows.length ? locationRows.join(",\n") : "  ('__none__', '', '', '')"}
+) as v(name, address, city, postal_code)
+join agencies a on lower(btrim(a.name)) = lower(btrim(v.name))
+where v.name <> '__none__'
+  and not (
+    lower(btrim(a.city)) = lower(btrim(v.city))
+    and lower(btrim(a.address)) = lower(btrim(v.address))
+  )
+  and not exists (
+    select 1 from agency_locations l
+    where l.agency_id = a.id
+      and lower(btrim(l.city)) = lower(btrim(v.city))
+      and lower(btrim(l.address)) = lower(btrim(v.address))
+  );
 
 insert into agency_name_aliases (agency_id, alias, kind)
 select a.id, v.alias, 'commercial'
 from (
   values
 ${aliasRows.join(",\n")}
-) as v(slug, alias)
-join agencies a on a.slug = v.slug
+) as v(name, alias)
+join agencies a on lower(btrim(a.name)) = lower(btrim(v.name))
 where not exists (
   select 1
   from agency_name_aliases existing

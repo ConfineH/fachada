@@ -117,6 +117,50 @@ describe("AgencyService.matchByName", () => {
   });
 });
 
+describe("AgencyService presence", () => {
+  it("lists one company in every city where it has an office", async () => {
+    const store = new MemoryStore();
+    const service = new AgencyService(store);
+    const sol = (await store.listAgencies()).find((agency) => agency.slug === "inmobiliaria-sol-madrid")!;
+
+    await store.createLocation({
+      id: crypto.randomUUID(),
+      agencyId: sol.id,
+      kind: "branch",
+      status: "publicado",
+      address: "Oficina en Barcelona",
+      city: "Barcelona",
+      postalCode: "08001",
+      createdAt: new Date(),
+    });
+
+    const barcelona = await service.listByCity("barcelona");
+    const registry = await service.search("Sol");
+    expect(barcelona.some((agency) => agency.id === sol.id)).toBe(true);
+    expect(registry).toHaveLength(1);
+    expect(registry[0]?.presenceCities).toEqual(["Madrid", "Barcelona"]);
+  });
+
+  it("sums a brand only when the CIFs differ", async () => {
+    const store = new MemoryStore();
+    const service = new AgencyService(store);
+    const [first, second] = await store.listAgencies();
+    first!.brandSlug = "red";
+    first!.brandName = "Red";
+    first!.cif = "A11111111";
+    second!.brandSlug = "red";
+    second!.brandName = "Red";
+    second!.cif = "B22222222";
+
+    const rollup = await service.brandRollup(first!);
+    expect(rollup?.companyCount).toBe(2);
+    expect(rollup?.brandName).toBe("Red");
+
+    second!.cif = "A11111111";
+    expect(await service.brandRollup(first!)).toBeNull();
+  });
+});
+
 describe("AgencyService.updatePublicProfile", () => {
   it("updates portal urls and adds an alias", async () => {
     const store = new MemoryStore();

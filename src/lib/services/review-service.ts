@@ -81,6 +81,7 @@ export class ReviewService {
       incidentSentiments: marked.incidentSentiments,
       experienceDate: data.experienceDate,
       experienceType: data.experienceType,
+      experienceCity: data.experienceCity,
       firstHandAttested: data.firstHandAttested,
       noIncentiveAttested: data.noIncentiveAttested,
       noConflictAttested: data.noConflictAttested,

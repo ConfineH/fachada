@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { BrandRollup } from "@/components/brand-rollup";
 import { AgencyBrowseControls } from "@/components/agency-browse-controls";
 import { AgencyResultList } from "@/components/agency-result-list";
 import { PublicShell } from "@/components/public-shell";
@@ -25,6 +26,7 @@ export default async function AgencyRegistryPage({
     publicOnly: true,
     sort,
   });
+  const brands = await agencyService.brandBanners(agencies);
 
   return (
     <PublicShell storage={usingSupabase() ? "supabase" : "memory"}>
@@ -59,6 +61,15 @@ export default async function AgencyRegistryPage({
             {agencies.length} {agencies.length === 1 ? "agencia" : "agencias"}
           </span>
         </div>
+        {brands.map((brand) => (
+          <BrandRollup
+            key={brand.brandName}
+            brandName={brand.brandName}
+            companyCount={brand.companyCount}
+            roleRatings={brand.roleRatings}
+            place="registro"
+          />
+        ))}
         <AgencyResultList
           agencies={agencies}
           empty={

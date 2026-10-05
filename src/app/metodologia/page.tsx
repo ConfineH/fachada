@@ -100,9 +100,28 @@ export default function MetodologiaPage() {
               inquilinos o propietarios.
             </p>
           </div>
+          <div id="marca">
+            <h2 className="text-xl font-semibold text-zinc-900">
+              7. Misma marca, otra empresa
+            </h2>
+            <p className="mt-2">
+              Una inmobiliaria con varias ciudades es una sola ficha. La nota
+              de la tarjeta es de toda la empresa. Dentro de la ficha puedes
+              filtrar por la ciudad del piso; eso no cambia la nota de arriba.
+            </p>
+            <p className="mt-2">
+              Algunas marcas, como las franquicias, agrupan empresas con CIF
+              distinto. Comparten nombre, formación y normas. No comparten caja
+              ni responsabilidad. Cuando hay más de un CIF, Fachada enseña la
+              nota de esa empresa y, aparte y más pequeña, la del conjunto de
+              la marca. Esa cifra junta las reseñas de todas esas empresas. No
+              significa que la oficina que estás leyendo hiciera lo que cuenta
+              la reseña de otra.
+            </p>
+          </div>
           <div>
             <h2 className="text-xl font-semibold text-zinc-900">
-              7. Qué pertenece a Fachada
+              8. Qué pertenece a Fachada
             </h2>
             <p className="mt-2">
               La reseña pertenece a su autor y la respuesta a la inmobiliaria.

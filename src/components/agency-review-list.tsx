@@ -35,6 +35,7 @@ type PublicReview = {
   incidentSentiments?: IncidentSentiments;
   experienceDate: string;
   experienceType: ReviewExperienceType;
+  experienceCity?: string;
   verificationLevel: ReviewVerificationLevel;
   identityVerification: "email" | "phone";
   createdAt: string;
@@ -130,6 +131,7 @@ export function AgencyReviewList({
                   ? "acreditada"
                   : "declarada"}{" "}
                 · {new Date(review.experienceDate).toLocaleDateString("es-ES")}
+                {review.experienceCity ? ` · ${review.experienceCity}` : ""}
               </p>
               <h3 className="mt-2 text-lg font-semibold">{review.title}</h3>
               {review.wouldRecommend !== undefined && (

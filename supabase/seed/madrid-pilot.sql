@@ -46,6 +46,11 @@ from (
   ('era-inmobiliaria-madrid', 'ERA Inmobiliaria', 'Oficina en Madrid', '28001', 'https://www.era.es'),
   ('winkworth-madrid', 'Winkworth', 'Oficina en Madrid', '28001', 'https://www.winkworth.es')
 ) as v(slug, name, address, postal_code, website)
+where not exists (
+  select 1 from agencies existing
+  where lower(btrim(existing.name)) = lower(btrim(v.name))
+    and existing.slug <> v.slug
+)
 on conflict (slug) do update set
   name = excluded.name,
   address = excluded.address,

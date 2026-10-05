@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 
 import { AgencyLogo } from "@/components/agency-logo";
 import { RoleRatingSummary } from "@/components/role-rating-summary";
-import { publicStreetLine } from "@/lib/domain/agency-presence";
+import { publicPresenceLine } from "@/lib/domain/company-presence";
 import { agencyLogoUrl } from "@/lib/ops/agency-logos";
 import type { AgencyWithStats } from "@/lib/domain/types";
 
@@ -51,7 +51,7 @@ export function AgencyResultList({
                 <div>
                   <h3 className="text-lg font-semibold">{agency.name}</h3>
                   <p className="text-sm text-zinc-600">
-                    {publicStreetLine(agency)}
+                    {publicPresenceLine(agency, agency.presenceCities ?? [agency.city])}
                   </p>
                 </div>
               </div>

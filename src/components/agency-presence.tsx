@@ -1,13 +1,5 @@
 import type { Agency, AgencyLocation, AgencyNameAlias } from "@/lib/domain/types";
-import {
-  formatLocationLine,
-  isConfirmedStreetAddress,
-  publicStreetLine,
-} from "@/lib/domain/agency-presence";
-
-function locationKindLabel(kind: AgencyLocation["kind"]) {
-  return kind === "branch" ? "Otra oficina" : "Ubicación observada";
-}
+import { presenceGroups } from "@/lib/domain/company-presence";
 
 export function AgencyPresence({
   agency,
@@ -18,7 +10,6 @@ export function AgencyPresence({
   locations: AgencyLocation[];
   aliases: AgencyNameAlias[];
 }) {
-  const principalConfirmed = isConfirmedStreetAddress(agency.address);
   const legalDistinct =
     Boolean(agency.legalAddress) &&
     agency.legalAddress!.toLowerCase() !== agency.address.toLowerCase();
@@ -39,21 +30,21 @@ export function AgencyPresence({
         <p className="mt-1 text-sm text-zinc-600">
           El domicilio que figura en papeles no siempre es donde atienden.
         </p>
-        <dl className="mt-4 space-y-4 text-sm">
-          <div>
-            <dt className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
-              Oficina principal
-            </dt>
-            <dd className="mt-1 font-medium text-zinc-900">
-              {publicStreetLine(agency)}
-            </dd>
-            {!principalConfirmed ? (
-              <p className="mt-1 text-xs text-zinc-500">
-                Aún no hay una calle confirmada. Si la conoces, sugiérela más
-                abajo.
-              </p>
-            ) : null}
-          </div>
+        <div className="mt-4 space-y-4 text-sm">
+          {presenceGroups(agency, locations).map((group) => (
+            <div key={group.city}>
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
+                {group.city}
+              </h3>
+              <ul className="mt-1 space-y-1">
+                {group.lines.map((line) => (
+                  <li key={line} className="font-medium text-zinc-900">
+                    {line}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
           {legalDistinct ? (
             <div>
               <dt className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
@@ -62,20 +53,7 @@ export function AgencyPresence({
               <dd className="mt-1 text-zinc-800">{agency.legalAddress}</dd>
             </div>
           ) : null}
-          {locations.map((location) => (
-            <div key={location.id}>
-              <dt className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
-                {location.label || locationKindLabel(location.kind)}
-              </dt>
-              <dd className="mt-1 font-medium text-zinc-900">
-                {formatLocationLine(location)}
-              </dd>
-              {location.note ? (
-                <p className="mt-1 text-xs text-zinc-500">{location.note}</p>
-              ) : null}
-            </div>
-          ))}
-        </dl>
+        </div>
       </section>
 
       {showHistory ? (

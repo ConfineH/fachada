@@ -71,6 +71,9 @@ export interface Agency {
   premium: boolean;
   createdAt: Date;
   logoPath?: string;
+  /** Marca compartida por varias empresas. La nota de marca solo suma si hay CIF distintos. */
+  brandSlug?: string;
+  brandName?: string;
 }
 
 export type AgencyAliasKind = "commercial" | "legal" | "former";
@@ -149,6 +152,8 @@ export interface Review {
   incidentSentiments: IncidentSentiments;
   experienceDate: Date;
   experienceType: ReviewExperienceType;
+  /** Ciudad del piso, o de la oficina si no hubo piso. Filtra dentro de la ficha. */
+  experienceCity?: string;
   firstHandAttested: boolean;
   noIncentiveAttested: boolean;
   noConflictAttested: boolean;
@@ -262,6 +267,7 @@ export interface AgencyWithStats extends Agency {
   averageRating: number;
   reviewCount: number;
   roleRatings: AgencyRoleRatings;
+  presenceCities?: string[];
 }
 
 export interface ReviewWithResponse extends Review {

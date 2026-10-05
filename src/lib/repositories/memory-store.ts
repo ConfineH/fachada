@@ -305,6 +305,10 @@ export class MemoryStore implements Repository {
     return this.agencies.get(id) ?? null;
   }
 
+  async findAgencyIdByLegacySlug(_slug: string) {
+    return null;
+  }
+
   async findAgencyBySlug(slug: string) {
     const id = this.agenciesBySlug.get(slug);
     return id ? (this.agencies.get(id) ?? null) : null;
@@ -468,6 +472,10 @@ export class MemoryStore implements Repository {
 
   async listLocationsByAgency(agencyId: string) {
     return this.locations.filter((location) => location.agencyId === agencyId);
+  }
+
+  async listPublishedLocations() {
+    return this.locations.filter((location) => location.status === "publicado");
   }
 
   async listPendingLocations() {

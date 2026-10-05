@@ -35,6 +35,8 @@ type AgencyRow = {
   premium: boolean;
   created_at: string;
   logo_path?: string | null;
+  brand_slug?: string | null;
+  brand_name?: string | null;
 };
 
 type UserRow = {
@@ -65,6 +67,7 @@ type ReviewRow = {
   incident_sentiments: unknown;
   experience_date: string | null;
   experience_type: Review["experienceType"] | null;
+  experience_city: string | null;
   first_hand_attested: boolean | null;
   no_incentive_attested: boolean | null;
   no_conflict_attested: boolean | null;
@@ -172,6 +175,8 @@ export function mapAgency(row: AgencyRow): Agency {
     premium: row.premium,
     createdAt: new Date(row.created_at),
     logoPath: row.logo_path ?? undefined,
+    brandSlug: row.brand_slug ?? undefined,
+    brandName: row.brand_name ?? undefined,
   };
 }
 
@@ -206,6 +211,7 @@ export function mapReview(row: ReviewRow): Review {
     incidentSentiments: parseIncidentSentiments(row.incident_sentiments),
     experienceDate: new Date(row.experience_date ?? row.created_at),
     experienceType: row.experience_type ?? "alquiler",
+    experienceCity: row.experience_city ?? undefined,
     firstHandAttested: row.first_hand_attested ?? false,
     noIncentiveAttested: row.no_incentive_attested ?? false,
     noConflictAttested: row.no_conflict_attested ?? false,

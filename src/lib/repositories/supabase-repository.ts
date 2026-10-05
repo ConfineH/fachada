@@ -209,6 +209,16 @@ export class SupabaseRepository implements Repository {
     return data ? mapAgency(data as AgencyRow) : null;
   }
 
+  async findAgencyIdByLegacySlug(slug: string) {
+    const { data, error } = await this.client
+      .from("agency_slug_redirects")
+      .select("agency_id")
+      .eq("slug", slug)
+      .maybeSingle();
+    throwIfError(error);
+    return (data?.agency_id as string | undefined) ?? null;
+  }
+
   async updateAgency(agency: Agency) {
     const { error } = await this.client
       .from("agencies")
@@ -232,6 +242,8 @@ export class SupabaseRepository implements Repository {
         verified: agency.verified,
         premium: agency.premium,
         logo_path: agency.logoPath ?? null,
+        brand_slug: agency.brandSlug ?? null,
+        brand_name: agency.brandName ?? null,
       })
       .eq("id", agency.id);
     throwIfError(error);
@@ -259,6 +271,8 @@ export class SupabaseRepository implements Repository {
       verified: agency.verified,
       premium: agency.premium,
       logo_path: agency.logoPath ?? null,
+      brand_slug: agency.brandSlug ?? null,
+      brand_name: agency.brandName ?? null,
       created_at: agency.createdAt.toISOString(),
     });
     throwIfError(error);
@@ -347,6 +361,7 @@ export class SupabaseRepository implements Repository {
       incident_sentiments: review.incidentSentiments,
       experience_date: review.experienceDate.toISOString().slice(0, 10),
       experience_type: review.experienceType,
+      experience_city: review.experienceCity ?? null,
       first_hand_attested: review.firstHandAttested,
       no_incentive_attested: review.noIncentiveAttested,
       no_conflict_attested: review.noConflictAttested,
@@ -646,6 +661,15 @@ export class SupabaseRepository implements Repository {
       .select("*")
       .eq("agency_id", agencyId)
       .order("created_at", { ascending: true });
+    throwIfError(error);
+    return (data ?? []).map((row) => this.mapLocation(row));
+  }
+
+  async listPublishedLocations() {
+    const { data, error } = await this.client
+      .from("agency_locations")
+      .select("*")
+      .eq("status", "publicado");
     throwIfError(error);
     return (data ?? []).map((row) => this.mapLocation(row));
   }

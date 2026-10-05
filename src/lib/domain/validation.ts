@@ -112,6 +112,11 @@ export const reviewInputSchema = z
       .transform((value) => parseIncidentSentiments(value)),
     experienceDate: z.coerce.date(),
     experienceType: z.enum(reviewExperienceTypes),
+    experienceCity: z
+      .string()
+      .trim()
+      .min(2, "Indica la ciudad del piso")
+      .max(80),
     firstHandAttested: z.literal(true, {
       error: "Confirma que la experiencia es propia",
     }),

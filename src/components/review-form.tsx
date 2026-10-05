@@ -28,7 +28,13 @@ import type { ReviewExperienceType } from "@/lib/domain/types";
 
 type Step = "verify" | "review" | "done";
 
-export function ReviewForm({ agencySlug }: { agencySlug: string }) {
+export function ReviewForm({
+  agencySlug,
+  cities = [],
+}: {
+  agencySlug: string;
+  cities?: string[];
+}) {
   const [step, setStep] = useState<Step>("verify");
   const [token, setToken] = useState("");
   const [role, setRole] = useState<"inquilino" | "propietario">("inquilino");
@@ -44,6 +50,7 @@ export function ReviewForm({ agencySlug }: { agencySlug: string }) {
   const [experienceDate, setExperienceDate] = useState("");
   const [experienceType, setExperienceType] =
     useState<ReviewExperienceType>("alquiler");
+  const [experienceCity, setExperienceCity] = useState(cities[0] ?? "");
   const [firstHandAttested, setFirstHandAttested] = useState(false);
   const [noIncentiveAttested, setNoIncentiveAttested] = useState(false);
   const [noConflictAttested, setNoConflictAttested] = useState(false);
@@ -54,6 +61,7 @@ export function ReviewForm({ agencySlug }: { agencySlug: string }) {
   const [error, setError] = useState("");
   const [errorField, setErrorField] = useState<
     | "date"
+    | "city"
     | "rating"
     | "title"
     | "pros"
@@ -78,6 +86,7 @@ export function ReviewForm({ agencySlug }: { agencySlug: string }) {
   function showError(
     field:
       | "date"
+      | "city"
       | "rating"
       | "title"
       | "pros"
@@ -127,6 +136,10 @@ export function ReviewForm({ agencySlug }: { agencySlug: string }) {
     const trimmedCons = cons.trim();
     if (!experienceDate) {
       showError("date", "Indica la fecha de tu última interacción.");
+      return;
+    }
+    if (experienceCity.trim().length < 2) {
+      showError("city", "Indica la ciudad del piso.");
       return;
     }
     if (rating === null) {
@@ -191,6 +204,7 @@ export function ReviewForm({ agencySlug }: { agencySlug: string }) {
       incidentSentiments: sentiments,
       experienceDate,
       experienceType,
+      experienceCity,
       firstHandAttested,
       noIncentiveAttested,
       noConflictAttested,
@@ -387,6 +401,31 @@ export function ReviewForm({ agencySlug }: { agencySlug: string }) {
               </select>
             </label>
           </div>
+          <label id="review-city" className="block text-xs font-medium text-zinc-600">
+            ¿En qué ciudad está el piso?
+            <input
+              required
+              list="review-cities"
+              value={experienceCity}
+              aria-invalid={errorField === "city"}
+              onChange={(event) => setExperienceCity(event.target.value)}
+              className="input-field mt-1"
+              placeholder="Madrid"
+            />
+            <datalist id="review-cities">
+              {cities.map((city) => (
+                <option key={city} value={city} />
+              ))}
+            </datalist>
+            <span className="mt-1 block font-normal text-zinc-500">
+              Si solo fuiste a una oficina, indica la ciudad de esa oficina.
+            </span>
+            {errorField === "city" && error ? (
+              <span className="mt-1 block text-sm font-normal text-red-700">
+                {error}
+              </span>
+            ) : null}
+          </label>
           <p className="text-xs text-zinc-500">
             La fecha debe ser de los últimos 30 días. Si sigues de alquiler o
             de gestión, indica el último contacto que importe.
