@@ -75,6 +75,7 @@ export function ReviewForm({
   const [loading, setLoading] = useState(false);
   const [published, setPublished] = useState(true);
   const [holdReason, setHoldReason] = useState("");
+  const [fichaHref, setFichaHref] = useState("");
   const feedbackRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -305,6 +306,11 @@ export function ReviewForm({
       }
       const isPublic = data.review?.moderated !== false;
       setPublished(isPublic);
+      setFichaHref(
+        isPublic
+          ? `/agencias/${agencySlug}?publicada=${data.review?.id ?? "1"}#experiencias`
+          : "",
+      );
       setHoldReason(
         isPublic
           ? ""
@@ -698,10 +704,7 @@ export function ReviewForm({
         >
           <p className="font-medium">Reseña publicada</p>
           <p className="mt-1">Ya está en esta ficha.</p>
-          <a
-            href={`/agencias/${agencySlug}#experiencias`}
-            className="mt-2 inline-block underline"
-          >
+          <a href={fichaHref} className="mt-2 inline-block underline">
             Verla en la ficha
           </a>
           {evidenceNote ? <p className="mt-1">{evidenceNote}</p> : null}
