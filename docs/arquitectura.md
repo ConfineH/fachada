@@ -114,7 +114,7 @@ User ──< Review >── Agency
 
 ### Moderación
 
-- Reseñas nuevas: `moderated: false` hasta acción admin
+- Reseñas nuevas: públicas al enviar (`moderated: true`), salvo la primera de una cuenta de menos de 24 h o un texto con amenaza, insulto o datos ajenos
 - Claims: `status: pendiente` → aprobado / rechazado
 
 ## Seguridad (MVP)

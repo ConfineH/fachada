@@ -3,6 +3,11 @@ import { randomUUID } from "node:crypto";
 import { tagsFromSentiments } from "@/lib/domain/incidents";
 import { isAccountVerified } from "@/lib/domain/identity";
 import { composeReviewBody } from "@/lib/domain/review-copy";
+import {
+  editPublication,
+  initialPublication,
+  type ReviewPublication,
+} from "@/lib/domain/review-publication";
 import { isPublicReview } from "@/lib/domain/review-visibility";
 import type { Review, User } from "@/lib/domain/types";
 import { reviewEditSchema, reviewInputSchema } from "@/lib/domain/validation";
@@ -63,6 +68,11 @@ export class ReviewService {
 
     const marked = markedExperience(data);
     const anonymous = data.anonymous ?? true;
+    const publication = initialPublication({
+      text: reviewText(data.title, data.pros, data.cons, data.publicName),
+      accountCreatedAt: user.createdAt,
+      hasPriorReview: userReviews.some((review) => !review.deletedAt),
+    });
     const review: Review = {
       id: randomUUID(),
       userId: user.id,
@@ -94,13 +104,13 @@ export class ReviewService {
       termsVersion: data.termsVersion,
       termsAcceptedAt: new Date(),
       createdAt: new Date(),
-      moderated: false,
-      flagged: false,
+      ...publicationFields(publication),
     };
 
     await this.repo.createReview(review);
-    await notifyModerationQueue(this.email, {
-      kind: "Reseña",
+    await notifyReviewPublication(this.email, publication, {
+      publishedKind: "Reseña publicada",
+      heldKind: "Reseña retenida",
       detail: `«${review.title}» sobre ${agency.name} (${agency.city}).`,
     });
     return review;
@@ -118,6 +128,16 @@ export class ReviewService {
     const data = reviewEditSchema.parse(input);
     const anonymous = data.anonymous ?? true;
     const marked = markedExperience(data);
+    const userReviews = await this.repo.listReviewsByUser(user.id);
+    const publication = editPublication({
+      text: reviewText(data.title, data.pros, data.cons, data.publicName),
+      wasFlagged: review.flagged,
+      wasPublic: isPublicReview(review),
+      accountCreatedAt: user.createdAt,
+      hasOtherReview: userReviews.some(
+        (item) => item.id !== review.id && !item.deletedAt,
+      ),
+    });
     const next: Review = {
       ...review,
       rating: data.rating,
@@ -131,15 +151,15 @@ export class ReviewService {
       incidentTags: marked.incidentTags,
       incidentSentiments: marked.incidentSentiments,
       editedAt: new Date(),
-      moderated: false,
-      flagged: false,
       verificationLevel: "declarada",
+      ...publicationFields(publication),
     };
     await this.repo.updateReview(next);
     const editedAgency = await this.repo.findAgencyById(next.agencyId);
-    await notifyModerationQueue(this.email, {
-      kind: "Reseña editada",
-      detail: `«${next.title}» sobre ${editedAgency?.name ?? "una ficha"} vuelve a la cola.`,
+    await notifyReviewPublication(this.email, publication, {
+      publishedKind: "Reseña editada",
+      heldKind: "Reseña editada retenida",
+      detail: `«${next.title}» sobre ${editedAgency?.name ?? "una ficha"}.`,
     });
     return next;
   }
@@ -183,6 +203,54 @@ export class ReviewService {
     }
     return review;
   }
+}
+
+function reviewText(
+  title: string,
+  pros: string,
+  cons: string,
+  publicName?: string,
+) {
+  return [title, pros, cons, publicName].filter(Boolean).join("\n");
+}
+
+function publicationFields(publication: ReviewPublication): Pick<
+  Review,
+  "moderated" | "flagged" | "moderationReason" | "moderatedAt"
+> {
+  if (publication.publish) {
+    return {
+      moderated: true,
+      flagged: false,
+      moderationReason: undefined,
+      moderatedAt: new Date(),
+    };
+  }
+  return {
+    moderated: false,
+    flagged: Boolean(publication.keepFlagged),
+    moderationReason: publication.reason,
+    moderatedAt: new Date(),
+  };
+}
+
+async function notifyReviewPublication(
+  email: EmailProvider | undefined,
+  publication: ReviewPublication,
+  notice: { publishedKind: string; heldKind: string; detail: string },
+) {
+  if (publication.publish) {
+    await notifyModerationQueue(email, {
+      kind: notice.publishedKind,
+      detail: `${notice.detail} Ya está en la ficha.`,
+      queued: false,
+    });
+    return;
+  }
+  await notifyModerationQueue(email, {
+    kind: notice.heldKind,
+    detail: `${notice.detail} Motivo: ${publication.reason}`,
+  });
 }
 
 function markedExperience(data: {

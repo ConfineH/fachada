@@ -6,6 +6,7 @@ import { AuthService } from "@/lib/services/auth-service";
 import { ReviewError, ReviewService } from "@/lib/services/review-service";
 import { MockSmsProvider } from "@/lib/services/sms-provider";
 import { REVIEW_TERMS_VERSION } from "@/lib/domain/review-authenticity";
+import { HOLD_INSULT, HOLD_NEW_ACCOUNT } from "@/lib/domain/review-publication";
 
 const PROS = "La gestión fue rápida y clara en todo momento.";
 const CONS = "Algún retraso menor contestando correos por la tarde.";
@@ -30,6 +31,14 @@ describe("ReviewService", () => {
     const code = sms.lastCodeFor(phone)!;
     const session = await auth.verifyCode(phone, code);
     return auth.getUserFromSession(session.token);
+  }
+
+  async function establishedUser(phone = "+34600111222") {
+    const user = await verifiedUser(phone);
+    if (!user) throw new Error("missing user");
+    user.createdAt = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
+    await store.updateUser(user);
+    return user;
   }
 
   function payload(overrides: Record<string, unknown> = {}) {
@@ -77,7 +86,34 @@ describe("ReviewService", () => {
 
     expect(review.agencyId).toBe(agencyId);
     expect(review.moderated).toBe(false);
+    expect(review.moderationReason).toBe(HOLD_NEW_ACCOUNT);
     expect(review.incidentTags).toEqual([]);
+  });
+
+  it("publishes a clean review from an older account without waiting for approval", async () => {
+    const user = await establishedUser();
+    const review = await service.create(
+      user,
+      payload(),
+      { evidencePath: "private/receipt.jpg" },
+    );
+
+    expect(review.moderated).toBe(true);
+    expect(review.flagged).toBe(false);
+    expect(review.moderationReason).toBeUndefined();
+    expect(review.evidencePath).toBe("private/receipt.jpg");
+    expect(review.verificationLevel).toBe("declarada");
+  });
+
+  it("holds a review that includes an insult and tells the author why", async () => {
+    const user = await establishedUser();
+    const review = await service.create(
+      user,
+      payload({ cons: "El comercial es un gilipollas con la fianza." }),
+    );
+
+    expect(review.moderated).toBe(false);
+    expect(review.moderationReason).toBe(HOLD_INSULT);
   });
 
   it("stores public name when not anonymous", async () => {
@@ -167,10 +203,9 @@ describe("ReviewService", () => {
     );
   });
 
-  it("lets the author edit a review, marks it edited and unpublishes it", async () => {
-    const user = await verifiedUser();
+  it("lets the author edit a published review and keeps it public", async () => {
+    const user = await establishedUser();
     const review = await service.create(user, payload());
-    review.moderated = true;
     review.verificationLevel = "acreditada";
     await store.updateReview(review);
 
@@ -185,7 +220,7 @@ describe("ReviewService", () => {
 
     expect(updated.title).toBe("Cambié de opinión");
     expect(updated.editedAt).toBeInstanceOf(Date);
-    expect(updated.moderated).toBe(false);
+    expect(updated.moderated).toBe(true);
     expect(updated.flagged).toBe(false);
     expect(updated.verificationLevel).toBe("declarada");
     expect(updated.incidentTags).toEqual(["fianza"]);
@@ -235,11 +270,9 @@ describe("ReviewService", () => {
     );
   });
 
-  it("hides edited and deleted reviews from the public ficha", async () => {
-    const user = await verifiedUser();
+  it("keeps a clean edit on the public ficha and hides an insult or a deletion", async () => {
+    const user = await establishedUser();
     const review = await service.create(user, payload());
-    review.moderated = true;
-    await store.updateReview(review);
     const agencies = new AgencyService(store);
     const slug = (await store.listAgencies())[0]!.slug;
 
@@ -254,6 +287,18 @@ describe("ReviewService", () => {
       title: "Ajuste de matices",
       pros: "La gestión siguió siendo clara en el contrato.",
       cons: "Hubo un retraso puntual con las llaves.",
+    });
+    expect(
+      (await agencies.getBySlug(slug, { publicOnly: true }))?.reviews.some(
+        (item) => item.id === review.id,
+      ),
+    ).toBe(true);
+
+    await service.update(user, review.id, {
+      rating: 1,
+      title: "Ajuste de matices",
+      pros: "La gestión siguió siendo clara en el contrato.",
+      cons: "El comercial es un capullo con las llaves.",
     });
     expect(
       (await agencies.getBySlug(slug, { publicOnly: true }))?.reviews.some(

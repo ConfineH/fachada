@@ -7,7 +7,7 @@ import { pageMeta } from "@/lib/seo";
 
 export const metadata = pageMeta(
   "Cómo publicamos una reseña",
-    "Puedes publicar en la ficha de forma anónima. Pedimos cuenta identificada, experiencia declarada o acreditada, nota de inquilino y de propietario, y moderación humana. Sin sello de reseña verificada.",
+    "Puedes publicar en la ficha de forma anónima. Pedimos cuenta identificada, experiencia declarada o acreditada, y nota de inquilino y de propietario. La reseña sale al enviarla. Sin sello de reseña verificada.",
   "/metodologia",
 );
 
@@ -26,8 +26,8 @@ export default function MetodologiaPage() {
         </h1>
         <p className="mt-4 text-lg text-zinc-600">
           Puedes publicar en la ficha de forma anónima o con seudónimo. Pedimos
-          una cuenta identificada, una experiencia propia declarada y que una
-          persona lea el texto. No es un sello de «reseña verificada».
+          una cuenta identificada y una experiencia propia declarada. La reseña
+          sale en la ficha al enviarla. No es un sello de «reseña verificada».
         </p>
 
         <section className="mt-10 space-y-8 text-zinc-700">
@@ -82,11 +82,14 @@ export default function MetodologiaPage() {
               5. Moderación humana
             </h2>
             <p className="mt-2">
-              Una reseña no sale en la ficha hasta que un moderador la aprueba.
-              Retiramos contenido ilegal, fuera de experiencia real o que
-              identifique a terceros de forma innecesaria. Una crítica no se
-              retira por ser negativa. Las decisiones de restricción se
-              comunican con su motivo y pueden revisarse.
+              La reseña sale en la ficha al enviarla. Retenemos en el acto, y
+              te decimos por qué, la primera reseña de una cuenta recién
+              creada y los textos con amenaza, insulto o datos de otra persona.
+              Una foto adjunta no retrasa la publicación: si la revisamos,
+              puede pasar la experiencia a acreditada. Una crítica no se
+              retiene por ser negativa. Si alguien avisa, una persona lo mira.
+              Las decisiones de restricción se comunican con su motivo y pueden
+              revisarse.
             </p>
           </div>
           <div>

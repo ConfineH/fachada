@@ -299,8 +299,8 @@ export default async function AgencyPage({
           <p className="mt-1 text-sm text-zinc-600">
             {totalReviews}{" "}
             {totalReviews === 1
-              ? "reseña publicada tras moderación."
-              : "reseñas publicadas tras moderación."}
+              ? "reseña publicada."
+              : "reseñas publicadas."}
             {cityFilter
               ? ` La nota de arriba es de toda la empresa. Abajo, lo contado en ${cityFilter}.`
               : ""}

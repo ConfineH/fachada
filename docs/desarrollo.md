@@ -121,7 +121,7 @@ Leer en este orden:
 |---------|----------|
 | Build falla tras git pull | `rm -rf .next && npm run build` |
 | No veo código SMS | En local, sin Twilio, el mock muestra el código. En Vercel Production no se expone |
-| Reseña no aparece en Vercel | Si no hay `SUPABASE_SERVICE_ROLE_KEY`, el deploy está en memoria y se pierde. Si hay Supabase: falta moderación en `/admin` |
+| Reseña no aparece en Vercel | Si no hay `SUPABASE_SERVICE_ROLE_KEY`, el deploy está en memoria y se pierde. Si hay Supabase: puede estar retenida (cuenta nueva, amenaza, insulto o datos ajenos) y sale en `/admin` |
 | Google no sale / error 403 | Client ID del proyecto GCP Fachada, origen `https://fachada-tau.vercel.app`, app OAuth en producción |
 | "No autorizado" al responder | Mismo teléfono que hizo el claim aprobado |
 | Hydration warning en dev | Conocido con DevBanner; no bloquea en local |

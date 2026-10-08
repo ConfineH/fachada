@@ -12,7 +12,7 @@ Fachada es un archivo público español de reseñas sobre la gestión de
 inmobiliarias. Publica valoraciones separadas de inquilinos y propietarios,
 respuestas de agencias, fichas elaboradas por el operador y resúmenes de
 patrones. La cuenta del autor se identifica por Google o código al email; su
-correo no se publica. Toda reseña se revisa antes de publicarse.
+correo no se publica. La reseña sale al enviarla. Se retiene la primera de una cuenta recién creada y el texto con amenaza, insulto o datos de otra persona; el resto se revisa si alguien avisa.
 
 Actualmente opera una persona física, sin monetización, con una reseña pública.
 La aplicación usa Vercel, Supabase, Google Identity y Resend. Existe una
