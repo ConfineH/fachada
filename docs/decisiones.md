@@ -199,6 +199,32 @@ expresa de titularidad completa). Hasta entonces el aviso lo dice.
 
 ---
 
+## ADR-012: La reseña sale al enviarla
+
+**Fecha:** 2026-10-08  
+**Estado:** Aceptada
+
+**Contexto:** Aprobar cada reseña antes de mostrarla se vive como un rechazo:
+el botón dice «Publicar» y la ficha sigue vacía. Glassdoor retiene hasta 72 h;
+Trustpilot y Google publican tras un filtro y retiran si alguien avisa. En
+Fachada quien escribe lo hace una vez. La foto adjunta no se publica y no
+acredita la experiencia hasta que una persona la marca.
+
+**Decisión:** La reseña entra en la ficha al enviarla, como experiencia
+declarada. Se retiene, con el motivo en el acto, solo si es la primera de una
+cuenta creada hace menos de 24 h o si el texto trae amenaza, insulto directo
+o datos de otra persona (teléfono, correo, DNI, IBAN). Una edición limpia
+sigue publicada. Una crítica no se retiene por ser negativa. El aviso («Avisar»)
+y la cola de `/admin` cubren el resto. El archivo se mira aparte, para
+acreditar, y no bloquea el texto.
+
+**Consecuencias:**
+- ✅ Quien escribe ve la reseña en la ficha
+- ⚠️ Una reseña falsa de una cuenta con más de 24 h puede estar visible hasta que alguien avise
+- 📁 `src/lib/domain/review-publication.ts`, `review-service.ts`
+
+---
+
 ## Plantilla para nuevas decisiones
 
 ```markdown

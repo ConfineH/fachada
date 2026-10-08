@@ -29,6 +29,7 @@ type Dashboard = {
     incidentSentiments?: IncidentSentiments;
     moderated: boolean;
     flagged: boolean;
+    moderationReason?: string;
     createdAt: string;
     editedAt?: string;
     agency: { name: string; slug: string } | null;

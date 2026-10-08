@@ -81,9 +81,9 @@ export default function NormasPage() {
         </li>
         <li>
           Puedes editar o eliminar tu reseña desde tu cuenta. Si la editas,
-          deja de verse en la ficha hasta una nueva revisión y queda marcada
-          como editada. El rol, la inmobiliaria y la fecha de la experiencia
-          no se pueden cambiar.
+          sigue en la ficha y queda marcada como editada, salvo que el texto
+          nuevo deba retenerse. El rol, la inmobiliaria y la fecha de la
+          experiencia no se pueden cambiar.
         </li>
       </ul>
       <h2>Licencia y autoría</h2>
@@ -98,11 +98,16 @@ export default function NormasPage() {
       </p>
       <h2>Moderación</h2>
       <p>
-        Las reseñas no salen en la ficha hasta que un moderador las revisa.
-        Podemos no publicar, limitar o retirar textos ilegales, falsos, no
-        relacionados con una experiencia real o contrarios a estas normas.
-        Comunicaremos al autor la regla aplicada y el motivo. No retiramos una
-        crítica por ser negativa, por petición especial ni por pago.
+        La reseña sale en la ficha al enviarla, como experiencia declarada.
+        La retenemos en el acto, y te decimos por qué, si es la primera de una
+        cuenta recién creada o si el texto incluye una amenaza, un insulto o
+        datos de otra persona. Una foto adjunta no retrasa la publicación:
+        solo sirve, si la revisamos, para marcar la experiencia como
+        acreditada. También podemos limitar o retirar después un texto ilegal,
+        falso, no relacionado con una experiencia real o contrario a estas
+        normas. Comunicaremos al autor la regla aplicada y el motivo. No
+        retiramos una crítica por ser negativa, por petición especial ni por
+        pago.
       </p>
       <h2>Avisar de contenido ilícito</h2>
       <p>

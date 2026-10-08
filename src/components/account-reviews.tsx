@@ -30,6 +30,7 @@ export type AccountReviewItem = {
   incidentSentiments?: IncidentSentiments;
   moderated: boolean;
   flagged: boolean;
+  moderationReason?: string;
   createdAt: string;
   editedAt?: string;
   agency: { name: string; slug: string; logoUrl?: string } | null;
@@ -120,6 +121,11 @@ export function AccountReviews({
               · {review.rating}/5 · {reviewStatus(review)}
               {review.editedAt ? " · Editada" : ""}
             </p>
+            {review.moderationReason && reviewStatus(review) !== "publicada" ? (
+              <p className="mt-2 text-sm text-zinc-700">
+                {review.moderationReason}
+              </p>
+            ) : null}
             <div className="mt-2 flex flex-wrap gap-3 text-sm">
               <button
                 type="button"
@@ -220,11 +226,9 @@ export function AccountReviews({
 }
 
 function reviewStatus(review: AccountReviewItem) {
+  if (review.moderated && !review.flagged) return "publicada";
   if (review.flagged) return "retirada";
-  if (review.moderated) return "publicada";
-  return review.editedAt
-    ? "pendiente de moderación (texto modificado)"
-    : "pendiente de moderación";
+  return "retenida";
 }
 
 function AccountReviewEditor({
@@ -307,8 +311,8 @@ function AccountReviewEditor({
   return (
     <form onSubmit={submit} className="mt-3 space-y-3 rounded-lg bg-stone-50 p-3">
       <p className="text-xs text-zinc-600">
-        El texto modificado vuelve a moderación. En la ficha constará como
-        editada.
+        Si el texto no incluye una amenaza, un insulto o datos de otra persona,
+        sigue en la ficha y consta como editada.
       </p>
       <label className="block text-xs font-medium text-zinc-600">
         Nota (1–5)

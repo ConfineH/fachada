@@ -554,8 +554,13 @@ export function AdminDashboard({
                   <p className="mt-2 text-stone-700">{review.body}</p>
                   <p className="mt-2 text-sm text-stone-500">
                     {review.role} · {review.rating}/5 ·{" "}
-                    {review.flagged ? "Reportada" : "Sin moderar"}
+                    {review.flagged ? "Restringida" : "Retenida"}
                   </p>
+                  {review.moderationReason ? (
+                    <p className="mt-1 text-sm text-stone-700">
+                      {review.moderationReason}
+                    </p>
+                  ) : null}
                   {review.evidenceUrl ? (
                     <div className="mt-3 flex flex-wrap items-center gap-3">
                       <a

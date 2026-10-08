@@ -73,6 +73,8 @@ export function ReviewForm({
     | ""
   >("");
   const [loading, setLoading] = useState(false);
+  const [published, setPublished] = useState(true);
+  const [holdReason, setHoldReason] = useState("");
   const feedbackRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -261,9 +263,17 @@ export function ReviewForm({
         res = await send(null);
         raw = await res.text();
       }
-      let data: { error?: string } = {};
+      let data: {
+        error?: string;
+        review?: { moderated?: boolean; moderationReason?: string };
+      } = {};
       try {
-        data = raw ? (JSON.parse(raw) as { error?: string }) : {};
+        data = raw
+          ? (JSON.parse(raw) as {
+              error?: string;
+              review?: { moderated?: boolean; moderationReason?: string };
+            })
+          : {};
       } catch {
         const tooLarge = res.status === 413 || raw.includes("PAYLOAD_TOO_LARGE");
         data = {
@@ -290,9 +300,17 @@ export function ReviewForm({
 
       if (droppedEvidence) {
         setEvidenceNote(
-          "La reseña se ha enviado sin el archivo. Sube una foto de una página, no el contrato entero.",
+          "La reseña se ha publicado sin el archivo. Sube una foto de una página, no el contrato entero.",
         );
       }
+      const isPublic = data.review?.moderated !== false;
+      setPublished(isPublic);
+      setHoldReason(
+        isPublic
+          ? ""
+          : (data.review?.moderationReason ??
+            "Una persona la revisará antes de que salga en la ficha."),
+      );
       setStep("done");
       feedbackRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
     } catch {
@@ -673,16 +691,32 @@ export function ReviewForm({
         </form>
       )}
 
-      {step === "done" && (
+      {step === "done" && published && (
         <div
           key="done"
           className="motion-scale-in mt-4 rounded-lg bg-emerald-50 px-3 py-3 text-sm text-emerald-900"
         >
-          <p className="font-medium">Reseña enviada</p>
-          <p className="mt-1">
-            Sale en la ficha cuando un moderador la revise. Puedes ver el estado
-            en tu cuenta.
-          </p>
+          <p className="font-medium">Reseña publicada</p>
+          <p className="mt-1">Ya está en esta ficha.</p>
+          <a
+            href={`/agencias/${agencySlug}#experiencias`}
+            className="mt-2 inline-block underline"
+          >
+            Verla en la ficha
+          </a>
+          {evidenceNote ? <p className="mt-1">{evidenceNote}</p> : null}
+        </div>
+      )}
+      {step === "done" && !published && (
+        <div
+          key="held"
+          className="motion-scale-in mt-4 rounded-lg bg-amber-50 px-3 py-3 text-sm text-amber-950"
+        >
+          <p className="font-medium">Reseña retenida</p>
+          <p className="mt-1">{holdReason}</p>
+          <a href="/cuenta" className="mt-2 inline-block underline">
+            Ir a tu cuenta
+          </a>
           {evidenceNote ? <p className="mt-1">{evidenceNote}</p> : null}
         </div>
       )}

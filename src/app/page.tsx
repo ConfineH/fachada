@@ -200,7 +200,7 @@ export default async function Home({
                 {sampleReviews.length === 0 && (
                   <p className="text-sm text-zinc-600">
                     Aún no hay reseñas publicadas. Las primeras experiencias
-                    aparecerán aquí tras moderación.
+                    aparecerán aquí en cuanto alguien las publique.
                   </p>
                 )}
                 {sampleReviews.map((review) => (

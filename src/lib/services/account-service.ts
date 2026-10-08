@@ -40,6 +40,7 @@ export class AccountService {
             incidentSentiments: review.incidentSentiments,
             moderated: review.moderated,
             flagged: review.flagged,
+            moderationReason: review.moderationReason,
             createdAt: review.createdAt,
             editedAt: review.editedAt,
             agency: agency
