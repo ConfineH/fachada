@@ -22,11 +22,14 @@ export function DepositTool() {
   const [keysDate, setKeysDate] = useState("");
   const [deposit, setDeposit] = useState("");
   const [extra, setExtra] = useState("");
+  const [monthlyRent, setMonthlyRent] = useState("");
+  const [contractKind, setContractKind] = useState<"vivienda" | "temporada">("vivienda");
   const [deduction, setDeduction] = useState("");
   const [deductionDetail, setDeductionDetail] = useState("");
   const [acceptDeduction, setAcceptDeduction] = useState(false);
   const [copied, setCopied] = useState<"letter" | "burofax" | null>(null);
 
+  const monthlyRentEur = monthlyRent.trim() === "" ? null : parseEuroInput(monthlyRent);
   const depositEur = parseEuroInput(deposit);
   const extraEur = parseEuroInput(extra === "" ? "0" : extra);
   const deductionEur = parseEuroInput(deduction === "" ? "0" : deduction);
@@ -47,6 +50,8 @@ export function DepositTool() {
           deductionDetail,
           acceptDeduction,
           today: localTodayIso(),
+          monthlyRentEur,
+          contractKind,
         })
       : null;
   const docs = result?.status === "ready" ? depositDocuments(result) : null;
@@ -87,6 +92,23 @@ export function DepositTool() {
         <Field label="Entrega de llaves">
           <input className="input-field min-h-11" type="date" value={keysDate} onChange={(event) => setKeysDate(event.target.value)} />
         </Field>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Tipo de contrato">
+            <select
+              className="input-field min-h-11"
+              value={contractKind}
+              onChange={(event) =>
+                setContractKind(event.target.value as "vivienda" | "temporada")
+              }
+            >
+              <option value="vivienda">Vivienda habitual</option>
+              <option value="temporada">Vivienda temporal</option>
+            </select>
+          </Field>
+          <Field label="Renta mensual" hint="Opcional. Sirve para avisar si la fianza o las garantías pasan el tope legal.">
+            <input className="input-field min-h-11" inputMode="decimal" value={monthlyRent} onChange={(event) => setMonthlyRent(event.target.value)} placeholder="900" />
+          </Field>
+        </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Fianza" hint={FIELD_HINTS.euro}>
             <input className="input-field min-h-11" inputMode="decimal" value={deposit} onChange={(event) => setDeposit(event.target.value)} placeholder="900" />
@@ -134,6 +156,16 @@ export function DepositTool() {
                   ? "El mes termina hoy. Si no ingresan el saldo, desde mañana devenga el interés legal."
                   : "Todavía no ha pasado el mes siguiente a la entrega de llaves. La carta sirve para pedirlo ya. El interés legal solo corre si ese plazo vence sin pago."}
             </p>
+            {result.excessiveDeposit ? (
+              <p>La fianza supera una mensualidad. El artículo 36.1 de la LAU puede hacer de ese exceso un cobro indebido. La carta lo dice.</p>
+            ) : null}
+            {result.excessiveGuarantee ? (
+              <p>
+                Las garantías adicionales superan el tope del artículo 36.5
+                {result.contractKind === "temporada" ? " (una mensualidad en vivienda temporal)" : " (dos mensualidades en vivienda)"}
+                . La carta lo dice.
+              </p>
+            ) : null}
           </Result>
           <div className="no-print flex flex-wrap gap-2">
             <button type="button" className="btn-primary min-h-11" onClick={() => window.print()}>

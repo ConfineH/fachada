@@ -1,7 +1,7 @@
 import {
   MIN_STAY_MONTHS,
   NOTICE_DAYS,
-  REFORM_2026_START,
+  reform2026Applies,
   type ContractKind,
 } from "@/lib/domain/tools/constants";
 import { addDays, addMonths, monthsBetween, parseIsoDate } from "@/lib/domain/tools/dates";
@@ -80,7 +80,7 @@ export function assessEarlyExit(input: EarlyExitInput): EarlyExitResult {
   const earliestExit = addMonths(input.startDate, MIN_STAY_MONTHS);
   if (!endDate || !earliestExit) return { status: "invalid", code: "invalid_date" };
 
-  const regime = input.startDate >= REFORM_2026_START ? "post_2026" : "classic";
+  const regime = reform2026Applies(input.startDate) ? "post_2026" : "classic";
 
   if (endDate <= earliestExit) {
     return {

@@ -1,4 +1,4 @@
-import { REFORM_2026_START } from "@/lib/domain/tools/constants";
+import { reform2026Applies } from "@/lib/domain/tools/constants";
 import { addDays, addMonths, parseIsoDate } from "@/lib/domain/tools/dates";
 import { roundCents } from "@/lib/domain/tools/money";
 
@@ -15,6 +15,8 @@ export type DepositInput = {
   deductionDetail: string;
   acceptDeduction: boolean;
   today: string;
+  monthlyRentEur?: number | null;
+  contractKind?: "vivienda" | "temporada";
 };
 
 export type DepositReady = {
@@ -29,6 +31,10 @@ export type DepositReady = {
   deductionDetail: string;
   acceptDeduction: boolean;
   presumptionApplies: boolean;
+  excessiveDeposit: boolean;
+  excessiveGuarantee: boolean;
+  monthlyRentEur: number | null;
+  contractKind: "vivienda" | "temporada";
   landlordName: string;
   tenantName: string;
   address: string;
@@ -57,6 +63,29 @@ function cleanLine(value: string, max: number): string {
     .replace(/\s+/g, " ")
     .trim()
     .slice(0, max);
+}
+
+function depositExcess(
+  kind: "vivienda" | "temporada",
+  depositEur: number,
+  extraEur: number,
+  monthlyRentEur: number | null | undefined,
+) {
+  const rent = monthlyRentEur == null ? null : roundCents(monthlyRentEur);
+  if (rent === null || rent <= 0) {
+    return {
+      excessiveDeposit: false,
+      excessiveGuarantee: false,
+      monthlyRentEur: null,
+    };
+  }
+  const rentCents = Math.round(rent * 100);
+  const guaranteeCap = kind === "temporada" ? rentCents : rentCents * 2;
+  return {
+    excessiveDeposit: kind !== "temporada" && Math.round(depositEur * 100) > rentCents,
+    excessiveGuarantee: Math.round(extraEur * 100) > guaranteeCap,
+    monthlyRentEur: rent,
+  };
 }
 
 export function assessDeposit(input: DepositInput): DepositResult {
@@ -124,7 +153,9 @@ export function assessDeposit(input: DepositInput): DepositResult {
     deductionEur,
     deductionDetail,
     acceptDeduction: accept,
-    presumptionApplies: input.keysDate >= REFORM_2026_START,
+    presumptionApplies: reform2026Applies(input.keysDate),
+    ...depositExcess(input.contractKind ?? "vivienda", depositEur, extraEur, input.monthlyRentEur),
+    contractKind: input.contractKind ?? "vivienda",
     landlordName,
     tenantName,
     address,

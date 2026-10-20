@@ -5,6 +5,7 @@ import { JsonLd } from "@/components/json-ld";
 import { LegalNotice } from "@/components/tools/legal-notice";
 import { ReviewCta } from "@/components/tools/review-cta";
 import { TENANT_TOOLS, type ToolDefinition } from "@/lib/domain/tools/catalog";
+import { REFORM_2026_NOTE } from "@/lib/domain/tools/constants";
 import { faqJsonLd } from "@/lib/seo";
 
 export function ToolLayout({
@@ -31,8 +32,16 @@ export function ToolLayout({
         </p>
         <h1 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">{tool.title}</h1>
         <p className="mt-4 text-lg leading-relaxed text-zinc-600">{tool.description}</p>
-        <div className="mt-6">
+        <div className="mt-6 space-y-3">
           <LegalNotice />
+          {REFORM_2026_NOTE ? (
+            <p
+              role="note"
+              className="rounded-lg border border-stone-200 bg-white px-4 py-3 text-sm leading-relaxed text-zinc-700"
+            >
+              {REFORM_2026_NOTE}
+            </p>
+          ) : null}
         </div>
         <p className="mt-4 text-sm leading-relaxed text-zinc-600">
           <a

@@ -2,7 +2,12 @@ import {
   BOE_ART,
   BOE_LEY_12_2023,
   BOE_RDL_29_2026,
+  REFORM_2026_ACTIVE,
 } from "@/lib/domain/tools/constants";
+
+function whenReform(text: string) {
+  return REFORM_2026_ACTIVE ? text : "";
+}
 
 export type ToolFaq = { question: string; answer: string };
 
@@ -32,7 +37,7 @@ export const TENANT_TOOLS: ToolDefinition[] = [
     articleLabel: "Artículo 20 de la LAU",
     articleUrl: BOE_ART.fees,
     articleNote:
-      "Desde el 26 de mayo de 2023 (Ley 12/2023) los gastos de gestión inmobiliaria y de formalización corren a cargo del arrendador. Desde el 8 de octubre de 2026, el apartado 2 prohíbe repercutirlos al arrendatario, directa o indirectamente, bajo cualquier nombre.",
+      `Desde el 26 de mayo de 2023 (Ley 12/2023) los gastos de gestión inmobiliaria y de formalización corren a cargo del arrendador. ${whenReform("Desde el 8 de octubre de 2026, el apartado 2 prohíbe repercutirlos al arrendatario, directa o indirectamente, bajo cualquier nombre.")}`.trim(),
     extraLinks: [
       { href: BOE_LEY_12_2023, label: "Ley 12/2023" },
       { href: BOE_RDL_29_2026, label: "Real Decreto-ley 29/2026" },
@@ -41,7 +46,7 @@ export const TENANT_TOOLS: ToolDefinition[] = [
       {
         question: "¿Desde cuándo no pueden cobrarme los honorarios de la agencia?",
         answer:
-          "Desde el 26 de mayo de 2023, en los arrendamientos de vivienda habitual, los gastos de gestión inmobiliaria y de formalización del contrato corren a cargo del arrendador. El 8 de octubre de 2026 el artículo 20.2 reforzó esa regla: no pueden repercutirse al inquilino, ni directa ni indirectamente, bajo ningún concepto.",
+          `Desde el 26 de mayo de 2023, en los arrendamientos de vivienda habitual, los gastos de gestión inmobiliaria y de formalización del contrato corren a cargo del arrendador. ${whenReform("El 8 de octubre de 2026 el artículo 20.2 reforzó esa regla: no pueden repercutirse al inquilino, ni directa ni indirectamente, bajo ningún concepto.")}`.trim(),
       },
       {
         question: "¿Vale para un alquiler de temporada o de habitación?",
@@ -71,7 +76,7 @@ export const TENANT_TOOLS: ToolDefinition[] = [
     articleLabel: "Artículo 36 de la LAU",
     articleUrl: BOE_ART.deposit,
     articleNote:
-      "El saldo de la fianza debe devolverse en el mes siguiente a la entrega de las llaves. Si no se hace, devenga el interés legal del dinero. Desde el 8 de octubre de 2026, si no hay un documento de finalización que anote desperfectos, se presume que la vivienda se entregó en buen estado.",
+      `El saldo de la fianza debe devolverse en el mes siguiente a la entrega de las llaves. Si no se hace, devenga el interés legal del dinero. ${whenReform("Desde el 8 de octubre de 2026, si no hay un documento de finalización que anote desperfectos, se presume que la vivienda se entregó en buen estado.")}`.trim(),
     extraLinks: [{ href: BOE_RDL_29_2026, label: "Real Decreto-ley 29/2026" }],
     faqs: [
       {
@@ -92,7 +97,7 @@ export const TENANT_TOOLS: ToolDefinition[] = [
       {
         question: "¿Las garantías adicionales también se reclaman?",
         answer:
-          "La carta puede incluirlas junto a la fianza. Esta herramienta no comprueba si el importe pactado superaba el límite legal; solo prepara la reclamación de lo que entregaste.",
+          "La carta puede incluirlas junto a la fianza. Si indicas la renta mensual, avisa cuando la fianza supere una mensualidad o las garantías adicionales superen el tope del artículo 36.5.",
       },
     ],
   },
@@ -107,7 +112,7 @@ export const TENANT_TOOLS: ToolDefinition[] = [
     articleLabel: "Artículo 21 de la LAU",
     articleUrl: BOE_ART.repairs,
     articleNote:
-      "El arrendador paga las reparaciones necesarias para la habitabilidad, salvo que el daño lo haya causado el inquilino. El inquilino paga las pequeñas reparaciones por el desgaste del uso ordinario. Desde el 8 de octubre de 2026, el apartado 5 fija un requerimiento escrito y quince días naturales, y el artículo 21 bis trata la vivienda temporal.",
+      `El arrendador paga las reparaciones necesarias para la habitabilidad, salvo que el daño lo haya causado el inquilino. El inquilino paga las pequeñas reparaciones por el desgaste del uso ordinario. ${whenReform("Desde el 8 de octubre de 2026, el apartado 5 fija un requerimiento escrito y quince días naturales, y el artículo 21 bis trata la vivienda temporal.")}`.trim(),
     extraLinks: [{ href: BOE_RDL_29_2026, label: "Real Decreto-ley 29/2026" }],
     faqs: [
       {
@@ -128,7 +133,7 @@ export const TENANT_TOOLS: ToolDefinition[] = [
       {
         question: "¿Cómo se lo digo al arrendador?",
         answer:
-          "Hay una plantilla de mensaje. En las reparaciones que le corresponden, el artículo 21.3 pide avisar pronto y dejarle ver la vivienda. Desde el 8 de octubre de 2026, el artículo 21.5 permite un requerimiento con presupuesto y un plazo de quince días naturales.",
+          `Hay una plantilla de mensaje. En las reparaciones que le corresponden, el artículo 21.3 pide avisar pronto y dejarle ver la vivienda. ${whenReform("Desde el 8 de octubre de 2026, el artículo 21.5 permite un requerimiento con presupuesto y un plazo de quince días naturales.")}`.trim(),
       },
     ],
   },
@@ -143,7 +148,7 @@ export const TENANT_TOOLS: ToolDefinition[] = [
     articleLabel: "Artículo 11 de la LAU",
     articleUrl: BOE_ART.earlyExit,
     articleNote:
-      "En vivienda habitual puedes desistir cuando han pasado al menos seis meses, avisando con treinta días. Hasta el 8 de octubre de 2026 se podía pactar como máximo una mensualidad por cada año que faltara, en proporción. Desde esa fecha, el artículo 11.3 dice que este desistimiento no genera indemnización.",
+      `En vivienda habitual puedes desistir cuando han pasado al menos seis meses, avisando con treinta días. Se podía pactar como máximo una mensualidad por cada año que faltara, en proporción. ${whenReform("Desde el 8 de octubre de 2026, el artículo 11.3 dice que este desistimiento no genera indemnización.")}`.trim(),
     extraLinks: [{ href: BOE_RDL_29_2026, label: "Real Decreto-ley 29/2026" }],
     faqs: [
       {
@@ -159,7 +164,7 @@ export const TENANT_TOOLS: ToolDefinition[] = [
       {
         question: "¿Cuánto es la indemnización máxima?",
         answer:
-          "Si el contrato es anterior al 8 de octubre de 2026 y pactaba indemnización, el tope antiguo es una mensualidad de renta por cada año que falte, y la parte proporcional si falta menos de un año. El artículo 11.3, en vigor desde esa fecha, dice que el desistimiento no genera indemnización. En un contrato anterior la herramienta muestra el tope antiguo y lo marca como dudoso.",
+          `Si el contrato pactaba indemnización, el tope es una mensualidad de renta por cada año que falte, y la parte proporcional si falta menos de un año. ${whenReform("El artículo 11.3, en vigor desde el 8 de octubre de 2026, dice que el desistimiento no genera indemnización. En un contrato anterior la herramienta muestra el tope antiguo y lo marca como dudoso.")}`.trim(),
       },
       {
         question: "¿Sirve para temporada o habitación?",

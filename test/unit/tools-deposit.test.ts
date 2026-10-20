@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 
+import { REFORM_2026_ACTIVE } from "@/lib/domain/tools/constants";
 import { DEPOSIT_ART_36, DEPOSIT_STAYS_LOCAL, depositDocuments } from "@/lib/domain/tools/copy";
-import { assessDeposit, type DepositReady } from "@/lib/domain/tools/deposit";
+import { assessDeposit, type DepositInput, type DepositReady } from "@/lib/domain/tools/deposit";
 import { formatEuro } from "@/lib/domain/tools/money";
 
 const base = {
@@ -19,7 +20,7 @@ const base = {
   today: "2026-03-20",
 };
 
-function ready(overrides: Partial<typeof base> = {}): DepositReady {
+function ready(overrides: Partial<DepositInput> = {}): DepositReady {
   const result = assessDeposit({ ...base, ...overrides });
   if (result.status !== "ready") throw new Error(result.status);
   return result;
@@ -56,9 +57,40 @@ describe("assessDeposit", () => {
     ).toBe(2500);
   });
 
-  it("applies the handover presumption only when the keys were returned on or after 8 October 2026", () => {
-    expect(ready({ keysDate: "2026-10-08", today: "2026-10-09" }).presumptionApplies).toBe(true);
+  it("applies the handover presumption only when the 2026 reform is active and the keys were returned on or after 8 October 2026", () => {
+    expect(ready({ keysDate: "2026-10-08", today: "2026-10-09" }).presumptionApplies).toBe(
+      REFORM_2026_ACTIVE,
+    );
     expect(ready({ keysDate: "2026-10-07", today: "2026-10-08" }).presumptionApplies).toBe(false);
+  });
+
+  it("warns when the deposit or extra guarantees exceed the LAU caps, and only if rent is given", () => {
+    const housing = ready({ monthlyRentEur: 900, depositEur: 1000, extraEur: 0 });
+    expect(housing.excessiveDeposit).toBe(true);
+    expect(housing.excessiveGuarantee).toBe(false);
+    const housingDocs = depositDocuments(housing);
+    expect(housingDocs.letter).toContain("artículo 36.1");
+    expect(housingDocs.burofax).toContain("artículo 36.1");
+
+    const extra = ready({ monthlyRentEur: 900, depositEur: 900, extraEur: 1800.01 });
+    expect(extra.excessiveGuarantee).toBe(true);
+    expect(depositDocuments(extra).letter).toContain("artículo 36.5");
+    expect(depositDocuments(extra).letter).toContain("dos mensualidades");
+
+    const seasonal = ready({
+      monthlyRentEur: 900,
+      depositEur: 2000,
+      extraEur: 900.01,
+      contractKind: "temporada",
+    });
+    expect(seasonal.excessiveDeposit).toBe(false);
+    expect(seasonal.excessiveGuarantee).toBe(true);
+    expect(depositDocuments(seasonal).letter).toContain("una mensualidad");
+    expect(depositDocuments(seasonal).burofax).toContain("artículo 36.5");
+
+    expect(ready().excessiveDeposit).toBe(false);
+    expect(ready().excessiveGuarantee).toBe(false);
+    expect(depositDocuments(ready()).letter).not.toContain("artículo 36.1");
   });
 
   it("refuses a letter when the dates or the accepted deduction do not add up", () => {

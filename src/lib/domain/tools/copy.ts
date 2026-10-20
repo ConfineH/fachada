@@ -5,6 +5,11 @@ import type { RepairResult } from "@/lib/domain/tools/repairs";
 import { REPAIR_FLOW } from "@/lib/domain/tools/repairs";
 import { formatSpanishDate } from "@/lib/domain/tools/dates";
 import { formatEuro } from "@/lib/domain/tools/money";
+import { REFORM_2026_ACTIVE } from "@/lib/domain/tools/constants";
+
+function whenReform(text: string) {
+  return REFORM_2026_ACTIVE ? text : "";
+}
 
 export const LEGAL_NOTICE =
   "Información general y orientativa, no es asesoramiento jurídico. Revisa tu contrato y, si dudas, consulta a un profesional o a la OMIC de tu municipio.";
@@ -55,12 +60,9 @@ const FEE_BODIES = {
   no_amount: "Con 0 € no hay un cobro que orientar. Si te cobraron otra cantidad, ponla.",
   before_reform:
     "Firmaste antes del 26 de mayo de 2023. La regla que pone la gestión y la formalización a cargo del arrendador entra en vigor ese día y, en general, no alcanza a los contratos ya firmados. Habría que leer qué se pactó entonces.",
-  seasonal:
-    "El artículo 20 está en el título de arrendamiento de vivienda. Un contrato de temporada puede ser un uso distinto, y entonces esta prohibición no rige igual, o una vivienda temporal si es posterior al 8 de octubre de 2026 y cumple los requisitos. Con este dato no se puede afirmar que el cobro sea indebido.",
-  room:
-    "El alquiler de habitación a menudo queda fuera de la LAU. Desde el 8 de octubre de 2026 una habitación puede encajar en vivienda temporal si hay un desplazamiento justificado. No es un caso claro.",
-  other_concept:
-    "«Otro» puede ser un gasto de gestión con otro nombre, que no te correspondería, o un servicio opcional que pediste por escrito después de que te informaran del precio. El artículo 20.2, desde el 8 de octubre de 2026, sí permite ese segundo caso. Sin el concepto exacto y el papel, no se puede afirmar.",
+  seasonal: `El artículo 20 está en el título de arrendamiento de vivienda. Un contrato de temporada puede ser un uso distinto, y entonces esta prohibición no rige igual${whenReform(", o una vivienda temporal si es posterior al 8 de octubre de 2026 y cumple los requisitos")}. Con este dato no se puede afirmar que el cobro sea indebido.`,
+  room: `El alquiler de habitación a menudo queda fuera de la LAU. ${whenReform("Desde el 8 de octubre de 2026 una habitación puede encajar en vivienda temporal si hay un desplazamiento justificado. ")}No es un caso claro.`,
+  other_concept: `«Otro» puede ser un gasto de gestión con otro nombre, que no te correspondería, o un servicio opcional que pediste por escrito después de que te informaran del precio. ${whenReform("El artículo 20.2, desde el 8 de octubre de 2026, sí permite ese segundo caso. ")}Sin el concepto exacto y el papel, no se puede afirmar.`,
 } as const;
 
 export function feeCollectorLabel(collector: FeeCollector): string {
@@ -74,11 +76,11 @@ export function feeView(result: FeeResult): { title: string; body: string; steps
     const who = feeCollectorLabel(result.collector);
     const concept =
       result.concept === "solvencia"
-        ? " El estudio de solvencia es un servicio de preparación del contrato: entra en los gastos de gestión y formalización, y desde el 8 de octubre de 2026 la ley lo cubre bajo cualquier nombre. Conserva el justificante por si el papel lo llama de otra forma."
+        ? ` El estudio de solvencia es un servicio de preparación del contrato: entra en los gastos de gestión y formalización${whenReform(", y desde el 8 de octubre de 2026 la ley lo cubre bajo cualquier nombre")}. Conserva el justificante por si el papel lo llama de otra forma.`
         : " Conserva el justificante del cobro.";
     return {
       title: `Parece un cobro que no te correspondía. Se podrían reclamar ${formatEuro(result.amountEur)}.`,
-      body: `En un arrendamiento de vivienda habitual firmado a partir del 26 de mayo de 2023, los gastos de gestión inmobiliaria y de formalización corren a cargo del arrendador. Desde el 8 de octubre de 2026, el artículo 20.2 prohíbe repercutirlos al arrendatario, directa o indirectamente, bajo cualquier nombre. El importe orientativo es lo que te cobraron.${concept}`,
+      body: `En un arrendamiento de vivienda habitual firmado a partir del 26 de mayo de 2023, los gastos de gestión inmobiliaria y de formalización corren a cargo del arrendador. ${whenReform("Desde el 8 de octubre de 2026, el artículo 20.2 prohíbe repercutirlos al arrendatario, directa o indirectamente, bajo cualquier nombre. ")}El importe orientativo es lo que te cobraron.${concept}`,
       steps: [
         `Pide la devolución por escrito a ${who}. Cita el artículo 20 de la LAU y adjunta el justificante.`,
         "Si no contestan o se niegan, presenta una hoja de reclamaciones.",
@@ -175,6 +177,16 @@ export function depositDocuments(ready: DepositReady): { letter: string; burofax
   const presumption = ready.presumptionApplies
     ? "Si no hay un documento de finalización que anote desperfectos, o no se firmó, el artículo 36.7 presume que la vivienda se entregó en estado adecuado, salvo prueba en contrario."
     : "";
+  const excess = [
+    ready.excessiveDeposit
+      ? "La fianza supera una mensualidad de renta. El artículo 36.1 de la LAU fija la fianza de vivienda en una mensualidad, así que ese exceso puede ser un cobro indebido."
+      : "",
+    ready.excessiveGuarantee
+      ? ready.contractKind === "temporada"
+        ? "Las garantías adicionales superan una mensualidad. El artículo 36.5 de la LAU limita esas garantías a una mensualidad en vivienda temporal."
+        : "Las garantías adicionales superan dos mensualidades de renta. El artículo 36.5 de la LAU fija ese tope en el arrendamiento de vivienda."
+      : "",
+  ].filter(Boolean);
 
   const letter = [
     ready.tenantName,
@@ -191,6 +203,8 @@ export function depositDocuments(ready: DepositReady): { letter: string; burofax
     interest,
     "",
     ...lines,
+    "",
+    ...excess,
     "",
     presumption,
     "Les ruego el ingreso y la confirmación por escrito. Si alegan daños, necesito el detalle y las facturas.",
@@ -213,6 +227,7 @@ export function depositDocuments(ready: DepositReady): { letter: string; burofax
     ready.deductionEur > 0 && !ready.acceptDeduction
       ? `No acepto el descuento alegado de ${formatEuro(ready.deductionEur)} sin prueba de un daño imputable a mí.`
       : "",
+    ...excess,
     presumption,
     "Quedo a la espera del ingreso y de la confirmación escrita.",
   ]
@@ -293,7 +308,7 @@ const REPAIR_BODIES: Record<string, { title: string; body: string }> = {
   },
   habitacion: {
     title: "Caso dudoso. Es una habitación",
-    body: "El artículo 21 regula la vivienda. Una habitación a menudo queda fuera de la LAU; desde el 8 de octubre de 2026 puede encajar en vivienda temporal si hay un desplazamiento justificado, y entonces el artículo 21 bis carga la conservación al arrendador. No es un caso claro.",
+    body: `El artículo 21 regula la vivienda. Una habitación a menudo queda fuera de la LAU. ${whenReform("Desde el 8 de octubre de 2026 puede encajar en vivienda temporal si hay un desplazamiento justificado, y entonces el artículo 21 bis carga la conservación al arrendador. ")}No es un caso claro.`,
   },
 };
 
@@ -357,8 +372,10 @@ function repairSteps(payer: "arrendador" | "inquilino" | "dudoso", code: string)
       "Avísale por escrito en cuanto puedas. Describe el fallo, desde cuándo ocurre y que no lo causaste tú.",
       "Facilita que lo vea él o un técnico.",
       "Si es urgente, para evitar un daño inminente o una incomodidad grave, el artículo 21.3 permite hacer la reparación previa comunicación y exigir el importe de inmediato.",
-      "Desde el 8 de octubre de 2026, el artículo 21.5 permite un requerimiento escrito con un presupuesto razonable. Tiene quince días naturales para aceptar, proponer otra reparación o hacerla. Si no responde o se niega sin motivo, puedes ejecutarla y descontar el coste de rentas futuras, con las facturas.",
-    ];
+      whenReform(
+        "Desde el 8 de octubre de 2026, el artículo 21.5 permite un requerimiento escrito con un presupuesto razonable. Tiene quince días naturales para aceptar, proponer otra reparación o hacerla. Si no responde o se niega sin motivo, puedes ejecutarla y descontar el coste de rentas futuras, con las facturas.",
+      ),
+    ].filter((step): step is string => Boolean(step));
   }
   if (payer === "inquilino") {
     return [
@@ -445,11 +462,11 @@ export function earlyExitView(
       },
       seasonal: {
         title: "Caso dudoso. Es un contrato de temporada",
-        body: "El artículo 11.1 (seis meses y treinta días) es el de vivienda habitual. Un temporada anterior puede ser un uso distinto, y entonces este artículo no rige. Si es vivienda temporal posterior al 8 de octubre de 2026, el artículo 11.2 permite irse al mes, con diez días de preaviso, y el 11.3 dice que no genera indemnización. No se puede dar una sola respuesta.",
+        body: `El artículo 11.1 (seis meses y treinta días) es el de vivienda habitual. Un temporada puede ser un uso distinto, y entonces este artículo no rige. ${whenReform("Si es vivienda temporal posterior al 8 de octubre de 2026, el artículo 11.2 permite irse al mes, con diez días de preaviso, y el 11.3 dice que no genera indemnización. ")}No se puede dar una sola respuesta.`,
       },
       room: {
         title: "Caso dudoso. Es una habitación",
-        body: "El artículo 11 regula el arrendamiento de vivienda. Una habitación a menudo queda fuera de la LAU. Desde el 8 de octubre de 2026 puede ser vivienda temporal, con otro plazo. No se puede decir si puedes irte ni si hay indemnización.",
+        body: `El artículo 11 regula el arrendamiento de vivienda. Una habitación a menudo queda fuera de la LAU. ${whenReform("Desde el 8 de octubre de 2026 puede ser vivienda temporal, con otro plazo. ")}No se puede decir si puedes irte ni si hay indemnización.`,
       },
     } as const;
     const code = result.status === "invalid" ? result.code : result.code;
@@ -539,7 +556,7 @@ function compensationCopy(
   if (result.compensation.status === "zero" && result.compensation.code === "not_agreed") {
     return {
       title: "Indemnización: 0 €",
-      body: "La ley no impone una indemnización por irte. Solo podía exigirse si el contrato la pactaba, y has marcado que no. Desde el 8 de octubre de 2026 el artículo 11.3 dice, además, que el desistimiento no genera ese derecho; en un contrato anterior esa frase nueva es un matiz, no lo que decides aquí.",
+      body: `La ley no impone una indemnización por irte. Solo podía exigirse si el contrato la pactaba, y has marcado que no. ${whenReform("Desde el 8 de octubre de 2026 el artículo 11.3 dice, además, que el desistimiento no genera ese derecho; en un contrato anterior esa frase nueva es un matiz, no lo que decides aquí.")}`.trim(),
     };
   }
   if (result.compensation.status === "zero" && result.compensation.code === "nothing_left") {
@@ -551,7 +568,7 @@ function compensationCopy(
   if (result.compensation.status === "doubtful_cap") {
     return {
       title: "Indemnización: caso dudoso",
-      body: `El artículo 11 anterior al 8 de octubre de 2026 permitía pactar como máximo una mensualidad por cada año que faltara, en proporción por los periodos menores. ${when.charAt(0).toUpperCase()}${when.slice(1)}, ese tope antiguo es ${formatEuro(result.compensation.eur)}. Desde esa fecha, el artículo 11.3 dice que el desistimiento no genera indemnización. No puedo decirte si un pacto de un contrato anterior sigue siendo exigible: no des esa cifra por debida.`,
+      body: `El artículo 11 ${REFORM_2026_ACTIVE ? "anterior al 8 de octubre de 2026 " : ""}permitía pactar como máximo una mensualidad por cada año que faltara, en proporción por los periodos menores. ${when.charAt(0).toUpperCase()}${when.slice(1)}, ese tope es ${formatEuro(result.compensation.eur)}. ${whenReform("Desde esa fecha, el artículo 11.3 dice que el desistimiento no genera indemnización. ")}No puedo decirte si un pacto sigue siendo exigible: no des esa cifra por debida.`,
     };
   }
   return {

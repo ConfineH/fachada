@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { repairView } from "@/lib/domain/tools/copy";
+import { REFORM_2026_ACTIVE, REFORM_2026_NOTE } from "@/lib/domain/tools/constants";
 import { REPAIR_FLOW, assessRepair } from "@/lib/domain/tools/repairs";
 import { TENANT_TOOLS } from "@/lib/domain/tools/catalog";
 
@@ -64,22 +65,51 @@ describe("assessRepair", () => {
     expect(boiler).toMatchObject({ payer: "arrendador", nuance: "habitabilidad" });
     expect(tap).toMatchObject({ payer: "inquilino", nuance: "pequena" });
     if (boiler.status === "answered") {
-      expect(repairView(boiler).steps.join(" ")).toContain("quince días");
+      const steps = repairView(boiler).steps.join(" ");
+      if (REFORM_2026_ACTIVE) expect(steps).toContain("quince días");
+      else expect(steps).toContain("21.3");
     }
   });
 
-  it("does not make the tenant pay ordinary wear in a seasonal let", () => {
+  it("answers that the tenant pays when the seasonal damage is their fault", () => {
+    const faults = [
+      ["caldera", "mal_uso"],
+      ["electrodomesticos", "lo_rompi"],
+      ["persianas", "lo_rompi"],
+      ["cerraduras", "llaves"],
+      ["grifos", "lo_rompi"],
+      ["pintura", "la_dane"],
+      ["humedades", "lo_cause"],
+    ] as const;
+    for (const [item, situation] of faults) {
+      const result = assessRepair({ contract: "temporada", item, situation });
+      expect(result, situation).toMatchObject({
+        status: "answered",
+        payer: "inquilino",
+        nuance: "culpa",
+      });
+      if (result.status === "answered") {
+        expect(repairView(result).title).toMatch(/lo pagas tú/i);
+      }
+    }
+  });
+
+  it("reserves the seasonal wear doubt for ordinary wear, and only while the 2026 reform is active", () => {
     const result = assessRepair({ contract: "temporada", item: "grifos", situation: "goteo" });
-    expect(result).toMatchObject({ status: "doubtful", code: "temporal_desgaste" });
-    if (result.status === "doubtful") {
-      expect(repairView(result).title.toLowerCase()).toContain("dudoso");
+    if (REFORM_2026_ACTIVE) {
+      expect(result).toMatchObject({ status: "doubtful", code: "temporal_desgaste" });
+    } else {
+      expect(result).toMatchObject({ status: "answered", payer: "inquilino", nuance: "pequena" });
     }
   });
 
   it("still assigns a clear leak in a seasonal let to the landlord", () => {
     expect(
       assessRepair({ contract: "temporada", item: "humedades", situation: "filtracion" }),
-    ).toMatchObject({ payer: "arrendador", nuance: "temporal_habitabilidad" });
+    ).toMatchObject({
+      payer: "arrendador",
+      nuance: REFORM_2026_ACTIVE ? "temporal_habitabilidad" : "habitabilidad",
+    });
   });
 
   it("marks a room as doubtful before asking what broke", () => {
@@ -102,6 +132,17 @@ describe("tenant tool catalog", () => {
       expect(tool.faqs.length).toBeGreaterThanOrEqual(3);
       expect(tool.articleUrl).toContain("BOE-A-1994-26003");
       expect(tool.description.length).toBeGreaterThan(40);
+    }
+  });
+
+  it("hides post-8 October 2026 rules and shows the pending-validation note while the flag is off", () => {
+    expect(REFORM_2026_NOTE).toBe(
+      "Norma reciente pendiente de convalidación; revisado a fecha 20/10/2026.",
+    );
+    if (REFORM_2026_ACTIVE) return;
+    for (const tool of TENANT_TOOLS) {
+      const text = [tool.articleNote, ...tool.faqs.map((faq) => faq.answer)].join(" ");
+      expect(text, tool.id).not.toContain("8 de octubre de 2026");
     }
   });
 });

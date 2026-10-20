@@ -1,4 +1,4 @@
-import type { ContractKind } from "@/lib/domain/tools/constants";
+import { REFORM_2026_ACTIVE, type ContractKind } from "@/lib/domain/tools/constants";
 
 export const REPAIR_PAYERS = ["arrendador", "inquilino", "dudoso"] as const;
 export type RepairPayer = (typeof REPAIR_PAYERS)[number];
@@ -88,6 +88,14 @@ export type RepairResult =
       situation: string;
     };
 
+const TENANT_FAULT = new Set([
+  "mal_uso",
+  "lo_rompi",
+  "llaves",
+  "la_dane",
+  "lo_cause",
+]);
+
 export function assessRepair(input: RepairInput): RepairResult {
   if (!input.contract) return { status: "incomplete" };
   if (input.contract === "habitacion") return { status: "doubtful", code: "habitacion" };
@@ -100,7 +108,17 @@ export function assessRepair(input: RepairInput): RepairResult {
   const situation = item.situations.find((entry) => entry.id === input.situation);
   if (!situation) return { status: "incomplete" };
 
-  if (input.contract === "temporada") {
+  if (TENANT_FAULT.has(situation.id)) {
+    return {
+      status: "answered",
+      payer: "inquilino",
+      nuance: "culpa",
+      item: item.id,
+      situation: situation.id,
+    };
+  }
+
+  if (input.contract === "temporada" && REFORM_2026_ACTIVE) {
     if (situation.payer === "arrendador") {
       return {
         status: "answered",

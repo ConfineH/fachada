@@ -5,6 +5,7 @@ import { JsonLd } from "@/components/json-ld";
 import { LegalNotice } from "@/components/tools/legal-notice";
 import { ReviewCta } from "@/components/tools/review-cta";
 import { TENANT_TOOLS, TOOLS_INDEX } from "@/lib/domain/tools/catalog";
+import { REFORM_2026_NOTE } from "@/lib/domain/tools/constants";
 import { faqJsonLd, pageMeta } from "@/lib/seo";
 
 export const metadata = pageMeta(TOOLS_INDEX.title, TOOLS_INDEX.description, "/herramientas");
@@ -24,8 +25,13 @@ export default function HerramientasPage() {
         Cuatro cálculos sobre el alquiler de vivienda. Sirven cuando ya hay un cobro, una fianza,
         una avería o una salida. Al terminar, puedes contar qué pasó con la agencia.
       </p>
-      <div className="mt-6 max-w-3xl">
+      <div className="mt-6 max-w-3xl space-y-3">
         <LegalNotice />
+        {REFORM_2026_NOTE ? (
+          <p role="note" className="rounded-lg border border-stone-200 bg-white px-4 py-3 text-sm leading-relaxed text-zinc-700">
+            {REFORM_2026_NOTE}
+          </p>
+        ) : null}
       </div>
       <ul className="mt-10 grid gap-4 sm:grid-cols-2">
         {TENANT_TOOLS.map((tool) => (

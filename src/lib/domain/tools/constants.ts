@@ -9,6 +9,22 @@ export const FEE_RULE_START = "2023-05-26";
  */
 export const REFORM_2026_START = "2026-10-08";
 
+/**
+ * El Real Decreto-ley 29/2026 está pendiente de convalidación (plazo hacia el
+ * 13/11/2026). En false no se aplican textos ni reglas posteriores al 8/10/2026.
+ */
+export const REFORM_2026_ACTIVE = false;
+export const REFORM_2026_REVIEWED_ON = "20/10/2026";
+export const REFORM_2026_NOTE = REFORM_2026_ACTIVE
+  ? ""
+  : `Norma reciente pendiente de convalidación; revisado a fecha ${REFORM_2026_REVIEWED_ON}.`;
+
+export function reform2026Applies(date?: string) {
+  if (!REFORM_2026_ACTIVE) return false;
+  if (!date) return true;
+  return date >= REFORM_2026_START;
+}
+
 /** LEC: juicio verbal sin abogado ni procurador si la cuantía no excede de este importe. */
 export const LAWYER_FREE_MAX_EUR = 2000;
 
