@@ -17,6 +17,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/agencias",
     "/metodologia",
     "/sobre",
+    "/herramientas",
+    "/herramientas/honorarios",
+    "/herramientas/fianza",
+    "/herramientas/reparaciones",
+    "/herramientas/salida-anticipada",
     "/agencia/acceso",
     "/agregar-inmobiliaria",
     "/legal/aviso-legal",
@@ -27,7 +32,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     url: absoluteUrl(path || "/"),
     lastModified,
     changeFrequency: path === "" || path === "/agencias" ? "daily" : "weekly",
-    priority: path === "" ? 1 : path === "/agencias" || path === "/explorar" ? 0.8 : 0.5,
+    priority:
+      path === ""
+        ? 1
+        : path === "/agencias" || path === "/explorar"
+          ? 0.8
+          : path.startsWith("/herramientas")
+            ? 0.7
+            : 0.5,
   }));
 
   const cityRoutes = cities.map((city) => ({

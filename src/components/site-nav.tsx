@@ -20,6 +20,9 @@ export function SiteNav() {
           <Link href="/agencias" className="nav-link">
             Inmobiliarias
           </Link>
+          <Link href="/herramientas" className="nav-link">
+            Herramientas
+          </Link>
           <Link href="/agregar-inmobiliaria" className="nav-link">
             Sugerir inmobiliaria
           </Link>

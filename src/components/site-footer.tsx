@@ -33,6 +33,11 @@ export function SiteFooter() {
                   Cómo publicamos una reseña
                 </Link>
               </li>
+              <li>
+                <Link href="/herramientas" className="hover:text-brand">
+                  Herramientas para inquilinos
+                </Link>
+              </li>
             </ul>
           </div>
           <div>
