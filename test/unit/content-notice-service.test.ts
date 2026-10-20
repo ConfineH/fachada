@@ -171,6 +171,37 @@ describe("ContentNoticeService", () => {
     expect(await store.listContentNotices()).toHaveLength(2);
   });
 
+  it("does not hide again when the same reason was already kept", async () => {
+    const payload = {
+      reviewId,
+      reporterName: "Agencia Ejemplo",
+      category: "personal_data" as const,
+      exactExcerpt: "La comunicación posterior fue lenta",
+      legalReason:
+        "El fragmento identifica a una persona física con datos innecesarios.",
+      goodFaithAttested: true,
+    };
+    const first = await service.create(
+      { ...payload, reporterEmail: "uno@agencia.example" },
+      { reporterVerified: true },
+    );
+    await service.decide(first.id, {
+      status: "mantenido",
+      decisionRule: "Se mantiene la reseña",
+      decisionReason: "El fragmento no identifica a una persona física.",
+    });
+    expect((await store.findReviewById(reviewId))?.flagged).toBe(false);
+
+    const second = await service.create(
+      { ...payload, reporterEmail: "dos@agencia.example" },
+      { reporterVerified: true, ip: "203.0.113.20" },
+    );
+    const review = await store.findReviewById(reviewId);
+    expect(review?.flagged).toBe(false);
+    expect(isPublicReview(review!)).toBe(true);
+    expect(second.status).toBe("pendiente");
+  });
+
   it("limits notices to five per email and five per IP each day", async () => {
     const base = {
       reviewId,

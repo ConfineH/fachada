@@ -44,10 +44,12 @@ export function noticeShouldHide(input: {
   reporterVerified: boolean;
   reviewFlagged: boolean;
   moderationReason?: string;
+  sameReasonKept?: boolean;
 }) {
   if (!input.reporterVerified || !noticeHidesProvisionally(input.category)) {
     return false;
   }
+  if (input.sameReasonKept) return false;
   const label = noticeReasonLabel(input.category);
   const alreadyHiddenForReason =
     input.reviewFlagged && (input.moderationReason ?? "").includes(label);

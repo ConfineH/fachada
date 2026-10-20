@@ -49,6 +49,18 @@ describe("screenReviewText", () => {
         cons: "La cuenta DE89 3704 0044 0532 0130 00 tampoco.",
       }).outcome,
     ).toBe("block");
+    expect(
+      screenReviewText({
+        ...base,
+        cons: "Transferí a DE89 3704 0044 0532 0130 00 y no volvió.",
+      }).outcome,
+    ).toBe("block");
+    expect(
+      screenReviewText({
+        ...base,
+        cons: "La referencia del anuncio es AB12 3456 7890 1234.",
+      }).outcome,
+    ).toBe("clean");
     expect(screenReviewText({ ...base, cons: "El trato fue de gilipollas todo el mes." }).outcome).toBe("block");
   });
 
@@ -81,6 +93,38 @@ describe("screenReviewText", () => {
     });
     expect(lowercase.outcome).toBe("hold");
     expect(lowercase.hits.some((hit) => hit.message.toLowerCase().includes("marta"))).toBe(true);
+
+    const spoken = screenReviewText({
+      ...base,
+      cons: "Habló con Marta y no contestó a los mensajes.",
+    });
+    expect(spoken.outcome).toBe("hold");
+    expect(spoken.hits.some((hit) => hit.message.includes("Marta"))).toBe(true);
+  });
+
+  it("does not treat the word after a role as a name unless it is a given name or a capital", () => {
+    for (const cons of [
+      "El agente que vino no explicó la fianza.",
+      "La comercial nos enseñó el piso y se fue.",
+      "El gestor del alquiler tardó una semana.",
+    ]) {
+      const result = screenReviewText({ ...base, cons });
+      expect(result.hits.some((hit) => hit.code === "person_name"), cons).toBe(false);
+      expect(result.outcome, cons).toBe("clean");
+    }
+  });
+
+  it("does not treat a lowercase given name as a person unless it follows a role", () => {
+    for (const cons of [
+      "Entramos en julio y el piso seguía sucio.",
+      "Había pintadas de rosa en el portal.",
+      "Hay un pilar en el salón y no lo arreglaron.",
+      "La cocina era blanca y el horno no funcionaba.",
+      "Si tomas el piso, revisa la caldera antes.",
+      "Pidieron cesar el contrato antes de devolver la fianza.",
+    ]) {
+      expect(screenReviewText({ ...base, cons }).outcome, cons).toBe("clean");
+    }
   });
 
   it("does not hold streets, institutions, holidays or another agency name", () => {

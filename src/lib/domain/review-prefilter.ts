@@ -472,9 +472,73 @@ const NIE_RE =
 const CIF_RE =
   /(?<![a-z0-9])[abcdefghjnpqrsuvw][\s.-]?\d{7}[\s.-]?[0-9a-j](?![a-z0-9])/gi;
 const IBAN_RE =
-  /(?<![a-z0-9])([a-z]{2}\d{2}(?:[\s-]?[a-z0-9]){11,30})(?![a-z0-9])/gi;
-const TITLE_RE =
-  /(?:^|[^\p{L}])(?:señora|senora|señor|senor|sra|sr|doña|dona|don|empleados|empleadas|empleado|empleada|comerciales|comercial|gestores|gestoras|gestor|gestora|agentes|agente)[^\p{L}]+(\p{L}[\p{L}'’-]{2,})/giu;
+  /(?<![a-z0-9])([a-z]{2}\d{2}(?:[\s-]*[a-z0-9]{4}){2,7}(?:[\s-]*[a-z0-9]{1,3})?)(?![a-z0-9])/gi;
+const ROLE_TITLES = new Set(
+  [
+    "señora",
+    "senora",
+    "señor",
+    "senor",
+    "sra",
+    "sr",
+    "doña",
+    "dona",
+    "don",
+    "empleados",
+    "empleadas",
+    "empleado",
+    "empleada",
+    "comerciales",
+    "comercial",
+    "gestores",
+    "gestoras",
+    "gestor",
+    "gestora",
+    "agentes",
+    "agente",
+  ].map(fold),
+);
+const FUNCTION_WORDS = new Set(
+  [
+    "a",
+    "al",
+    "con",
+    "de",
+    "del",
+    "e",
+    "el",
+    "en",
+    "es",
+    "era",
+    "la",
+    "las",
+    "le",
+    "les",
+    "lo",
+    "los",
+    "me",
+    "mi",
+    "mis",
+    "nos",
+    "o",
+    "os",
+    "por",
+    "que",
+    "se",
+    "son",
+    "su",
+    "sus",
+    "te",
+    "tu",
+    "tus",
+    "u",
+    "un",
+    "una",
+    "unas",
+    "unos",
+    "y",
+  ].map(fold),
+);
 
 /** Misma lista en el formulario y en el servidor: nombre, razón social, marca y ciudades. */
 export function reviewAllowedNames(input: {
@@ -595,11 +659,30 @@ function hasNationalId(text: string) {
 function hasIban(text: string) {
   IBAN_RE.lastIndex = 0;
   for (const match of text.matchAll(IBAN_RE)) {
-    const compact = match[1]?.replace(/[\s-]/g, "") ?? "";
-    if (compact.length >= 15 && compact.length <= 34) return true;
+    const raw = match[1] ?? "";
+    const compact = raw.replace(/[\s-]/g, "");
+    if (compact.length < 15 || compact.length > 34) continue;
+    const start = match.index ?? 0;
+    const around = text.slice(Math.max(0, start - 40), start + raw.length + 40);
+    if (/\b(?:iban|cuenta)\b/i.test(around) || ibanChecksumOk(compact)) return true;
   }
   IBAN_RE.lastIndex = 0;
   return false;
+}
+
+function ibanChecksumOk(compact: string) {
+  const rearranged = (compact.slice(4) + compact.slice(0, 4)).toUpperCase();
+  let expanded = "";
+  for (const char of rearranged) {
+    const code = char.charCodeAt(0);
+    expanded += code >= 65 && code <= 90 ? String(code - 55) : char;
+  }
+  let remainder = 0;
+  for (const digit of expanded) {
+    if (digit < "0" || digit > "9") return false;
+    remainder = (remainder * 10 + Number(digit)) % 97;
+  }
+  return remainder === 1;
 }
 
 function matchingTerms(text: string, terms: readonly string[]) {
@@ -631,19 +714,22 @@ function personNames(
   };
 
   const skip = new Set(SKIP_WORDS.map(fold));
-  for (const match of text.matchAll(TITLE_RE)) {
-    const name = match[1];
-    if (!name) continue;
-    const key = fold(name);
-    if (allowed.has(key) || skip.has(key)) continue;
-    push(name);
-  }
-
   const given = new Set(GIVEN_NAMES.map(fold));
-  for (const match of text.matchAll(/\p{L}{3,}/gu)) {
-    const word = match[0];
+  const tokens = [...text.matchAll(/\p{L}[\p{L}'’-]*/gu)];
+  for (let index = 0; index < tokens.length; index += 1) {
+    const word = tokens[index]?.[0];
+    if (!word) continue;
     const key = fold(word);
-    if (given.has(key) && !allowed.has(key)) push(word);
+    if (allowed.has(key) || skip.has(key) || FUNCTION_WORDS.has(key)) continue;
+    const previous = index > 0 ? fold(tokens[index - 1]?.[0] ?? "") : "";
+    const afterRole = ROLE_TITLES.has(previous);
+    const capital = /^\p{Lu}/u.test(word);
+    const isGiven = given.has(key);
+    if (afterRole && (isGiven || capital)) {
+      push(word);
+      continue;
+    }
+    if (isGiven && capital) push(word);
   }
   return found;
 }

@@ -18,6 +18,36 @@ export function ReviewReportForm({
   const [error, setError] = useState("");
   const [reference, setReference] = useState("");
   const [sending, setSending] = useState(false);
+  const [email, setEmail] = useState("");
+  const [sendingCode, setSendingCode] = useState(false);
+  const [codeStatus, setCodeStatus] = useState("");
+
+  async function sendCode() {
+    setError("");
+    setCodeStatus("");
+    if (!email.includes("@")) {
+      setError("Escribe el correo para enviarte el código.");
+      return;
+    }
+    setSendingCode(true);
+    try {
+      const response = await fetch("/api/auth/request-email-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const data = (await response.json()) as { error?: string };
+      if (!response.ok) {
+        setError(data.error ?? "No se pudo enviar el código.");
+        return;
+      }
+      setCodeStatus("Te hemos enviado un código a ese correo.");
+    } catch {
+      setError("No se pudo conectar con el servidor.");
+    } finally {
+      setSendingCode(false);
+    }
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -35,7 +65,7 @@ export function ReviewReportForm({
         body: JSON.stringify({
           reviewId,
           reporterName: formData.get("reporterName"),
-          reporterEmail: formData.get("reporterEmail"),
+          reporterEmail: email,
           emailCode: formData.get("emailCode") || undefined,
           relationship: formData.get("relationship") || undefined,
           category,
@@ -106,16 +136,28 @@ export function ReviewReportForm({
               name="reporterEmail"
               type="email"
               required
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
               placeholder="Correo de contacto"
               className="input-field"
             />
-            <input
-              name="emailCode"
-              inputMode="numeric"
-              maxLength={6}
-              placeholder="Código del correo, si no has entrado"
-              className="input-field sm:col-span-2"
-            />
+            <div className="flex flex-col gap-2 sm:col-span-2 sm:flex-row">
+              <input
+                name="emailCode"
+                inputMode="numeric"
+                maxLength={6}
+                placeholder="Código del correo, si no has entrado"
+                className="input-field"
+              />
+              <button
+                type="button"
+                onClick={sendCode}
+                disabled={sendingCode}
+                className="btn-secondary min-h-11 shrink-0 disabled:opacity-60"
+              >
+                {sendingCode ? "Enviando…" : "Enviarme código"}
+              </button>
+            </div>
           </div>
           <input
             name="relationship"
@@ -170,6 +212,7 @@ export function ReviewReportForm({
             />
             Declaro de buena fe que la información es exacta y completa.
           </label>
+          {codeStatus ? <p className="text-xs text-emerald-800">{codeStatus}</p> : null}
           {error ? <p className="text-xs text-red-700">{error}</p> : null}
           <button
             type="submit"

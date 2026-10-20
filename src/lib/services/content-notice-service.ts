@@ -58,6 +58,13 @@ export class ContentNoticeService {
       );
     }
 
+    const sameReasonKept = existing.some(
+      (notice) =>
+        notice.reviewId === data.reviewId &&
+        notice.category === data.category &&
+        notice.status === "mantenido",
+    );
+
     const now = new Date();
     const notice: ContentNotice = {
       id: randomUUID(),
@@ -83,6 +90,7 @@ export class ContentNoticeService {
         reporterVerified: Boolean(context.reporterVerified),
         reviewFlagged: review.flagged,
         moderationReason: review.moderationReason,
+        sameReasonKept,
       })
     ) {
       review.flagged = true;
