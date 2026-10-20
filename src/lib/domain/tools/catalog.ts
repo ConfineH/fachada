@@ -2,6 +2,7 @@ import {
   BOE_ART,
   BOE_LEY_12_2023,
   REFORM_2026_ACTIVE,
+  TOOL_TEXTS_REVIEWED_ON,
   reformStatuteLinks,
 } from "@/lib/domain/tools/constants";
 
@@ -12,7 +13,13 @@ function whenReform(text: string) {
 export type ToolFaq = { question: string; answer: string };
 
 export type ToolDefinition = {
-  id: "honorarios" | "fianza" | "reparaciones" | "salida-anticipada";
+  id:
+    | "honorarios"
+    | "fianza"
+    | "reparaciones"
+    | "salida-anticipada"
+    | "acta-entrega-llaves"
+    | "subida-alquiler";
   path: string;
   label: string;
   title: string;
@@ -173,6 +180,84 @@ export const TENANT_TOOLS: ToolDefinition[] = [
       },
     ],
   },
+  {
+    id: "acta-entrega-llaves",
+    path: "/herramientas/acta-entrega-llaves",
+    label: "Acta de entrega de llaves",
+    title: "Acta de entrega de llaves del alquiler",
+    description:
+      "Acta entrega llaves alquiler, al entrar o al salir del piso: estancias, fotos, contadores y firmas. Se guarda en el dispositivo y el PDF se genera en el navegador.",
+    card: "Deja por escrito el estado del piso, con fotos y la firma de las dos partes.",
+    articleLabel: "Artículo 36 de la LAU",
+    articleUrl: BOE_ART.deposit,
+    articleNote:
+      `El artículo 21.4 deja en el inquilino las pequeñas reparaciones del desgaste ordinario. El deterioro por el tiempo, sin culpa, no justifica retener la fianza. ${whenReform("Desde el 8 de octubre de 2026, el artículo 36.7 exige un documento de finalización y, si no se firma o no anota desperfectos, presume que la vivienda se devolvió en buen estado.")} Revisado el ${TOOL_TEXTS_REVIEWED_ON}.`.trim(),
+    extraLinks: [
+      { href: BOE_ART.repairs, label: "Artículo 21 de la LAU" },
+      ...reformStatuteLinks(REFORM_2026_ACTIVE),
+    ],
+    faqs: [
+      {
+        question: "¿El desgaste normal lo paga el inquilino?",
+        answer:
+          "Las pequeñas reparaciones que exija el uso ordinario, sí: lo dice el artículo 21.4. El deterioro que produce el tiempo, sin culpa del inquilino, no es un daño para descontar de la fianza. El artículo 21.1 remite a los artículos 1.563 y 1.564 del Código Civil, y el 36 regula la devolución.",
+      },
+      {
+        question: "¿Para qué sirve el acta al salir?",
+        answer:
+          `Sirve para anotar el estado el día de las llaves, con fotos y las dos firmas. ${whenReform("Desde el 8 de octubre de 2026, el artículo 36.7 pide un documento de finalización. Si no se firma, o no se anotan desperfectos, se presume que la vivienda se devolvió en buen estado.")}`.trim(),
+      },
+      {
+        question: "¿Fachada guarda las fotos o las firmas?",
+        answer:
+          "No. Se quedan en este dispositivo, en el almacenamiento local del navegador. El PDF y el archivo para comparar se descargan aquí. El código del PDF es un resumen SHA-256 del contenido, no un sello de tiempo oficial.",
+      },
+      {
+        question: "¿Puedo usar el acta para reclamar la fianza?",
+        answer:
+          "Sí, si quieres. Desde el acta puedes pasar la dirección, los nombres, la fecha de llaves y los elementos marcados como dañados a la carta de reclamación. No se rellena sola.",
+      },
+    ],
+  },
+  {
+    id: "subida-alquiler",
+    path: "/herramientas/subida-alquiler",
+    label: "Subida del alquiler",
+    title: "¿Cuánto me pueden subir el alquiler?",
+    description:
+      "Calcula cuánto me pueden subir el alquiler: si el contrato no lo prevé no hay subida, y si lo prevé aplica el tope de 2023, el de 2024 o el IRAV.",
+    card: "Mira el tope legal de la actualización y si lo que te piden lo pasa.",
+    articleLabel: "Artículo 18 de la LAU",
+    articleUrl: BOE_ART.rent,
+    articleNote:
+      `Sin pacto expreso no hay actualización durante el contrato. Con pacto, el tope fue el 2 % en 2023 y el 3 % en 2024, y desde 2025 el IRAV. ${whenReform("Del 8 de octubre de 2026 al 31 de diciembre de 2027, la disposición final sexta del RDL 29/2026 impide subir la renta si supera el índice de precios de referencia y, sin pacto nuevo, la limita al 2 %.")} Revisado el ${TOOL_TEXTS_REVIEWED_ON}.`.trim(),
+    extraLinks: [
+      { href: BOE_LEY_12_2023, label: "Ley 12/2023" },
+      ...reformStatuteLinks(REFORM_2026_ACTIVE),
+    ],
+    faqs: [
+      {
+        question: "¿Me pueden subir el alquiler si el contrato no lo dice?",
+        answer:
+          "No durante el contrato. El artículo 18.1 de la LAU dice que, en defecto de pacto expreso, no se aplica actualización de rentas.",
+      },
+      {
+        question: "¿Cuál es el tope si el contrato sí prevé la actualización?",
+        answer:
+          `En las actualizaciones de 2023 el tope fue el 2 % y en las de 2024 el 3 %. Desde 2025 el límite es el IRAV que publica el INE, el del último mes disponible en la fecha de la actualización. ${whenReform("Entre el 8 de octubre de 2026 y el 31 de diciembre de 2027 hay un límite extra: si la renta supera el índice de precios de referencia no sube, y si no lo supera y no hay un pacto nuevo, no puede pasar del 2 %.")}`.trim(),
+      },
+      {
+        question: "¿De dónde sale el IRAV?",
+        answer:
+          "De la serie IRAV1 del INE, copiada en la aplicación. Si el mes que corresponde no está cargado, la calculadora lo dice y no usa otro mes. No consulta al INE al calcular.",
+      },
+      {
+        question: "¿La subida vale en cualquier mes?",
+        answer:
+          "No. El artículo 18 solo permite actualizarla el día en que se cumple cada año de vigencia del contrato. La renta nueva se exige desde el mes siguiente al aviso por escrito.",
+      },
+    ],
+  },
 ];
 
 export function toolById(id: ToolDefinition["id"]): ToolDefinition {
@@ -184,7 +269,7 @@ export function toolById(id: ToolDefinition["id"]): ToolDefinition {
 export const TOOLS_INDEX = {
   title: "Herramientas para inquilinos",
   description:
-    "Cuatro herramientas gratuitas sobre honorarios, fianza, reparaciones y salir del alquiler. Se calculan en el navegador y no se guardan.",
+    "Seis herramientas gratuitas sobre honorarios, fianza, reparaciones, salir del alquiler, el acta de entrega de llaves y la subida de la renta. Se calculan en el navegador y no se envían a ningún servidor.",
   faqs: [
     {
       question: "¿Estas herramientas son asesoramiento jurídico?",
@@ -194,7 +279,7 @@ export const TOOLS_INDEX = {
     {
       question: "¿Fachada guarda lo que escribo?",
       answer:
-        "No. Los cálculos se hacen en tu navegador. La carta de la fianza no se envía a ningún servidor. Buscar la agencia para dejar una reseña es otro paso, y solo viaja el nombre que buscas.",
+        "No sale de tu navegador. La carta de la fianza no se envía a ningún servidor. El acta de llaves se guarda solo en este dispositivo. Buscar la agencia para dejar una reseña es otro paso, y solo viaja el nombre que buscas.",
     },
     {
       question: "¿Sirven si el piso está en Madrid?",

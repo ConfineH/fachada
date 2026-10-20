@@ -10,11 +10,13 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "seed:madrid-sql": "node scripts/print-madrid-seed-sql.mjs",
-    "seed:cities-sql": "node scripts/print-city-seed-sql.mjs"
+    "seed:cities-sql": "node scripts/print-city-seed-sql.mjs",
+    "update-irav": "node scripts/update-irav.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.3",
     "next": "16.2.10",
+    "pdf-lib": "^1.17.1",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "zod": "^4.4.3"

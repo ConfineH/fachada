@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 
 import { Field, Result } from "@/components/tools/fields";
 import {
@@ -11,6 +11,10 @@ import {
 } from "@/lib/domain/tools/copy";
 import { assessDeposit } from "@/lib/domain/tools/deposit";
 import { localTodayIso } from "@/lib/domain/tools/dates";
+import {
+  ACTA_DEPOSIT_STORAGE_KEY,
+  parseActaDepositDraft,
+} from "@/lib/domain/tools/handover";
 import { parseEuroInput } from "@/lib/domain/tools/money";
 
 export function DepositTool() {
@@ -28,6 +32,24 @@ export function DepositTool() {
   const [deductionDetail, setDeductionDetail] = useState("");
   const [acceptDeduction, setAcceptDeduction] = useState(false);
   const [copied, setCopied] = useState<"letter" | "burofax" | null>(null);
+  const actaRaw = useSyncExternalStore(subscribeActaDraft, readActaDraft, () => "");
+  const actaDraft = actaRaw ? parseActaDepositDraft(actaRaw) : null;
+
+  function applyActa() {
+    if (!actaDraft) return;
+    setLandlordName(actaDraft.landlordName);
+    setTenantName(actaDraft.tenantName);
+    setAddress(actaDraft.address);
+    if (actaDraft.keysDate) setKeysDate(actaDraft.keysDate);
+    if (actaDraft.deductionDetail) setDeductionDetail(actaDraft.deductionDetail);
+    sessionStorage.removeItem(ACTA_DEPOSIT_STORAGE_KEY);
+    window.dispatchEvent(new Event(ACTA_DEPOSIT_EVENT));
+  }
+
+  function dismissActa() {
+    sessionStorage.removeItem(ACTA_DEPOSIT_STORAGE_KEY);
+    window.dispatchEvent(new Event(ACTA_DEPOSIT_EVENT));
+  }
 
   const monthlyRentEur = monthlyRent.trim() === "" ? null : parseEuroInput(monthlyRent);
   const depositEur = parseEuroInput(deposit);
@@ -71,6 +93,19 @@ export function DepositTool() {
       <p className="rounded-lg border border-stone-200 bg-white px-4 py-3 text-sm leading-relaxed text-zinc-700">
         {DEPOSIT_STAYS_LOCAL}
       </p>
+      {actaDraft ? (
+        <div className="rounded-lg border border-stone-200 bg-stone-50 px-4 py-3 text-sm">
+          <p>Hay un acta de llaves en este dispositivo. Puedes usar la dirección, los nombres, la fecha y los daños anotados.</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button type="button" className="btn-primary min-h-11" onClick={applyActa}>
+              Usar los datos del acta
+            </button>
+            <button type="button" className="btn-secondary min-h-11" onClick={dismissActa}>
+              Ahora no
+            </button>
+          </div>
+        </div>
+      ) : null}
       <div className="no-print card-raised space-y-5 p-5 sm:p-6">
         <Field label="Arrendador">
           <input className="input-field min-h-11" autoComplete="off" value={landlordName} onChange={(event) => setLandlordName(event.target.value)} />
@@ -196,4 +231,15 @@ export function DepositTool() {
       )}
     </div>
   );
+}
+
+const ACTA_DEPOSIT_EVENT = "fachada-acta-deposit";
+
+function subscribeActaDraft(onChange: () => void) {
+  window.addEventListener(ACTA_DEPOSIT_EVENT, onChange);
+  return () => window.removeEventListener(ACTA_DEPOSIT_EVENT, onChange);
+}
+
+function readActaDraft() {
+  return sessionStorage.getItem(ACTA_DEPOSIT_STORAGE_KEY) ?? "";
 }

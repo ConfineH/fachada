@@ -143,12 +143,14 @@ describe("assessRepair", () => {
 });
 
 describe("tenant tool catalog", () => {
-  it("publishes four tools with faqs and a consolidated statute link", () => {
+  it("publishes six tools with faqs and a consolidated statute link", () => {
     expect(TENANT_TOOLS.map((tool) => tool.path)).toEqual([
       "/herramientas/honorarios",
       "/herramientas/fianza",
       "/herramientas/reparaciones",
       "/herramientas/salida-anticipada",
+      "/herramientas/acta-entrega-llaves",
+      "/herramientas/subida-alquiler",
     ]);
     for (const tool of TENANT_TOOLS) {
       expect(tool.faqs.length).toBeGreaterThanOrEqual(3);

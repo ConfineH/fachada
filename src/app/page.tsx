@@ -232,12 +232,12 @@ export default async function Home({
                   Herramientas para un problema concreto
                 </h2>
                 <p className="mt-1 max-w-xl text-sm text-zinc-600">
-                  Honorarios, fianza, reparaciones o salir antes. Se calculan en
-                  el navegador.
+                  Honorarios, fianza, reparaciones, salir antes, el acta de llaves o
+                  la subida del alquiler. Se calculan en el navegador.
                 </p>
               </div>
               <Link href="/herramientas" className="link-brand text-sm">
-                Ver las cuatro
+                Ver las seis
               </Link>
             </div>
             <ul className="mt-6 grid gap-4 sm:grid-cols-2">
