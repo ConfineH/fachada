@@ -8,6 +8,7 @@ import { PublicShell } from "@/components/public-shell";
 import { Reveal } from "@/components/reveal";
 import { SearchForm } from "@/components/search-form";
 import { JsonLd } from "@/components/json-ld";
+import { TENANT_TOOLS } from "@/lib/domain/tools/catalog";
 import { homeDocumentedAgencies } from "@/lib/domain/agency-browse";
 import { agencyService, usingSupabase } from "@/lib/container";
 import {
@@ -220,6 +221,35 @@ export default async function Home({
                 ))}
               </div>
             </div>
+          </section>
+        </Reveal>
+
+        <Reveal>
+          <section>
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <h2 className="text-2xl font-semibold tracking-tight">
+                  Herramientas para un problema concreto
+                </h2>
+                <p className="mt-1 max-w-xl text-sm text-zinc-600">
+                  Honorarios, fianza, reparaciones o salir antes. Se calculan en
+                  el navegador.
+                </p>
+              </div>
+              <Link href="/herramientas" className="link-brand text-sm">
+                Ver las cuatro
+              </Link>
+            </div>
+            <ul className="mt-6 grid gap-4 sm:grid-cols-2">
+              {TENANT_TOOLS.map((tool) => (
+                <li key={tool.id}>
+                  <Link href={tool.path} className="card-interactive block h-full p-5">
+                    <h3 className="font-semibold">{tool.label}</h3>
+                    <p className="mt-1 text-sm text-zinc-600">{tool.card}</p>
+                  </Link>
+                </li>
+              ))}
+            </ul>
           </section>
         </Reveal>
 
