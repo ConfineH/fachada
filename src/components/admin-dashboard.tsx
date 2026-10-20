@@ -11,7 +11,9 @@ import type {
   TipWithAgency,
 } from "@/lib/services/admin-service";
 import { AGENCY_TIP_KIND_LABELS } from "@/lib/domain/agency-tips";
-import type { ContentNotice } from "@/lib/domain/types";
+import { noticeReasonLabel } from "@/lib/domain/content-notice-reasons";
+import { moderationSla } from "@/lib/domain/review-visibility";
+import type { ContentNotice, PublicationMode } from "@/lib/domain/types";
 
 export function AdminDashboard({
   initialClaims,
@@ -20,6 +22,8 @@ export function AdminDashboard({
   initialLocations,
   initialTips,
   initialContentNotices,
+  initialPolicy,
+  initialPolicyChanges,
 }: {
   initialClaims: ClaimWithAgency[];
   initialReviews: ReviewWithAgency[];
@@ -27,6 +31,18 @@ export function AdminDashboard({
   initialLocations: LocationWithAgency[];
   initialTips: Array<TipWithAgency & { evidenceUrl?: string }>;
   initialContentNotices: ContentNotice[];
+  initialPolicy: {
+    mode: PublicationMode;
+    updatedAt: string;
+    updatedBy: string;
+  };
+  initialPolicyChanges: Array<{
+    id: string;
+    mode: PublicationMode;
+    previousMode: PublicationMode;
+    changedBy: string;
+    changedAt: string;
+  }>;
 }) {
   const router = useRouter();
   const [claims, setClaims] = useState(initialClaims);
@@ -46,6 +62,35 @@ export function AdminDashboard({
   >({});
   const [message, setMessage] = useState("");
   const [messageIsError, setMessageIsError] = useState(false);
+  const [publicationMode, setPublicationMode] = useState(initialPolicy.mode);
+
+  async function savePublicationMode() {
+    setMessage("");
+    setMessageIsError(false);
+    let res: Response;
+    try {
+      res = await fetch("/api/admin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "set-publication-mode",
+          mode: publicationMode,
+        }),
+      });
+    } catch {
+      setMessage("No se pudo conectar con el servidor.");
+      setMessageIsError(true);
+      return;
+    }
+    if (!res.ok) {
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      setMessage(data.error ?? "No se pudo cambiar el modo");
+      setMessageIsError(true);
+      return;
+    }
+    setMessage("Modo de publicación actualizado.");
+    router.refresh();
+  }
 
   async function runAction(
     action: string,
@@ -146,6 +191,58 @@ export function AdminDashboard({
         Ejecutar borrado de evidencias vencidas
       </button>
 
+      <section className="rounded-xl border border-stone-200 bg-white p-5">
+        <h2 className="text-lg font-medium">Publicación de reseñas</h2>
+        <p className="mt-2 text-sm text-stone-600">
+          Modo actual:{" "}
+          <strong>
+            {initialPolicy.mode === "immediate"
+              ? "publicación inmediata con prefiltro"
+              : "pre-moderación"}
+          </strong>
+          {initialPolicy.updatedAt !== new Date(0).toISOString()
+            ? `. Último cambio: ${initialPolicy.updatedBy} · ${new Date(initialPolicy.updatedAt).toLocaleString("es-ES")}`
+            : ". Nadie ha cambiado el modo todavía"}
+          .
+        </p>
+        <p className="mt-2 text-xs text-stone-500">
+          El cambio queda a nombre de quien inició la sesión.
+        </p>
+        <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_auto]">
+          <select
+            value={publicationMode}
+            onChange={(event) =>
+              setPublicationMode(event.target.value as PublicationMode)
+            }
+            className="input-field"
+          >
+            <option value="immediate">Publicación inmediata con prefiltro</option>
+            <option value="premoderation">Pre-moderación</option>
+          </select>
+          <button
+            type="button"
+            onClick={() => void savePublicationMode()}
+            className="rounded-lg bg-zinc-900 px-3 py-2 text-sm text-white"
+          >
+            Guardar modo
+          </button>
+        </div>
+        {initialPolicyChanges.length > 0 ? (
+          <ul className="mt-3 space-y-1 text-xs text-stone-500">
+            {initialPolicyChanges.slice(0, 8).map((change) => (
+              <li key={change.id}>
+                {new Date(change.changedAt).toLocaleString("es-ES")} ·{" "}
+                {change.changedBy} · {change.previousMode} → {change.mode}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="mt-3 text-xs text-stone-500">
+            Todavía no hay cambios registrados.
+          </p>
+        )}
+      </section>
+
       <section>
         <h2 className="text-lg font-medium">
           Denuncias de contenido ({contentNotices.length})
@@ -162,8 +259,9 @@ export function AdminDashboard({
               className="rounded-xl border border-amber-200 bg-white p-5"
             >
               <p className="text-xs font-medium uppercase tracking-wide text-amber-800">
-                {notice.category} · expediente {notice.id}
+                {noticeReasonLabel(notice.category)} · expediente {notice.id}
               </p>
+              <SlaNote createdAt={notice.createdAt} />
               <h3 className="mt-2 font-semibold">
                 Fragmento: «{notice.exactExcerpt}»
               </h3>
@@ -554,8 +652,19 @@ export function AdminDashboard({
                   <p className="mt-2 text-stone-700">{review.body}</p>
                   <p className="mt-2 text-sm text-stone-500">
                     {review.role} · {review.rating}/5 ·{" "}
-                    {review.flagged ? "Reportada" : "Sin moderar"}
+                    {review.flagged ? "Oculta o reportada" : "En revisión"}
                   </p>
+                  <SlaNote createdAt={review.createdAt} />
+                  {review.prefilterReasons && review.prefilterReasons.length > 0 ? (
+                    <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-amber-950">
+                      {review.prefilterReasons.map((reason) => (
+                        <li key={reason}>{reason}</li>
+                      ))}
+                    </ul>
+                  ) : null}
+                  {review.moderationReason ? (
+                    <p className="mt-2 text-sm text-zinc-700">{review.moderationReason}</p>
+                  ) : null}
                   {review.evidenceUrl ? (
                     <div className="mt-3 flex flex-wrap items-center gap-3">
                       <a
@@ -623,5 +732,14 @@ export function AdminDashboard({
         </ul>
       </section>
     </div>
+  );
+}
+
+function SlaNote({ createdAt }: { createdAt: Date | string }) {
+  const sla = moderationSla(createdAt);
+  return (
+    <p className={sla.overdue ? "mt-2 text-xs font-medium text-rose-700" : "mt-2 text-xs text-stone-500"}>
+      {sla.label}
+    </p>
   );
 }

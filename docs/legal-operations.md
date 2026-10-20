@@ -15,8 +15,9 @@ documento sigue siendo el ROPA/LIA operativo; no está firmado por abogado.
 - Punto de contacto de usuarios, autoridades y avisos DSA:
   `LEGAL_CONTACT_EMAIL`.
 - Privacidad: `LEGAL_PRIVACY_EMAIL` o, si no existe, el mismo buzón.
-- Moderación: una persona identificada en el registro interno; nunca una
-  decisión automática final para contenido denunciado.
+- Moderación: una persona identificada en el registro interno. La
+  publicación ordinaria puede ser automática tras el prefiltro. Nunca hay
+  una decisión automática final para contenido denunciado o retenido.
 
 ## Registro de actividades (ROPA)
 
@@ -80,7 +81,9 @@ Balance y garantías:
 - pseudónimo por defecto;
 - etiquetas que distinguen email, experiencia declarada y acreditada;
 - prohibición de datos personales innecesarios;
-- revisión humana y derecho de respuesta;
+- publicación inmediata solo con correo verificado y prefiltro limpio;
+  revisión humana de lo retenido, de los avisos y del sello de experiencia
+  acreditada; derecho de respuesta de la inmobiliaria;
 - denuncia accesible, decisión motivada y revisión;
 - evidencia privada, acceso restringido y borrado programado;
 - oposición y supresión evaluadas caso por caso;
@@ -99,6 +102,11 @@ sistemática o decisiones automatizadas con efecto significativo.
 Triggers internos: más de 1.000 usuarios activos mensuales, antifraude
 automatizado, scoring de personas físicas/autónomos, nuevas fuentes externas o
 tratamiento habitual de evidencias sensibles.
+
+El prefiltro automático impide enviar datos de contacto, documentos e
+insultos, y retiene acusaciones de delito y posibles nombres. No puntúa a
+personas ni decide un aviso. Reevaluar la EIPD si ese filtro se usa para
+sancionar cuentas o para ordenar fichas.
 
 ## Conservación y limpieza
 

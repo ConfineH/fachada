@@ -15,12 +15,13 @@ export default function NormasPage() {
   );
 
   return (
-    <LegalDoc title="Normas de uso y contenidos" updated="septiembre 2026">
+    <LegalDoc title="Normas de uso y contenidos" updated="octubre 2026">
       <p>
-        Al enviar una reseña, responder como inmobiliaria, avisar de un
-        contenido o aportar datos a una ficha aceptas estas normas. Fachada aloja
-        contenidos de usuarios y aplica estas reglas de forma objetiva,
-        proporcionada y con revisión humana.
+        Al enviar una reseña, responder como inmobiliaria, denunciar un
+        contenido o aportar datos a una ficha aceptas estas normas. Fachada
+        aloja contenidos de usuarios. Un filtro automático aplica estas reglas
+        antes de publicar. Las decisiones sobre avisos y textos retenidos las
+        toma una persona.
       </p>
       <h2>Quién habla en cada contenido</h2>
       <ul>
@@ -81,9 +82,11 @@ export default function NormasPage() {
         </li>
         <li>
           Puedes editar o eliminar tu reseña desde tu cuenta. Si la editas,
-          deja de verse en la ficha hasta una nueva revisión y queda marcada
-          como editada. El rol, la inmobiliaria y la fecha de la experiencia
-          no se pueden cambiar.
+          el sello de experiencia acreditada vuelve a experiencia declarada
+          y queda marcada como editada. Si el texto nuevo pasa el filtro y
+          el correo está verificado, se publica otra vez. Si no, deja de
+          verse hasta que una persona lo revise. El rol, la inmobiliaria y
+          la fecha de la experiencia no se pueden cambiar.
         </li>
       </ul>
       <h2>Licencia y autoría</h2>
@@ -96,21 +99,50 @@ export default function NormasPage() {
         después, durante el periodo estrictamente necesario en copias de
         seguridad o para cumplir obligaciones y defender reclamaciones.
       </p>
-      <h2>Moderación</h2>
+      <h2>Publicación y moderación</h2>
       <p>
-        Las reseñas no salen en la ficha hasta que un moderador las revisa.
-        Podemos no publicar, limitar o retirar textos ilegales, falsos, no
-        relacionados con una experiencia real o contrarios a estas normas.
-        Comunicaremos al autor la regla aplicada y el motivo. No retiramos una
-        crítica por ser negativa, por petición especial ni por pago.
+        Fachada es un alojador de contenidos. Una reseña con el correo
+        verificado y sin señales de riesgo se publica en la ficha al enviarla.
+        El filtro automático rechaza enlaces, teléfonos, correos, documentos
+        de identidad, cuentas bancarias e insultos: hay que corregirlos antes
+        de enviar. Si el texto imputa un delito o identifica a una persona,
+        te pedimos que lo cuentes como hecho. Si aun así lo envías, no se
+        publica y lo revisa una persona.
       </p>
-      <h2>Avisar de contenido ilícito</h2>
       <p>
-        Usa el enlace «Avisar» junto a cada reseña o escribe a{" "}
-        {contact}. Identifica la URL y el fragmento exacto, explica
-        el derecho o norma vulnerados, aporta un correo de contacto y confirma
-        de buena fe que la información es exacta. Acusaremos recibo y
-        comunicaremos una decisión motivada. Una discrepancia o una valoración
+        No llamamos «verificada» a una experiencia que solo está declarada.
+        «Experiencia declarada» significa que el autor afirma que ocurrió.
+        «Experiencia acreditada» solo aparece cuando una persona ha revisado
+        pruebas privadas, como un contrato o recibos. Esas pruebas no se
+        publican.
+      </p>
+      <p>
+        Podemos no publicar, limitar u ocultar textos ilegales, falsos, ajenos
+        a una experiencia real o contrarios a estas normas. Una crítica no se
+        retira por ser negativa, por petición especial ni por pago. Si
+        restringimos un texto, comunicamos la regla y el motivo. El autor
+        puede pedir una revisión humana.
+      </p>
+      <h2>Denunciar un contenido</h2>
+      <p>
+        Usa «Denunciar» en cada reseña. Si representas a la inmobiliaria con
+        la ficha verificada, también puedes «Solicitar revisión» desde su
+        panel. El aviso indica un motivo: datos personales, hecho falso, no
+        fue cliente, contenido ofensivo o acusación de delito, spam o reseña
+        falsa, u otro. Identifica el fragmento, explica el problema, aporta
+        un correo y confirma de buena fe que la información es exacta. También
+        puedes escribir a {contact}.
+      </p>
+      <p>
+        Un aviso por datos personales o por contenido ofensivo o acusación de
+        delito oculta la reseña de forma provisional solo si el correo de
+        quien avisa está verificado, con una sesión o con un código. Sin ese
+        correo verificado el aviso queda en cola y la reseña sigue visible.
+        El mismo motivo no vuelve a ocultarla mientras no se haya revisado.
+        El resto de avisos no la ocultan mientras se revisan.
+        Acusamos recibo y comunicamos una decisión motivada al autor y a
+        quien avisó. El autor puede recurrirla. La inmobiliaria conserva el
+        derecho a responder en la ficha. Una discrepancia o una valoración
         negativa no convierten por sí solas una reseña en ilícita.
       </p>
       <h2>Agencias</h2>

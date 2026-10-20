@@ -7,6 +7,9 @@ import type {
   Claim,
   ContentNotice,
   PendingVerification,
+  PublicationMode,
+  PublicationPolicy,
+  PublicationPolicyChange,
   Review,
   Session,
   User,
@@ -337,6 +340,9 @@ export class SupabaseRepository implements Repository {
         moderated_at: review.moderatedAt?.toISOString() ?? null,
         edited_at: review.editedAt?.toISOString() ?? null,
         deleted_at: review.deletedAt?.toISOString() ?? null,
+        prefilter_outcome: review.prefilterOutcome ?? null,
+        prefilter_codes: review.prefilterCodes ?? [],
+        prefilter_reasons: review.prefilterReasons ?? [],
       })
       .eq("id", review.id);
     throwIfError(error);
@@ -378,6 +384,9 @@ export class SupabaseRepository implements Repository {
       flagged: review.flagged,
       moderation_reason: review.moderationReason ?? null,
       moderated_at: review.moderatedAt?.toISOString() ?? null,
+      prefilter_outcome: review.prefilterOutcome ?? null,
+      prefilter_codes: review.prefilterCodes ?? [],
+      prefilter_reasons: review.prefilterReasons ?? [],
     });
     throwIfError(error);
   }
@@ -415,6 +424,7 @@ export class SupabaseRepository implements Repository {
       review_id: notice.reviewId,
       reporter_name: notice.reporterName,
       reporter_email: notice.reporterEmail,
+      reporter_ip: notice.reporterIp ?? null,
       relationship: notice.relationship ?? null,
       category: notice.category,
       exact_excerpt: notice.exactExcerpt,
@@ -948,6 +958,85 @@ export class SupabaseRepository implements Repository {
         created_agency_slug: submission.createdAgencySlug ?? null,
       })
       .eq("id", submission.id);
+    throwIfError(error);
+  }
+
+  async getPublicationPolicy(): Promise<PublicationPolicy> {
+    const { data, error } = await this.client
+      .from("publication_policy")
+      .select("mode, updated_at, updated_by")
+      .eq("id", 1)
+      .maybeSingle();
+    if (error && /publication_policy|schema cache|does not exist/i.test(error.message)) {
+      return {
+        mode: "immediate",
+        updatedAt: new Date(0),
+        updatedBy: "valor por defecto",
+      };
+    }
+    throwIfError(error);
+    if (!data) {
+      return {
+        mode: "immediate",
+        updatedAt: new Date(0),
+        updatedBy: "valor por defecto",
+      };
+    }
+    const row = data as {
+      mode: PublicationMode;
+      updated_at: string;
+      updated_by: string;
+    };
+    return {
+      mode: row.mode,
+      updatedAt: new Date(row.updated_at),
+      updatedBy: row.updated_by,
+    };
+  }
+
+  async listPublicationPolicyChanges(): Promise<PublicationPolicyChange[]> {
+    const { data, error } = await this.client
+      .from("publication_policy_audit")
+      .select("id, mode, previous_mode, changed_by, changed_at")
+      .order("changed_at", { ascending: false });
+    if (error && /publication_policy|schema cache|does not exist/i.test(error.message)) {
+      return [];
+    }
+    throwIfError(error);
+    return (
+      (data ?? []) as Array<{
+        id: string;
+        mode: PublicationMode;
+        previous_mode: PublicationMode;
+        changed_by: string;
+        changed_at: string;
+      }>
+    ).map((row) => ({
+      id: row.id,
+      mode: row.mode,
+      previousMode: row.previous_mode,
+      changedBy: row.changed_by,
+      changedAt: new Date(row.changed_at),
+    }));
+  }
+
+  async setPublicationPolicy(change: PublicationPolicyChange) {
+    const { error: auditError } = await this.client
+      .from("publication_policy_audit")
+      .insert({
+        id: change.id,
+        mode: change.mode,
+        previous_mode: change.previousMode,
+        changed_by: change.changedBy,
+        changed_at: change.changedAt.toISOString(),
+      });
+    throwIfError(auditError);
+    const { error } = await this.client.from("publication_policy").upsert({
+      id: 1,
+      mode: change.mode,
+      updated_at: change.changedAt.toISOString(),
+      updated_by: change.changedBy,
+    });
     throwIfError(error);
   }
 

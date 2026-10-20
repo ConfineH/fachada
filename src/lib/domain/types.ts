@@ -170,6 +170,26 @@ export interface Review {
   flagged: boolean;
   moderationReason?: string;
   moderatedAt?: Date;
+  /** clean = pasó el prefiltro; held = el autor envió un texto retenido. */
+  prefilterOutcome?: "clean" | "held";
+  prefilterCodes?: string[];
+  prefilterReasons?: string[];
+}
+
+export type PublicationMode = "immediate" | "premoderation";
+
+export interface PublicationPolicy {
+  mode: PublicationMode;
+  updatedAt: Date;
+  updatedBy: string;
+}
+
+export interface PublicationPolicyChange {
+  id: string;
+  mode: PublicationMode;
+  previousMode: PublicationMode;
+  changedBy: string;
+  changedAt: Date;
 }
 
 export type ContentNoticeCategory =
@@ -179,7 +199,12 @@ export type ContentNoticeCategory =
   | "threat"
   | "intellectual_property"
   | "fake_experience"
-  | "other_illegal";
+  | "other_illegal"
+  | "false_statement"
+  | "not_customer"
+  | "offensive_or_crime"
+  | "spam"
+  | "other";
 
 export type ContentNoticeStatus =
   | "pendiente"
@@ -192,6 +217,7 @@ export interface ContentNotice {
   reviewId: string;
   reporterName: string;
   reporterEmail: string;
+  reporterIp?: string;
   relationship?: string;
   category: ContentNoticeCategory;
   exactExcerpt: string;

@@ -84,6 +84,9 @@ type ReviewRow = {
   flagged: boolean;
   moderation_reason: string | null;
   moderated_at: string | null;
+  prefilter_outcome?: "clean" | "held" | null;
+  prefilter_codes?: string[] | null;
+  prefilter_reasons?: string[] | null;
 };
 
 type ClaimRow = {
@@ -119,6 +122,7 @@ type ContentNoticeRow = {
   review_id: string;
   reporter_name: string;
   reporter_email: string;
+  reporter_ip?: string | null;
   relationship: string | null;
   category: ContentNotice["category"];
   exact_excerpt: string;
@@ -230,6 +234,9 @@ export function mapReview(row: ReviewRow): Review {
     flagged: row.flagged,
     moderationReason: row.moderation_reason ?? undefined,
     moderatedAt: row.moderated_at ? new Date(row.moderated_at) : undefined,
+    prefilterOutcome: row.prefilter_outcome ?? undefined,
+    prefilterCodes: row.prefilter_codes ?? [],
+    prefilterReasons: row.prefilter_reasons ?? [],
   };
 }
 
@@ -277,6 +284,7 @@ export function mapContentNotice(row: ContentNoticeRow): ContentNotice {
     reviewId: row.review_id,
     reporterName: row.reporter_name,
     reporterEmail: row.reporter_email,
+    reporterIp: row.reporter_ip ?? undefined,
     relationship: row.relationship ?? undefined,
     category: row.category,
     exactExcerpt: row.exact_excerpt,

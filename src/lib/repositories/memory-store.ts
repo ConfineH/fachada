@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 
 import { REVIEW_TERMS_VERSION } from "@/lib/domain/review-authenticity";
+import { DEFAULT_PUBLICATION_MODE } from "@/lib/domain/review-visibility";
 import type {
   Agency,
   AgencyLocation,
@@ -11,6 +12,8 @@ import type {
   Claim,
   ContentNotice,
   PendingEmailVerification,
+  PublicationPolicy,
+  PublicationPolicyChange,
   PendingVerification,
   Review,
   Session,
@@ -109,6 +112,12 @@ export class MemoryStore implements Repository {
   private reviewHelpful = new Set<string>();
   private savedAgencies: { userId: string; agencyId: string; createdAt: Date }[] =
     [];
+  private publicationPolicy: PublicationPolicy = {
+    mode: DEFAULT_PUBLICATION_MODE,
+    updatedAt: new Date(0),
+    updatedBy: "valor por defecto",
+  };
+  private publicationPolicyChanges: PublicationPolicyChange[] = [];
 
   private businessKey(userId: string, agencyId: string) {
     return `${userId}:${agencyId}`;
@@ -568,6 +577,25 @@ export class MemoryStore implements Repository {
 
   async clearBusinessLineVerified(userId: string, agencyId: string) {
     this.businessLineVerified.delete(this.businessKey(userId, agencyId));
+  }
+
+  async getPublicationPolicy() {
+    return this.publicationPolicy;
+  }
+
+  async listPublicationPolicyChanges() {
+    return [...this.publicationPolicyChanges].sort(
+      (a, b) => b.changedAt.getTime() - a.changedAt.getTime(),
+    );
+  }
+
+  async setPublicationPolicy(change: PublicationPolicyChange) {
+    this.publicationPolicy = {
+      mode: change.mode,
+      updatedAt: change.changedAt,
+      updatedBy: change.changedBy,
+    };
+    this.publicationPolicyChanges.push(change);
   }
 }
 

@@ -299,8 +299,8 @@ export default async function AgencyPage({
           <p className="mt-1 text-sm text-zinc-600">
             {totalReviews}{" "}
             {totalReviews === 1
-              ? "reseña publicada tras moderación."
-              : "reseñas publicadas tras moderación."}
+              ? "reseña publicada."
+              : "reseñas publicadas."}
             {cityFilter
               ? ` La nota de arriba es de toda la empresa. Abajo, lo contado en ${cityFilter}.`
               : ""}
@@ -362,7 +362,13 @@ export default async function AgencyPage({
         <aside className="space-y-6">
           <AgencyMetadataCard agency={agency} aliases={agency.aliases} />
           <div id="dejar-resena">
-            <ReviewForm agencySlug={agency.slug} cities={cities} />
+            <ReviewForm
+              agencySlug={agency.slug}
+              agencyName={agency.name}
+              legalName={agency.legalName}
+              brandName={agency.brandName}
+              cities={cities}
+            />
           </div>
           {(agency.idealistaUrl || agency.fotocasaUrl) && (
             <p className="text-center text-sm text-zinc-600">

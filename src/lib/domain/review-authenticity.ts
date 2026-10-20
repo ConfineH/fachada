@@ -1,4 +1,4 @@
-export const REVIEW_TERMS_VERSION = "2026-09-legal-hardening-v1";
+export const REVIEW_TERMS_VERSION = "2026-10-publicacion-inmediata-v1";
 export const MAX_EXPERIENCE_AGE_DAYS = 30;
 export const WHOLE_NUMBER_RATING_ERROR =
   "No se ha publicado la reseña porque la nota no es un número entero. Solo puedes usar 1, 2, 3, 4 o 5.";

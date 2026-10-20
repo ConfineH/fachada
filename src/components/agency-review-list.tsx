@@ -8,6 +8,7 @@ import { StarScore } from "@/components/star-score";
 import { authHeaders, readSessionToken } from "@/lib/auth/session-client";
 import { INCIDENT_TAG_LABELS, type IncidentSentiments, type IncidentTag } from "@/lib/domain/incidents";
 import {
+  experiencePublicLabel,
   reviewProsCons,
   reviewPublicByline,
 } from "@/lib/domain/review-copy";
@@ -126,11 +127,8 @@ export function AgencyReviewList({
                 {review.identityVerification === "email"
                   ? "Correo verificado"
                   : "Teléfono verificado"}{" "}
-                · Experiencia{" "}
-                {review.verificationLevel === "acreditada"
-                  ? "acreditada"
-                  : "declarada"}{" "}
-                · {new Date(review.experienceDate).toLocaleDateString("es-ES")}
+                · {experiencePublicLabel(review.verificationLevel)} ·{" "}
+                {new Date(review.experienceDate).toLocaleDateString("es-ES")}
                 {review.experienceCity ? ` · ${review.experienceCity}` : ""}
               </p>
               <h3 className="mt-2 text-lg font-semibold">{review.title}</h3>
@@ -186,13 +184,12 @@ export function AgencyReviewList({
                   </p>
                 </div>
               )}
-              <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-                <p className="text-xs text-stone-500">
-                {new Date(review.createdAt).toLocaleDateString("es-ES")}
-                {review.editedAt ? " · Editada" : ""}
-              </p>
-                <div className="flex items-center gap-3">
-                  <ReviewReportForm reviewId={review.id} />
+              <div className="mt-3 space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <p className="text-xs text-stone-500">
+                    {new Date(review.createdAt).toLocaleDateString("es-ES")}
+                    {review.editedAt ? " · Editada" : ""}
+                  </p>
                   <button
                     type="button"
                     onClick={() => markHelpful(review.id)}
@@ -202,6 +199,7 @@ export function AgencyReviewList({
                     Útil ({helpful[review.id] ?? review.helpfulCount})
                   </button>
                 </div>
+                <ReviewReportForm reviewId={review.id} />
               </div>
             </li>
           );

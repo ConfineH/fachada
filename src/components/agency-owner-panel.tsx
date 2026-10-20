@@ -4,6 +4,7 @@ import { FormEvent, useState } from "react";
 
 import { AgencyProfileEditor, AgencyAddOfficeForm } from "@/components/agency-profile-editor";
 import { AccountVerification } from "@/components/account-verification";
+import { ReviewReportForm } from "@/components/review-report-form";
 
 type ReviewItem = {
   id: string;
@@ -108,9 +109,9 @@ export function AgencyOwnerPanel({
   return (
     <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-5">
       <h3 className="font-medium text-emerald-950">Gestión de reseñas</h3>
-      <p className="mt-1 text-sm text-emerald-900">
+        <p className="mt-1 text-sm text-emerald-900">
         Si tienes el acceso de gestión aprobado para esta inmobiliaria, puedes
-        responder a las reseñas publicadas.
+        responder a las reseñas publicadas o solicitar la revisión de una.
       </p>
 
       {error && (
@@ -156,6 +157,28 @@ export function AgencyOwnerPanel({
             fotocasaUrl={fotocasaUrl}
           />
           <AgencyAddOfficeForm agencySlug={agencySlug} token={token} />
+        </div>
+      )}
+
+      {step === "manage" && canManage && reviews.length > 0 && (
+        <div className="mt-6 space-y-3">
+          <h4 className="text-sm font-medium text-emerald-950">
+            Solicitar revisión
+          </h4>
+          <ul className="space-y-3">
+            {reviews.map((review) => (
+              <li
+                key={`notice-${review.id}`}
+                className="rounded-lg border border-emerald-200 bg-white p-4"
+              >
+                <p className="text-sm font-medium">{review.title}</p>
+                <ReviewReportForm
+                  reviewId={review.id}
+                  label="Solicitar revisión"
+                />
+              </li>
+            ))}
+          </ul>
         </div>
       )}
 

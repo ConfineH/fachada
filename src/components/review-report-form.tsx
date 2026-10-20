@@ -2,25 +2,52 @@
 
 import { FormEvent, useState } from "react";
 
+import { authHeaders, readSessionToken } from "@/lib/auth/session-client";
+import { PUBLIC_NOTICE_REASONS } from "@/lib/domain/content-notice-reasons";
 import type { ContentNoticeCategory } from "@/lib/domain/types";
 
-const CATEGORIES: Array<[ContentNoticeCategory, string]> = [
-  ["honor", "Honor o reputación"],
-  ["privacy", "Intimidad"],
-  ["personal_data", "Datos personales"],
-  ["threat", "Amenaza o acoso"],
-  ["intellectual_property", "Propiedad intelectual"],
-  ["fake_experience", "Experiencia presuntamente falsa"],
-  ["other_illegal", "Otro contenido presuntamente ilícito"],
-];
-
-export function ReviewReportForm({ reviewId }: { reviewId: string }) {
+export function ReviewReportForm({
+  reviewId,
+  label = "Denunciar",
+}: {
+  reviewId: string;
+  label?: string;
+}) {
   const [open, setOpen] = useState(false);
-  const [category, setCategory] =
-    useState<ContentNoticeCategory>("fake_experience");
+  const [category, setCategory] = useState<ContentNoticeCategory>("other");
   const [error, setError] = useState("");
   const [reference, setReference] = useState("");
   const [sending, setSending] = useState(false);
+  const [email, setEmail] = useState("");
+  const [sendingCode, setSendingCode] = useState(false);
+  const [codeStatus, setCodeStatus] = useState("");
+
+  async function sendCode() {
+    setError("");
+    setCodeStatus("");
+    if (!email.includes("@")) {
+      setError("Escribe el correo para enviarte el código.");
+      return;
+    }
+    setSendingCode(true);
+    try {
+      const response = await fetch("/api/auth/request-email-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const data = (await response.json()) as { error?: string };
+      if (!response.ok) {
+        setError(data.error ?? "No se pudo enviar el código.");
+        return;
+      }
+      setCodeStatus("Te hemos enviado un código a ese correo.");
+    } catch {
+      setError("No se pudo conectar con el servidor.");
+    } finally {
+      setSendingCode(false);
+    }
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -28,13 +55,18 @@ export function ReviewReportForm({ reviewId }: { reviewId: string }) {
     setError("");
     const formData = new FormData(event.currentTarget);
     try {
+      const token = readSessionToken();
       const response = await fetch("/api/content-notices", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? authHeaders(token) : {}),
+        },
         body: JSON.stringify({
           reviewId,
           reporterName: formData.get("reporterName"),
-          reporterEmail: formData.get("reporterEmail"),
+          reporterEmail: email,
+          emailCode: formData.get("emailCode") || undefined,
           relationship: formData.get("relationship") || undefined,
           category,
           exactExcerpt: formData.get("exactExcerpt"),
@@ -66,13 +98,13 @@ export function ReviewReportForm({ reviewId }: { reviewId: string }) {
   }
 
   return (
-    <div>
+    <div className="w-full">
       <button
         type="button"
         onClick={() => setOpen((current) => !current)}
-        className="text-xs text-stone-500 underline hover:text-zinc-800"
+        className="text-xs font-medium text-stone-600 underline hover:text-zinc-900"
       >
-        Avisar
+        {label}
       </button>
       {open ? (
         <form
@@ -80,11 +112,17 @@ export function ReviewReportForm({ reviewId }: { reviewId: string }) {
           className="mt-3 space-y-3 rounded-lg border border-stone-200 bg-stone-50 p-4"
         >
           <p className="text-sm font-semibold text-zinc-900">
-            Avisar de un contenido presuntamente ilícito
+            {label === "Solicitar revisión"
+              ? "Solicitar revisión de esta reseña"
+              : "Denunciar esta reseña"}
           </p>
           <p className="text-xs text-zinc-600">
             Una valoración negativa no es ilícita por sí sola. Señala el
-            fragmento concreto y explica el derecho o norma vulnerados.
+            fragmento concreto y explica el derecho o norma vulnerados. Si el
+            motivo es datos personales o contenido ofensivo o acusación de
+            delito, la reseña se oculta solo si el correo está verificado
+            (sesión o código). Sin verificar, el aviso entra en la cola y la
+            reseña sigue visible.
           </p>
           <div className="grid gap-3 sm:grid-cols-2">
             <input
@@ -98,9 +136,28 @@ export function ReviewReportForm({ reviewId }: { reviewId: string }) {
               name="reporterEmail"
               type="email"
               required
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
               placeholder="Correo de contacto"
               className="input-field"
             />
+            <div className="flex flex-col gap-2 sm:col-span-2 sm:flex-row">
+              <input
+                name="emailCode"
+                inputMode="numeric"
+                maxLength={6}
+                placeholder="Código del correo, si no has entrado"
+                className="input-field"
+              />
+              <button
+                type="button"
+                onClick={sendCode}
+                disabled={sendingCode}
+                className="btn-secondary min-h-11 shrink-0 disabled:opacity-60"
+              >
+                {sendingCode ? "Enviando…" : "Enviarme código"}
+              </button>
+            </div>
           </div>
           <input
             name="relationship"
@@ -115,9 +172,9 @@ export function ReviewReportForm({ reviewId }: { reviewId: string }) {
             }
             className="input-field"
           >
-            {CATEGORIES.map(([value, label]) => (
+            {PUBLIC_NOTICE_REASONS.map(([value, reason]) => (
               <option key={value} value={value}>
-                {label}
+                {reason}
               </option>
             ))}
           </select>
@@ -155,6 +212,7 @@ export function ReviewReportForm({ reviewId }: { reviewId: string }) {
             />
             Declaro de buena fe que la información es exacta y completa.
           </label>
+          {codeStatus ? <p className="text-xs text-emerald-800">{codeStatus}</p> : null}
           {error ? <p className="text-xs text-red-700">{error}</p> : null}
           <button
             type="submit"

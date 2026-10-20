@@ -154,7 +154,7 @@ export const HOME_FAQS = [
   {
     question: "¿Fachada verifica que la experiencia ocurrió?",
     answer:
-      "No de forma automática. Quien escribe entra con un correo y declara una experiencia propia reciente. Solo marcamos «experiencia acreditada» si una persona revisa pruebas privadas.",
+      "No de forma automática. Quien escribe entra con un correo verificado y declara una experiencia propia reciente. Si el texto pasa un filtro automático, se publica al momento como experiencia declarada. Solo marcamos «experiencia acreditada» si una persona revisa pruebas privadas.",
   },
   {
     question: "¿En qué se diferencia de las reseñas de Google o Idealista?",

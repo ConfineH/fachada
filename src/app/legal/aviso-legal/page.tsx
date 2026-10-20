@@ -76,9 +76,10 @@ export default function AvisoLegalPage() {
       <p>
         Las reseñas reflejan experiencias individuales, no un dictamen
         profesional ni una calificación oficial. Fachada no garantiza que una
-        cuenta identificada pruebe por sí sola la experiencia descrita. Actúa
-        con diligencia ante avisos suficientemente precisos y mantiene un
-        proceso de moderación y respuesta. Los enlaces a Idealista, Fotocasa u
+        cuenta identificada pruebe por sí sola la experiencia descrita. Una
+        reseña ordinaria puede publicarse tras un filtro automático; Fachada
+        no la hace suya. Actúa con diligencia ante avisos suficientemente
+        precisos y mantiene un proceso de moderación y respuesta. Los enlaces a Idealista, Fotocasa u
         otros sitios son de terceros y no implican afiliación.
       </p>
       <h2>Legislación y fuero</h2>

@@ -2,8 +2,10 @@ import { randomUUID } from "node:crypto";
 
 import { buildAgencySlug } from "@/lib/domain/agency-slug";
 import { brandSlugFromName, companyKey, servesCity } from "@/lib/domain/company-presence";
+import { noticeQueueRisk } from "@/lib/domain/content-notice-reasons";
 import { summarizeReviewFunnel } from "@/lib/domain/review-funnel";
-import type { Agency, AgencyLocation, AgencySubmission, AgencyTip, Claim, ContentNotice, Review } from "@/lib/domain/types";
+import { compareModerationQueue } from "@/lib/domain/review-visibility";
+import type { Agency, AgencyLocation, AgencySubmission, AgencyTip, Claim, ContentNotice, PublicationMode, Review } from "@/lib/domain/types";
 import {
   adminAddAliasSchema,
   adminCreateAgencySchema,
@@ -51,12 +53,49 @@ export class AdminService {
 
   async listPendingContentNotices(): Promise<ContentNotice[]> {
     const notices = await this.repo.listContentNotices();
-    return notices.filter(
-      (notice) =>
-        notice.status === "pendiente" ||
-        notice.status === "informacion_requerida" ||
-        Boolean(notice.appealedAt && !notice.appealDecidedAt),
-    );
+    return notices
+      .filter(
+        (notice) =>
+          notice.status === "pendiente" ||
+          notice.status === "informacion_requerida" ||
+          Boolean(notice.appealedAt && !notice.appealDecidedAt),
+      )
+      .sort((a, b) => {
+        const risk = noticeQueueRisk(a.category) - noticeQueueRisk(b.category);
+        if (risk !== 0) return risk;
+        return a.createdAt.getTime() - b.createdAt.getTime();
+      });
+  }
+
+  async getPublicationPolicy() {
+    return this.repo.getPublicationPolicy();
+  }
+
+  async listPublicationPolicyChanges() {
+    return this.repo.listPublicationPolicyChanges();
+  }
+
+  async setPublicationMode(mode: PublicationMode, changedBy: string) {
+    const name = changedBy.trim();
+    if (name.length < 2) {
+      throw new AdminError("Indica quién cambia el modo.");
+    }
+    if (mode !== "immediate" && mode !== "premoderation") {
+      throw new AdminError("Modo de publicación no válido.");
+    }
+    const current = await this.repo.getPublicationPolicy();
+    if (current.mode === mode) {
+      throw new AdminError("Ese modo ya está activo.");
+    }
+    const change = {
+      id: randomUUID(),
+      mode,
+      previousMode: current.mode,
+      changedBy: name,
+      changedAt: new Date(),
+    };
+    await this.repo.setPublicationPolicy(change);
+    return this.repo.getPublicationPolicy();
   }
 
   async decideContentNotice(id: string, input: unknown) {
@@ -87,7 +126,9 @@ export class AdminService {
 
   async listReviewsForModeration(): Promise<ReviewWithAgency[]> {
     const reviews = await this.repo.listAllReviews();
-    const queue = reviews.filter((r) => !r.deletedAt && (!r.moderated || r.flagged));
+    const queue = reviews
+      .filter((r) => !r.deletedAt && (!r.moderated || r.flagged))
+      .sort(compareModerationQueue);
 
     return Promise.all(
       queue.map(async (review) => {
@@ -135,6 +176,9 @@ export class AdminService {
       throw new AdminError("Motiva la decisión con al menos 10 caracteres");
     }
 
+    const wasProvisional =
+      review.flagged &&
+      (review.moderationReason ?? "").startsWith("Oculta de forma provisional");
     review.moderated = moderated;
     if (moderated) review.flagged = false;
     review.moderationReason = reason.trim();
@@ -142,6 +186,12 @@ export class AdminService {
     review.verificationLevel =
       accreditExperience && review.evidencePath ? "acreditada" : "declarada";
     await this.repo.updateReview(review);
+    if (moderated && wasProvisional && this.contentNoticeService) {
+      await this.contentNoticeService.closeOpenProvisionalNotices(
+        review.id,
+        review.moderationReason ?? reason.trim(),
+      );
+    }
     const author = await this.repo.findUserById(review.userId);
     if (author?.email && this.email) {
       await Promise.allSettled([

@@ -19,9 +19,13 @@ function sign(value: string) {
   return createHmac("sha256", getAdminSecret()).update(value).digest("hex");
 }
 
-export function createAdminToken() {
+export function createAdminToken(actor: string) {
+  const name = actor.trim();
+  if (name.length < 2) {
+    throw new Error("Admin actor required");
+  }
   const expiresAt = Date.now() + MAX_AGE_SEC * 1000;
-  const payload = `admin:${expiresAt}`;
+  const payload = `admin:${expiresAt}:${Buffer.from(name, "utf8").toString("base64url")}`;
   return `${payload}.${sign(payload)}`;
 }
 
@@ -37,6 +41,15 @@ export function verifyAdminToken(token: string | undefined) {
 
   const expiresAt = Number(payload.split(":")[1]);
   return Number.isFinite(expiresAt) && expiresAt > Date.now();
+}
+
+export function adminActorFromToken(token: string | undefined) {
+  if (!verifyAdminToken(token)) return null;
+  const payload = token!.split(".")[0] ?? "";
+  const encoded = payload.split(":")[2];
+  if (!encoded) return null;
+  const name = Buffer.from(encoded, "base64url").toString("utf8").trim();
+  return name.length >= 2 ? name : null;
 }
 
 export function verifyAdminPassword(password: string) {
