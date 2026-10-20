@@ -122,6 +122,7 @@ type ContentNoticeRow = {
   review_id: string;
   reporter_name: string;
   reporter_email: string;
+  reporter_ip?: string | null;
   relationship: string | null;
   category: ContentNotice["category"];
   exact_excerpt: string;
@@ -283,6 +284,7 @@ export function mapContentNotice(row: ContentNoticeRow): ContentNotice {
     reviewId: row.review_id,
     reporterName: row.reporter_name,
     reporterEmail: row.reporter_email,
+    reporterIp: row.reporter_ip ?? undefined,
     relationship: row.relationship ?? undefined,
     category: row.category,
     exactExcerpt: row.exact_excerpt,

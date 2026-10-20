@@ -9,6 +9,18 @@ export function isPublicReview(review: ReviewVisibility) {
   return Boolean(review.moderated && !review.flagged && !review.deletedAt);
 }
 
+/** A manual restriction, not only a notice marked «retirado». */
+export function editMustStayQueued(input: {
+  flagged: boolean;
+  moderated: boolean;
+  moderatedAt?: Date;
+  noticeStatuses?: string[];
+}) {
+  if (input.flagged) return true;
+  if (input.moderatedAt && !input.moderated) return true;
+  return (input.noticeStatuses ?? []).some((status) => status === "retirado");
+}
+
 export function decidePublication(input: {
   mode: PublicationMode;
   emailVerified: boolean;
@@ -33,7 +45,9 @@ export function decidePublication(input: {
     reasons.push("Hay un aviso de contenido abierto.");
   }
   if (input.removedBefore) {
-    reasons.push("Una decisión anterior retiró este contenido.");
+    reasons.push(
+      "Una restricción anterior impide republicar esta edición. Vuelve a la cola.",
+    );
   }
   if (reasons.length > 0) return { publish: false, reasons };
   return { publish: true, reasons: [] };

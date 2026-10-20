@@ -63,7 +63,6 @@ export function AdminDashboard({
   const [message, setMessage] = useState("");
   const [messageIsError, setMessageIsError] = useState(false);
   const [publicationMode, setPublicationMode] = useState(initialPolicy.mode);
-  const [changedBy, setChangedBy] = useState("");
 
   async function savePublicationMode() {
     setMessage("");
@@ -76,7 +75,6 @@ export function AdminDashboard({
         body: JSON.stringify({
           action: "set-publication-mode",
           mode: publicationMode,
-          changedBy,
         }),
       });
     } catch {
@@ -90,7 +88,6 @@ export function AdminDashboard({
       setMessageIsError(true);
       return;
     }
-    setChangedBy("");
     setMessage("Modo de publicación actualizado.");
     router.refresh();
   }
@@ -208,7 +205,10 @@ export function AdminDashboard({
             : ". Nadie ha cambiado el modo todavía"}
           .
         </p>
-        <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_1fr_auto]">
+        <p className="mt-2 text-xs text-stone-500">
+          El cambio queda a nombre de quien inició la sesión.
+        </p>
+        <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_auto]">
           <select
             value={publicationMode}
             onChange={(event) =>
@@ -219,12 +219,6 @@ export function AdminDashboard({
             <option value="immediate">Publicación inmediata con prefiltro</option>
             <option value="premoderation">Pre-moderación</option>
           </select>
-          <input
-            value={changedBy}
-            onChange={(event) => setChangedBy(event.target.value)}
-            placeholder="Quién cambia el modo"
-            className="input-field"
-          />
           <button
             type="button"
             onClick={() => void savePublicationMode()}

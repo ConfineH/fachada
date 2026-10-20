@@ -5,14 +5,16 @@ import { isAccountVerified } from "@/lib/domain/identity";
 import { composeReviewBody } from "@/lib/domain/review-copy";
 import { reviewRateLimitMessage } from "@/lib/domain/review-limits";
 import {
+  reviewAllowedNames,
   screenReviewText,
   type PrefilterResult,
 } from "@/lib/domain/review-prefilter";
 import {
   decidePublication,
+  editMustStayQueued,
   isPublicReview,
 } from "@/lib/domain/review-visibility";
-import type { Review, User } from "@/lib/domain/types";
+import type { Agency, Review, User } from "@/lib/domain/types";
 import { reviewEditSchema, reviewInputSchema } from "@/lib/domain/validation";
 import { notifyModerationQueue } from "@/lib/ops/moderation-alert";
 import type { Repository } from "@/lib/repositories/types";
@@ -60,21 +62,18 @@ export class ReviewService {
     if (limit) throw new ReviewError(limit);
 
     const anonymous = data.anonymous ?? true;
-    const screen = screenReviewText({
+    const screen = await this.screenForAgency(agency, {
       title: data.title,
       pros: data.pros,
       cons: data.cons,
       publicName: anonymous ? undefined : data.publicName,
-      agencyName: agency.name,
-      city: data.experienceCity ?? agency.city,
-      extraAllowedNames: [agency.legalName, agency.brandName].filter(
-        (name): name is string => Boolean(name),
-      ),
+      cities: [data.experienceCity, agency.city],
     });
     if (screen.outcome === "block") {
       throw new ReviewError(screen.hits.map((hit) => hit.message).join(" "));
     }
     const marked = markedExperience(data);
+    const notices = await this.publicationContext(user.id);
     const review: Review = {
       id: randomUUID(),
       userId: user.id,
@@ -109,7 +108,6 @@ export class ReviewService {
       moderated: false,
       flagged: false,
     };
-    const notices = await this.publicationContext(user.id);
     await this.applyPublication(review, screen, notices);
     await this.repo.createReview(review);
     if (!review.moderated) {
@@ -133,16 +131,12 @@ export class ReviewService {
     const data = reviewEditSchema.parse(input);
     const anonymous = data.anonymous ?? true;
     const agency = await this.repo.findAgencyById(review.agencyId);
-    const screen = screenReviewText({
+    const screen = await this.screenForAgency(agency, {
       title: data.title,
       pros: data.pros,
       cons: data.cons,
       publicName: anonymous ? undefined : data.publicName,
-      agencyName: agency?.name,
-      city: review.experienceCity ?? agency?.city,
-      extraAllowedNames: [agency?.legalName, agency?.brandName].filter(
-        (name): name is string => Boolean(name),
-      ),
+      cities: [review.experienceCity, agency?.city],
     });
     if (screen.outcome === "block") {
       throw new ReviewError(screen.hits.map((hit) => hit.message).join(" "));
@@ -162,7 +156,6 @@ export class ReviewService {
       incidentSentiments: marked.incidentSentiments,
       editedAt: new Date(),
       moderated: false,
-      flagged: false,
       verificationLevel: "declarada",
     };
     const notices = await this.publicationContext(user.id, review.id);
@@ -211,21 +204,57 @@ export class ReviewService {
       this.repo.listReviewsByUser(userId),
       this.repo.listContentNotices(),
     ]);
-    const ids = new Set(ownReviews.map((review) => review.id));
+    const current = reviewId
+      ? ownReviews.find((review) => review.id === reviewId)
+      : undefined;
+    const onThisReview = reviewId
+      ? notices.filter((notice) => notice.reviewId === reviewId)
+      : [];
     return {
-      openNotices: notices.some(
+      openNotices: onThisReview.some(
         (notice) =>
-          ids.has(notice.reviewId) &&
-          (notice.status === "pendiente" ||
-            notice.status === "informacion_requerida"),
+          notice.status === "pendiente" ||
+          notice.status === "informacion_requerida",
       ),
-      removedBefore: reviewId
-        ? notices.some(
-            (notice) =>
-              notice.reviewId === reviewId && notice.status === "retirado",
-          )
+      removedBefore: current
+        ? editMustStayQueued({
+            flagged: current.flagged,
+            moderated: current.moderated,
+            moderatedAt: current.moderatedAt,
+            noticeStatuses: onThisReview.map((notice) => notice.status),
+          })
         : false,
     };
+  }
+
+  private async screenForAgency(
+    agency: Agency | null | undefined,
+    input: {
+      title?: string;
+      pros?: string;
+      cons?: string;
+      publicName?: string;
+      cities?: Array<string | undefined>;
+    },
+  ) {
+    const locations = agency
+      ? await this.repo.listLocationsByAgency(agency.id)
+      : [];
+    return screenReviewText({
+      title: input.title,
+      pros: input.pros,
+      cons: input.cons,
+      publicName: input.publicName,
+      allowedNames: reviewAllowedNames({
+        name: agency?.name,
+        legalName: agency?.legalName,
+        brandName: agency?.brandName,
+        cities: [
+          ...(input.cities ?? []),
+          ...locations.map((location) => location.city),
+        ],
+      }),
+    });
   }
 
   private async applyPublication(
@@ -248,6 +277,13 @@ export class ReviewService {
     review.prefilterOutcome = screen.outcome === "hold" ? "held" : "clean";
     review.prefilterCodes = held.map((hit) => hit.code);
     review.prefilterReasons = held.map((hit) => hit.message);
+    if (notices.removedBefore) {
+      review.moderated = false;
+      review.moderatedAt = undefined;
+      review.moderationReason =
+        "Una restricción anterior impide republicar esta edición. Vuelve a la cola.";
+      return;
+    }
     review.moderated = decision.publish;
     review.flagged = false;
     review.moderatedAt = decision.publish ? new Date() : undefined;

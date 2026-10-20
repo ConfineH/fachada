@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
-import { COOKIE_NAME } from "@/lib/auth/admin-session";
+import { adminActorFromToken, COOKIE_NAME } from "@/lib/auth/admin-session";
 import { adminService } from "@/lib/container";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { purgeExpiredReviewEvidence } from "@/lib/ops/review-evidence";
@@ -46,7 +46,6 @@ export async function POST(request: Request) {
     note?: string;
     location?: unknown;
     mode?: string;
-    changedBy?: string;
   };
   if (!action) {
     return NextResponse.json({ error: "action required" }, { status: 400 });
@@ -62,13 +61,23 @@ export async function POST(request: Request) {
         return NextResponse.json({
           agency: await adminService.createAgency(body.agency),
         });
-      case "set-publication-mode":
+      case "set-publication-mode": {
+        const actor = adminActorFromToken(
+          (await cookies()).get(COOKIE_NAME)?.value,
+        );
+        if (!actor) {
+          return NextResponse.json(
+            { error: "Vuelve a entrar e indica tu nombre." },
+            { status: 400 },
+          );
+        }
         return NextResponse.json({
           policy: await adminService.setPublicationMode(
             body.mode === "premoderation" ? "premoderation" : "immediate",
-            String(body.changedBy ?? ""),
+            actor,
           ),
         });
+      }
       case "add-alias":
         return NextResponse.json({
           alias: await adminService.addAlias({

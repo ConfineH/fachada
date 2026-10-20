@@ -34,11 +34,19 @@ describe("screenReviewText", () => {
     expect(screenReviewText({ ...base, cons: "Mirad https://ejemplo.com/ficha antes de firmar." }).outcome).toBe("block");
     expect(screenReviewText({ ...base, cons: "Llamad al 600 111 222 y lo explico." }).outcome).toBe("block");
     expect(screenReviewText({ ...base, cons: "Mi DNI es 12345678Z y lo dejo aquí." }).outcome).toBe("block");
+    expect(screenReviewText({ ...base, cons: "El DNI 12.345.678-Z está en el contrato." }).outcome).toBe("block");
     expect(screenReviewText({ ...base, cons: "El NIE X1234567L aparece en el contrato." }).outcome).toBe("block");
+    expect(screenReviewText({ ...base, cons: "El NIF de la empresa es B12345674." }).outcome).toBe("block");
     expect(
       screenReviewText({
         ...base,
         cons: "El IBAN ES12 1234 1234 1234 1234 1234 no es mío.",
+      }).outcome,
+    ).toBe("block");
+    expect(
+      screenReviewText({
+        ...base,
+        cons: "La cuenta DE89 3704 0044 0532 0130 00 tampoco.",
       }).outcome,
     ).toBe("block");
     expect(screenReviewText({ ...base, cons: "El trato fue de gilipollas todo el mes." }).outcome).toBe("block");
@@ -66,6 +74,36 @@ describe("screenReviewText", () => {
     });
     expect(titled.outcome).toBe("hold");
     expect(titled.hits.some((hit) => hit.message.includes("Pedro"))).toBe(true);
+
+    const lowercase = screenReviewText({
+      ...base,
+      cons: "Hablé con la comercial marta y no contestó.",
+    });
+    expect(lowercase.outcome).toBe("hold");
+    expect(lowercase.hits.some((hit) => hit.message.toLowerCase().includes("marta"))).toBe(true);
+  });
+
+  it("does not hold streets, institutions, holidays or another agency name", () => {
+    expect(
+      screenReviewText({
+        ...base,
+        cons: "La oficina está en la calle Bravo Murillo y cerraron por Navidad.",
+      }).outcome,
+    ).toBe("clean");
+    expect(
+      screenReviewText({
+        ...base,
+        title: "Hacienda",
+        cons: "Me pidieron un justificante y tardaron una semana en devolverlo.",
+      }).outcome,
+    ).toBe("clean");
+    expect(
+      screenReviewText({
+        ...base,
+        allowedNames: ["Otra Inmobiliaria", "Otra Inmobiliaria SL", "Madrid", "Valencia"],
+        cons: "Comparé con Otra Inmobiliaria en Valencia y aquí tardaron más.",
+      }).outcome,
+    ).toBe("clean");
   });
 
   it("does not treat a leading verb or a neighborhood as a person", () => {

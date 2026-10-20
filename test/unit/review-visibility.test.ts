@@ -6,6 +6,7 @@ import { reviewRateLimitMessage } from "@/lib/domain/review-limits";
 import {
   compareModerationQueue,
   decidePublication,
+  editMustStayQueued,
   isPublicReview,
   moderationSla,
 } from "@/lib/domain/review-visibility";
@@ -55,6 +56,23 @@ describe("publication visibility", () => {
         openNotices: false,
       }).publish,
     ).toBe(false);
+  });
+
+  it("keeps an edited review in the queue after any manual restriction", () => {
+    expect(
+      editMustStayQueued({ flagged: true, moderated: true, moderatedAt: now }),
+    ).toBe(true);
+    expect(
+      editMustStayQueued({ flagged: false, moderated: false, moderatedAt: now }),
+    ).toBe(true);
+    expect(
+      editMustStayQueued({
+        flagged: false,
+        moderated: true,
+        noticeStatuses: ["retirado"],
+      }),
+    ).toBe(true);
+    expect(editMustStayQueued({ flagged: false, moderated: false })).toBe(false);
   });
 
   it("keeps public reviews to moderated, unflagged and not deleted", () => {

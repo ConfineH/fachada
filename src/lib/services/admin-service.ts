@@ -176,6 +176,9 @@ export class AdminService {
       throw new AdminError("Motiva la decisión con al menos 10 caracteres");
     }
 
+    const wasProvisional =
+      review.flagged &&
+      (review.moderationReason ?? "").startsWith("Oculta de forma provisional");
     review.moderated = moderated;
     if (moderated) review.flagged = false;
     review.moderationReason = reason.trim();
@@ -183,6 +186,12 @@ export class AdminService {
     review.verificationLevel =
       accreditExperience && review.evidencePath ? "acreditada" : "declarada";
     await this.repo.updateReview(review);
+    if (moderated && wasProvisional && this.contentNoticeService) {
+      await this.contentNoticeService.closeOpenProvisionalNotices(
+        review.id,
+        review.moderationReason ?? reason.trim(),
+      );
+    }
     const author = await this.repo.findUserById(review.userId);
     if (author?.email && this.email) {
       await Promise.allSettled([

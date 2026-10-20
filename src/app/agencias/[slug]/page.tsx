@@ -365,6 +365,8 @@ export default async function AgencyPage({
             <ReviewForm
               agencySlug={agency.slug}
               agencyName={agency.name}
+              legalName={agency.legalName}
+              brandName={agency.brandName}
               cities={cities}
             />
           </div>

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 
 export function AdminLoginForm() {
   const router = useRouter();
+  const [name, setName] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -17,12 +18,13 @@ export function AdminLoginForm() {
     const res = await fetch("/api/admin/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ password }),
+      body: JSON.stringify({ password, name }),
     });
 
     setLoading(false);
     if (!res.ok) {
-      setError("Contraseña incorrecta");
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      setError(data.error ?? "Contraseña incorrecta");
       return;
     }
 
@@ -31,6 +33,14 @@ export function AdminLoginForm() {
 
   return (
     <form onSubmit={onSubmit} className="mt-6 space-y-4">
+      <input
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        placeholder="Tu nombre"
+        required
+        minLength={2}
+        className="w-full rounded-lg border border-stone-300 px-4 py-3"
+      />
       <input
         type="password"
         value={password}

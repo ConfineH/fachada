@@ -89,7 +89,8 @@ export default function MetodologiaPage() {
               una acusación de delito o un nombre, no se publica y la revisa
               una persona. Cualquiera puede denunciar un texto. Un aviso por
               datos personales o por acusación de delito lo oculta hasta esa
-              revisión. El resto sigue visible. Una crítica no se retira por
+              revisión solo si el correo de quien avisa está verificado. El
+              resto sigue visible. Una crítica no se retira por
               ser negativa. La decisión se motiva y puede revisarse. La
               inmobiliaria puede responder.
             </p>

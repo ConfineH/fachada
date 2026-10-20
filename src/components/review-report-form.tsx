@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 
+import { authHeaders, readSessionToken } from "@/lib/auth/session-client";
 import { PUBLIC_NOTICE_REASONS } from "@/lib/domain/content-notice-reasons";
 import type { ContentNoticeCategory } from "@/lib/domain/types";
 
@@ -24,13 +25,18 @@ export function ReviewReportForm({
     setError("");
     const formData = new FormData(event.currentTarget);
     try {
+      const token = readSessionToken();
       const response = await fetch("/api/content-notices", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? authHeaders(token) : {}),
+        },
         body: JSON.stringify({
           reviewId,
           reporterName: formData.get("reporterName"),
           reporterEmail: formData.get("reporterEmail"),
+          emailCode: formData.get("emailCode") || undefined,
           relationship: formData.get("relationship") || undefined,
           category,
           exactExcerpt: formData.get("exactExcerpt"),
@@ -84,7 +90,9 @@ export function ReviewReportForm({
             Una valoración negativa no es ilícita por sí sola. Señala el
             fragmento concreto y explica el derecho o norma vulnerados. Si el
             motivo es datos personales o contenido ofensivo o acusación de
-            delito, la reseña se oculta hasta que una persona la revise.
+            delito, la reseña se oculta solo si el correo está verificado
+            (sesión o código). Sin verificar, el aviso entra en la cola y la
+            reseña sigue visible.
           </p>
           <div className="grid gap-3 sm:grid-cols-2">
             <input
@@ -100,6 +108,13 @@ export function ReviewReportForm({
               required
               placeholder="Correo de contacto"
               className="input-field"
+            />
+            <input
+              name="emailCode"
+              inputMode="numeric"
+              maxLength={6}
+              placeholder="Código del correo, si no has entrado"
+              className="input-field sm:col-span-2"
             />
           </div>
           <input

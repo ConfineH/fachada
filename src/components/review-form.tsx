@@ -26,6 +26,7 @@ import {
 } from "@/lib/domain/review-authenticity";
 import {
   REFORMULATION_HINT,
+  reviewAllowedNames,
   screenReviewText,
 } from "@/lib/domain/review-prefilter";
 import type { ReviewExperienceType } from "@/lib/domain/types";
@@ -35,10 +36,14 @@ type Step = "verify" | "review" | "done";
 export function ReviewForm({
   agencySlug,
   agencyName,
+  legalName,
+  brandName,
   cities = [],
 }: {
   agencySlug: string;
   agencyName?: string;
+  legalName?: string;
+  brandName?: string;
   cities?: string[];
 }) {
   const [step, setStep] = useState<Step>("verify");
@@ -203,9 +208,12 @@ export function ReviewForm({
       pros: trimmedPros,
       cons: trimmedCons,
       publicName: anonymous ? undefined : publicName.trim(),
-      agencyName,
-      city: experienceCity,
-      extraAllowedNames: cities,
+      allowedNames: reviewAllowedNames({
+        name: agencyName,
+        legalName,
+        brandName,
+        cities: [experienceCity, ...cities],
+      }),
     });
     if (screen.outcome === "block") {
       showError("form", screen.hits.map((hit) => hit.message).join(" "));

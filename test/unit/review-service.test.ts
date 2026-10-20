@@ -242,6 +242,91 @@ describe("ReviewService", () => {
     expect(updated.incidentTags).toEqual(["fianza"]);
   });
 
+  it("does not republish a review a moderator already restricted", async () => {
+    const user = await store.createUser({ email: "ana@gmail.com" });
+    user.emailVerified = true;
+    await store.updateUser(user);
+    const review = await service.create(user, payload());
+    review.flagged = true;
+    review.moderationReason = "Restringida por un moderador tras revisarla.";
+    review.moderatedAt = new Date();
+    await store.updateReview(review);
+
+    const updated = await service.update(user, review.id, {
+      rating: 4,
+      title: "Texto corregido",
+      pros: PROS,
+      cons: CONS,
+    });
+    expect(updated.moderated).toBe(false);
+    expect(updated.flagged).toBe(true);
+  });
+
+  it("does not republish after a negative moderation decision", async () => {
+    const user = await store.createUser({ email: "ana@gmail.com" });
+    user.emailVerified = true;
+    await store.updateUser(user);
+    const review = await service.create(user, payload());
+    review.moderated = false;
+    review.flagged = false;
+    review.moderatedAt = new Date();
+    review.moderationReason = "No se publica: falta una experiencia identificable.";
+    await store.updateReview(review);
+
+    const updated = await service.update(user, review.id, {
+      rating: 4,
+      title: "Sigo contando lo mismo",
+      pros: PROS,
+      cons: CONS,
+    });
+    expect(updated.moderated).toBe(false);
+  });
+
+  it("lets an open notice hold only the reported review", async () => {
+    const user = await store.createUser({ email: "ana@gmail.com" });
+    user.emailVerified = true;
+    await store.updateUser(user);
+    const agencies = await store.listAgencies();
+    const reported = await service.create(user, payload({ agencyId: agencies[0]!.id }));
+    const other = await service.create(
+      user,
+      payload({
+        agencyId: agencies[1]!.id,
+        title: "Otra ficha",
+      }),
+    );
+    expect(other.moderated).toBe(true);
+    await store.createContentNotice({
+      id: "notice-open",
+      reviewId: reported.id,
+      reporterName: "Alguien",
+      reporterEmail: "aviso@example.com",
+      category: "false_statement",
+      exactExcerpt: "Algún retraso menor",
+      legalReason: "El plazo que se afirma no coincide con el expediente interno.",
+      goodFaithAttested: true,
+      status: "pendiente",
+      createdAt: new Date(),
+      acknowledgedAt: new Date(),
+    });
+
+    const editedOther = await service.update(user, other.id, {
+      rating: 4,
+      title: "Sigue en la otra ficha",
+      pros: PROS,
+      cons: CONS,
+    });
+    expect(editedOther.moderated).toBe(true);
+
+    const editedReported = await service.update(user, reported.id, {
+      rating: 4,
+      title: "Texto nuevo de la denunciada",
+      pros: PROS,
+      cons: CONS,
+    });
+    expect(editedReported.moderated).toBe(false);
+  });
+
   it("rejects edits from another account", async () => {
     const author = await verifiedUser("+34600111222");
     const other = await verifiedUser("+34600999000");

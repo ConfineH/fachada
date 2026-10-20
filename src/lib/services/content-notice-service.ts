@@ -1,6 +1,10 @@
 import { randomUUID } from "node:crypto";
 
 import {
+  noticeRateLimitMessage,
+  noticeShouldHide,
+} from "@/lib/domain/content-notice-limits";
+import {
   noticeHidesProvisionally,
   noticeReasonLabel,
 } from "@/lib/domain/content-notice-reasons";
@@ -27,12 +31,21 @@ export class ContentNoticeService {
     private readonly email: EmailProvider,
   ) {}
 
-  async create(input: unknown): Promise<ContentNotice> {
+  async create(
+    input: unknown,
+    context: { reporterVerified?: boolean; ip?: string } = {},
+  ): Promise<ContentNotice> {
     const data = contentNoticeInputSchema.parse(input);
     const review = await this.repo.findReviewById(data.reviewId);
     if (!review || review.deletedAt) throw new ContentNoticeError("Reseña no encontrada");
 
     const existing = await this.repo.listContentNotices();
+    const limit = noticeRateLimitMessage({
+      notices: existing,
+      email: data.reporterEmail,
+      ip: context.ip,
+    });
+    if (limit) throw new ContentNoticeError(limit);
     const duplicate = existing.some(
       (notice) =>
         notice.reviewId === data.reviewId &&
@@ -51,6 +64,7 @@ export class ContentNoticeService {
       reviewId: review.id,
       reporterName: data.reporterName,
       reporterEmail: data.reporterEmail,
+      reporterIp: context.ip,
       relationship: data.relationship,
       category: data.category,
       exactExcerpt: data.exactExcerpt,
@@ -63,7 +77,14 @@ export class ContentNoticeService {
     };
 
     await this.repo.createContentNotice(notice);
-    if (noticeHidesProvisionally(notice.category)) {
+    if (
+      noticeShouldHide({
+        category: notice.category,
+        reporterVerified: Boolean(context.reporterVerified),
+        reviewFlagged: review.flagged,
+        moderationReason: review.moderationReason,
+      })
+    ) {
       review.flagged = true;
       review.moderationReason = `Oculta de forma provisional: ${noticeReasonLabel(notice.category)}.`;
       await this.repo.updateReview(review);
@@ -84,6 +105,32 @@ export class ContentNoticeService {
       ),
     ]);
     return notice;
+  }
+
+  async closeOpenProvisionalNotices(reviewId: string, reason: string) {
+    const notices = await this.repo.listContentNotices();
+    const open = notices.filter(
+      (notice) =>
+        notice.reviewId === reviewId &&
+        (notice.status === "pendiente" ||
+          notice.status === "informacion_requerida") &&
+        noticeHidesProvisionally(notice.category),
+    );
+    for (const notice of open) {
+      notice.status = "mantenido";
+      notice.decisionRule = "Aprobación en la cola de reseñas";
+      notice.decisionReason = reason.trim();
+      notice.decidedAt = new Date();
+      await this.repo.updateContentNotice(notice);
+      await Promise.allSettled([
+        this.email.sendMessage(
+          notice.reporterEmail,
+          `Decisión sobre tu aviso — ${notice.id}`,
+          `${notice.decisionRule}\n\n${notice.decisionReason}`,
+        ),
+      ]);
+    }
+    return open;
   }
 
   async decide(id: string, input: unknown): Promise<ContentNotice> {

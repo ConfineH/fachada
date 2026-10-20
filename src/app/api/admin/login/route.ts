@@ -15,12 +15,19 @@ export async function POST(request: Request) {
       { status: 503 },
     );
   }
-  const { password } = await request.json();
+  const { password, name } = await request.json();
+  const actor = String(name ?? "").trim();
+  if (actor.length < 2) {
+    return NextResponse.json(
+      { error: "Indica tu nombre para que conste en la sesión." },
+      { status: 400 },
+    );
+  }
   if (!verifyAdminPassword(password)) {
     return NextResponse.json({ error: "Contraseña incorrecta" }, { status: 401 });
   }
 
-  const token = createAdminToken();
+  const token = createAdminToken(actor);
   const cookieStore = await cookies();
   const options = adminCookieOptions();
   cookieStore.set(options.name, token, options);

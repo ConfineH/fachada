@@ -135,8 +135,11 @@ export default function NormasPage() {
       </p>
       <p>
         Un aviso por datos personales o por contenido ofensivo o acusación de
-        delito oculta la reseña de forma provisional hasta que una persona la
-        revise. El resto de avisos no la ocultan mientras se revisan.
+        delito oculta la reseña de forma provisional solo si el correo de
+        quien avisa está verificado, con una sesión o con un código. Sin ese
+        correo verificado el aviso queda en cola y la reseña sigue visible.
+        El mismo motivo no vuelve a ocultarla mientras no se haya revisado.
+        El resto de avisos no la ocultan mientras se revisan.
         Acusamos recibo y comunicamos una decisión motivada al autor y a
         quien avisó. El autor puede recurrirla. La inmobiliaria conserva el
         derecho a responder en la ficha. Una discrepancia o una valoración

@@ -424,6 +424,7 @@ export class SupabaseRepository implements Repository {
       review_id: notice.reviewId,
       reporter_name: notice.reporterName,
       reporter_email: notice.reporterEmail,
+      reporter_ip: notice.reporterIp ?? null,
       relationship: notice.relationship ?? null,
       category: notice.category,
       exact_excerpt: notice.exactExcerpt,

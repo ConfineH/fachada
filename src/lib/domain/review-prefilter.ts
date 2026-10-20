@@ -250,7 +250,7 @@ export const PLACE_ALLOWLIST = [
   "spain",
 ];
 
-/** Nombres de pila frecuentes. Solo se usan si abren la frase; a mitad de frase basta la mayúscula. */
+/** Nombres de pila frecuentes. Cuentan en cualquier posición, salvo que estén en la lista permitida. */
 export const GIVEN_NAMES = [
   "lucía",
   "lucia",
@@ -465,11 +465,28 @@ const URL_RE = /\b(?:https?:\/\/|www\.)\S+/gi;
 const DOMAIN_RE = /\b[a-z0-9-]+\.(?:com|es|net|org|io|app|eu)\b/gi;
 const PHONE_RE = /(?<!\d)(?:\+34|0034)?[\s.-]?[6-9](?:[\s.-]?\d){8}(?!\d)/g;
 const INTL_PHONE_RE = /\+\d{1,3}(?:[\s.-]?\d){8,14}/g;
-const DNI_RE = /(?<![a-z0-9])\d{8}[a-z](?![a-z0-9])/gi;
-const NIE_RE = /(?<![a-z0-9])[xyz]\d{7}[a-z](?![a-z0-9])/gi;
-const IBAN_RE = /\bes\d{2}(?:\s?\d{4}){5}\b/gi;
+const DNI_RE =
+  /(?<![a-z0-9])(?:\d{8}|\d{2}[.\s]\d{3}[.\s]\d{3})[\s.-]?[a-z](?![a-z0-9])/gi;
+const NIE_RE =
+  /(?<![a-z0-9])[xyz][\s.-]?\d{7}[\s.-]?[a-z](?![a-z0-9])/gi;
+const CIF_RE =
+  /(?<![a-z0-9])[abcdefghjnpqrsuvw][\s.-]?\d{7}[\s.-]?[0-9a-j](?![a-z0-9])/gi;
+const IBAN_RE =
+  /(?<![a-z0-9])([a-z]{2}\d{2}(?:[\s-]?[a-z0-9]){11,30})(?![a-z0-9])/gi;
 const TITLE_RE =
-  /(?:se(?:ñ|n)or(?:a)?|sr\.?|sra\.?|don|do(?:ñ|n)a|emplead[oa]s?|comercial(?:es)?|gestor(?:a|es)?|agente(?:s)?)\s+(\p{Lu}[\p{Ll}'’-]{2,})/gu;
+  /(?:^|[^\p{L}])(?:señora|senora|señor|senor|sra|sr|doña|dona|don|empleados|empleadas|empleado|empleada|comerciales|comercial|gestores|gestoras|gestor|gestora|agentes|agente)[^\p{L}]+(\p{L}[\p{L}'’-]{2,})/giu;
+
+/** Misma lista en el formulario y en el servidor: nombre, razón social, marca y ciudades. */
+export function reviewAllowedNames(input: {
+  name?: string;
+  legalName?: string;
+  brandName?: string;
+  cities?: Array<string | undefined | null>;
+}) {
+  return [input.name, input.legalName, input.brandName, ...(input.cities ?? [])].filter(
+    (value): value is string => Boolean(value?.trim()),
+  );
+}
 
 export function screenReviewText(input: {
   title?: string;
@@ -480,6 +497,7 @@ export function screenReviewText(input: {
   agencyName?: string;
   city?: string;
   extraAllowedNames?: string[];
+  allowedNames?: string[];
 }): PrefilterResult {
   const narrative = [input.title, input.pros, input.cons, input.body]
     .filter(Boolean)
@@ -505,21 +523,18 @@ export function screenReviewText(input: {
       message: "Quita el teléfono antes de enviar.",
     });
   }
-  if (DNI_RE.test(contact) || NIE_RE.test(contact)) {
+  if (hasNationalId(contact)) {
     hits.push({
       code: "national_id",
-      message: "Quita el DNI o el NIE antes de enviar.",
+      message: "Quita el DNI, el NIE o el NIF antes de enviar.",
     });
   }
-  DNI_RE.lastIndex = 0;
-  NIE_RE.lastIndex = 0;
-  if (IBAN_RE.test(contact)) {
+  if (hasIban(contact)) {
     hits.push({
       code: "iban",
       message: "Quita el IBAN o la cuenta bancaria antes de enviar.",
     });
   }
-  IBAN_RE.lastIndex = 0;
 
   const banned = matchingTerms(narrative, BANNED_EXPRESSIONS);
   if (banned.length > 0) {
@@ -570,6 +585,23 @@ function hasPhone(text: string) {
   return PHONE_RE.test(text) || INTL_PHONE_RE.test(text);
 }
 
+function hasNationalId(text: string) {
+  DNI_RE.lastIndex = 0;
+  NIE_RE.lastIndex = 0;
+  CIF_RE.lastIndex = 0;
+  return DNI_RE.test(text) || NIE_RE.test(text) || CIF_RE.test(text);
+}
+
+function hasIban(text: string) {
+  IBAN_RE.lastIndex = 0;
+  for (const match of text.matchAll(IBAN_RE)) {
+    const compact = match[1]?.replace(/[\s-]/g, "") ?? "";
+    if (compact.length >= 15 && compact.length <= 34) return true;
+  }
+  IBAN_RE.lastIndex = 0;
+  return false;
+}
+
 function matchingTerms(text: string, terms: readonly string[]) {
   const folded = fold(text);
   const found: string[] = [];
@@ -598,27 +630,20 @@ function personNames(
     if (!found.some((item) => fold(item) === fold(word))) found.push(word);
   };
 
+  const skip = new Set(SKIP_WORDS.map(fold));
   for (const match of text.matchAll(TITLE_RE)) {
     const name = match[1];
-    if (name) push(name);
+    if (!name) continue;
+    const key = fold(name);
+    if (allowed.has(key) || skip.has(key)) continue;
+    push(name);
   }
 
   const given = new Set(GIVEN_NAMES.map(fold));
-  for (const sentence of text.split(/(?<=[.!?])\s+|\n+/)) {
-    const words = [...sentence.matchAll(/\p{L}+/gu)].map((match) => match[0]);
-    words.forEach((word, index) => {
-      if (!/^\p{Lu}/u.test(word) || word.length < 3) return;
-      if (/^\p{Lu}{2,4}$/u.test(word)) return;
-      const key = fold(word);
-      if (index === 0) {
-        if (given.has(key) && !allowed.has(key)) push(word);
-        return;
-      }
-      if (allowed.has(key) || SKIP_WORDS.some((word) => fold(word) === key)) {
-        return;
-      }
-      push(word);
-    });
+  for (const match of text.matchAll(/\p{L}{3,}/gu)) {
+    const word = match[0];
+    const key = fold(word);
+    if (given.has(key) && !allowed.has(key)) push(word);
   }
   return found;
 }
@@ -627,6 +652,7 @@ function allowedTokens(input: {
   agencyName?: string;
   city?: string;
   extraAllowedNames?: string[];
+  allowedNames?: string[];
 }) {
   const allowed = new Set<string>();
   const sources = [
@@ -634,6 +660,7 @@ function allowedTokens(input: {
     input.agencyName ?? "",
     input.city ?? "",
     ...(input.extraAllowedNames ?? []),
+    ...(input.allowedNames ?? []),
   ];
   for (const source of sources) {
     for (const token of source.match(/\p{L}{2,}/gu) ?? []) {

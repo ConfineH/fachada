@@ -217,6 +217,7 @@ export interface ContentNotice {
   reviewId: string;
   reporterName: string;
   reporterEmail: string;
+  reporterIp?: string;
   relationship?: string;
   category: ContentNoticeCategory;
   exactExcerpt: string;
