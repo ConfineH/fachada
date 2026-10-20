@@ -23,6 +23,8 @@ npm test
 
 https://fachada-tau.vercel.app — navegable; los datos **no persisten** entre sesiones. Ver [limitaciones](./docs/infraestructura.md#limitaciones-demo-importante).
 
+Si el Congreso no convalida el RDL 29/2026 (plazo hacia el 13/11/2026), poner `REFORM_2026_ACTIVE = false` en `src/lib/domain/tools/constants.ts` y desplegar.
+
 ## Documentación
 
 | Doc | Contenido |
