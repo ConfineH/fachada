@@ -10,19 +10,31 @@ export const FEE_RULE_START = "2023-05-26";
 export const REFORM_2026_START = "2026-10-08";
 
 /**
- * El Real Decreto-ley 29/2026 está pendiente de convalidación (plazo hacia el
- * 13/11/2026). En false no se aplican textos ni reglas posteriores al 8/10/2026.
+ * El Real Decreto-ley 29/2026 está en vigor desde el 08/10/2026 y solo decae
+ * si el Congreso no lo convalida (plazo hacia el 13/11/2026). En false se
+ * retiran sus textos, sus reglas y el enlace al decreto.
  */
-export const REFORM_2026_ACTIVE = false;
+export const REFORM_2026_ACTIVE = true;
 export const REFORM_2026_REVIEWED_ON = "20/10/2026";
-export const REFORM_2026_NOTE = REFORM_2026_ACTIVE
-  ? ""
-  : `Norma reciente pendiente de convalidación; revisado a fecha ${REFORM_2026_REVIEWED_ON}.`;
 
-export function reform2026Applies(date?: string) {
-  if (!REFORM_2026_ACTIVE) return false;
+export function reform2026Note(active: boolean) {
+  return active
+    ? `Norma en vigor desde el 08/10/2026, pendiente de convalidación; revisado a fecha ${REFORM_2026_REVIEWED_ON}.`
+    : "El RDL 29/2026 no fue convalidado";
+}
+
+export const REFORM_2026_NOTE = reform2026Note(REFORM_2026_ACTIVE);
+
+export function reform2026Applies(date?: string, active = REFORM_2026_ACTIVE) {
+  if (!active) return false;
   if (!date) return true;
   return date >= REFORM_2026_START;
+}
+
+export function reformStatuteLinks(active: boolean) {
+  return active
+    ? [{ href: BOE_RDL_29_2026, label: "Real Decreto-ley 29/2026" }]
+    : [];
 }
 
 /** LEC: juicio verbal sin abogado ni procurador si la cuantía no excede de este importe. */

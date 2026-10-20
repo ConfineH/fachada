@@ -14,7 +14,7 @@ describe("tenant tool notices", () => {
     expect(screen.getByRole("note")).toHaveTextContent(LEGAL_NOTICE);
   });
 
-  it("shows the pending-validation note on each tool while the 2026 reform is off", () => {
+  it("shows the in-force note on each tool while the 2026 reform is active", () => {
     render(
       <ToolLayout tool={TENANT_TOOLS[0]!}>
         <p>contenido</p>

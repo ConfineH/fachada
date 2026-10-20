@@ -1,4 +1,4 @@
-import { reform2026Applies } from "@/lib/domain/tools/constants";
+import { REFORM_2026_ACTIVE, reform2026Applies } from "@/lib/domain/tools/constants";
 import { addDays, addMonths, parseIsoDate } from "@/lib/domain/tools/dates";
 import { roundCents } from "@/lib/domain/tools/money";
 
@@ -88,7 +88,10 @@ function depositExcess(
   };
 }
 
-export function assessDeposit(input: DepositInput): DepositResult {
+export function assessDeposit(
+  input: DepositInput,
+  reformActive = REFORM_2026_ACTIVE,
+): DepositResult {
   const landlordName = cleanLine(input.landlordName, 120);
   const tenantName = cleanLine(input.tenantName, 120);
   const address = cleanLine(input.address, 200);
@@ -153,7 +156,7 @@ export function assessDeposit(input: DepositInput): DepositResult {
     deductionEur,
     deductionDetail,
     acceptDeduction: accept,
-    presumptionApplies: reform2026Applies(input.keysDate),
+    presumptionApplies: reform2026Applies(input.keysDate, reformActive),
     ...depositExcess(input.contractKind ?? "vivienda", depositEur, extraEur, input.monthlyRentEur),
     contractKind: input.contractKind ?? "vivienda",
     landlordName,

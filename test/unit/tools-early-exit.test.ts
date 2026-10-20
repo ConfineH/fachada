@@ -1,7 +1,5 @@
 import { describe, expect, it } from "vitest";
 
-import { REFORM_2026_ACTIVE } from "@/lib/domain/tools/constants";
-
 import { earlyExitView } from "@/lib/domain/tools/copy";
 import { assessEarlyExit, compensationCapEur } from "@/lib/domain/tools/early-exit";
 import { formatEuro } from "@/lib/domain/tools/money";
@@ -103,30 +101,28 @@ describe("assessEarlyExit", () => {
     }
   });
 
-  it("sets compensation to zero for contracts signed on or after 8 October 2026 only while the reform flag is on", () => {
-    const result = assessEarlyExit({
+  it("sets compensation to zero after 8 October 2026 only when the reform flag is on", () => {
+    const input = {
       ...classic,
       startDate: "2026-10-08",
       durationMonths: 60,
       plannedExitDate: "2028-10-08",
       compensationAgreed: true,
+    };
+    expect(assessEarlyExit(input, true)).toMatchObject({
+      status: "can_leave",
+      regime: "post_2026",
+      noticeDeadline: "2028-09-08",
+      compensation: { status: "zero", code: "barred", eur: 0 },
     });
-    expect(result).toMatchObject(
-      REFORM_2026_ACTIVE
-        ? {
-            status: "can_leave",
-            regime: "post_2026",
-            noticeDeadline: "2028-09-08",
-            compensation: { status: "zero", code: "barred", eur: 0 },
-          }
-        : {
-            status: "can_leave",
-            regime: "classic",
-            noticeDeadline: "2028-09-08",
-          },
-    );
-    if (!REFORM_2026_ACTIVE && result.status === "can_leave") {
-      expect(result.compensation.status).not.toBe("zero");
+    const repealed = assessEarlyExit(input, false);
+    expect(repealed).toMatchObject({
+      status: "can_leave",
+      regime: "classic",
+      noticeDeadline: "2028-09-08",
+    });
+    if (repealed.status === "can_leave") {
+      expect(repealed.compensation.status).not.toBe("zero");
     }
   });
 

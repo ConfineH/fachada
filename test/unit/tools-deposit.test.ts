@@ -20,8 +20,11 @@ const base = {
   today: "2026-03-20",
 };
 
-function ready(overrides: Partial<DepositInput> = {}): DepositReady {
-  const result = assessDeposit({ ...base, ...overrides });
+function ready(
+  overrides: Partial<DepositInput> = {},
+  reformActive = REFORM_2026_ACTIVE,
+): DepositReady {
+  const result = assessDeposit({ ...base, ...overrides }, reformActive);
   if (result.status !== "ready") throw new Error(result.status);
   return result;
 }
@@ -57,11 +60,16 @@ describe("assessDeposit", () => {
     ).toBe(2500);
   });
 
-  it("applies the handover presumption only when the 2026 reform is active and the keys were returned on or after 8 October 2026", () => {
-    expect(ready({ keysDate: "2026-10-08", today: "2026-10-09" }).presumptionApplies).toBe(
-      REFORM_2026_ACTIVE,
+  it("applies the handover presumption for both flag values only on or after 8 October 2026", () => {
+    expect(ready({ keysDate: "2026-10-08", today: "2026-10-09" }, true).presumptionApplies).toBe(
+      true,
     );
-    expect(ready({ keysDate: "2026-10-07", today: "2026-10-08" }).presumptionApplies).toBe(false);
+    expect(ready({ keysDate: "2026-10-08", today: "2026-10-09" }, false).presumptionApplies).toBe(
+      false,
+    );
+    expect(ready({ keysDate: "2026-10-07", today: "2026-10-08" }, true).presumptionApplies).toBe(
+      false,
+    );
   });
 
   it("warns when the deposit or extra guarantees exceed the LAU caps, and only if rent is given", () => {

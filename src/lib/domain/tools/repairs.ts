@@ -96,7 +96,10 @@ const TENANT_FAULT = new Set([
   "lo_cause",
 ]);
 
-export function assessRepair(input: RepairInput): RepairResult {
+export function assessRepair(
+  input: RepairInput,
+  reformActive = REFORM_2026_ACTIVE,
+): RepairResult {
   if (!input.contract) return { status: "incomplete" };
   if (input.contract === "habitacion") return { status: "doubtful", code: "habitacion" };
   if (!input.item) return { status: "incomplete" };
@@ -118,7 +121,7 @@ export function assessRepair(input: RepairInput): RepairResult {
     };
   }
 
-  if (input.contract === "temporada" && REFORM_2026_ACTIVE) {
+  if (input.contract === "temporada" && reformActive) {
     if (situation.payer === "arrendador") {
       return {
         status: "answered",

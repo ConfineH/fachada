@@ -1,8 +1,8 @@
 import {
   BOE_ART,
   BOE_LEY_12_2023,
-  BOE_RDL_29_2026,
   REFORM_2026_ACTIVE,
+  reformStatuteLinks,
 } from "@/lib/domain/tools/constants";
 
 function whenReform(text: string) {
@@ -40,7 +40,7 @@ export const TENANT_TOOLS: ToolDefinition[] = [
       `Desde el 26 de mayo de 2023 (Ley 12/2023) los gastos de gestión inmobiliaria y de formalización corren a cargo del arrendador. ${whenReform("Desde el 8 de octubre de 2026, el apartado 2 prohíbe repercutirlos al arrendatario, directa o indirectamente, bajo cualquier nombre.")}`.trim(),
     extraLinks: [
       { href: BOE_LEY_12_2023, label: "Ley 12/2023" },
-      { href: BOE_RDL_29_2026, label: "Real Decreto-ley 29/2026" },
+      ...reformStatuteLinks(REFORM_2026_ACTIVE),
     ],
     faqs: [
       {
@@ -77,7 +77,7 @@ export const TENANT_TOOLS: ToolDefinition[] = [
     articleUrl: BOE_ART.deposit,
     articleNote:
       `El saldo de la fianza debe devolverse en el mes siguiente a la entrega de las llaves. Si no se hace, devenga el interés legal del dinero. ${whenReform("Desde el 8 de octubre de 2026, si no hay un documento de finalización que anote desperfectos, se presume que la vivienda se entregó en buen estado.")}`.trim(),
-    extraLinks: [{ href: BOE_RDL_29_2026, label: "Real Decreto-ley 29/2026" }],
+    extraLinks: reformStatuteLinks(REFORM_2026_ACTIVE),
     faqs: [
       {
         question: "¿Cuándo tienen que devolver la fianza?",
@@ -113,7 +113,7 @@ export const TENANT_TOOLS: ToolDefinition[] = [
     articleUrl: BOE_ART.repairs,
     articleNote:
       `El arrendador paga las reparaciones necesarias para la habitabilidad, salvo que el daño lo haya causado el inquilino. El inquilino paga las pequeñas reparaciones por el desgaste del uso ordinario. ${whenReform("Desde el 8 de octubre de 2026, el apartado 5 fija un requerimiento escrito y quince días naturales, y el artículo 21 bis trata la vivienda temporal.")}`.trim(),
-    extraLinks: [{ href: BOE_RDL_29_2026, label: "Real Decreto-ley 29/2026" }],
+    extraLinks: reformStatuteLinks(REFORM_2026_ACTIVE),
     faqs: [
       {
         question: "¿Qué reparaciones paga el arrendador?",
@@ -149,7 +149,7 @@ export const TENANT_TOOLS: ToolDefinition[] = [
     articleUrl: BOE_ART.earlyExit,
     articleNote:
       `En vivienda habitual puedes desistir cuando han pasado al menos seis meses, avisando con treinta días. Se podía pactar como máximo una mensualidad por cada año que faltara, en proporción. ${whenReform("Desde el 8 de octubre de 2026, el artículo 11.3 dice que este desistimiento no genera indemnización.")}`.trim(),
-    extraLinks: [{ href: BOE_RDL_29_2026, label: "Real Decreto-ley 29/2026" }],
+    extraLinks: reformStatuteLinks(REFORM_2026_ACTIVE),
     faqs: [
       {
         question: "¿Cuándo puedo irme del piso?",

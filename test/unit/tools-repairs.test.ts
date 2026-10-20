@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
 
 import { repairView } from "@/lib/domain/tools/copy";
-import { REFORM_2026_ACTIVE, REFORM_2026_NOTE } from "@/lib/domain/tools/constants";
+import {
+  BOE_RDL_29_2026,
+  REFORM_2026_ACTIVE,
+  REFORM_2026_NOTE,
+  reform2026Note,
+  reformStatuteLinks,
+} from "@/lib/domain/tools/constants";
 import { REPAIR_FLOW, assessRepair } from "@/lib/domain/tools/repairs";
 import { TENANT_TOOLS } from "@/lib/domain/tools/catalog";
 
@@ -94,22 +100,38 @@ describe("assessRepair", () => {
     }
   });
 
-  it("reserves the seasonal wear doubt for ordinary wear, and only while the 2026 reform is active", () => {
-    const result = assessRepair({ contract: "temporada", item: "grifos", situation: "goteo" });
-    if (REFORM_2026_ACTIVE) {
-      expect(result).toMatchObject({ status: "doubtful", code: "temporal_desgaste" });
-    } else {
-      expect(result).toMatchObject({ status: "answered", payer: "inquilino", nuance: "pequena" });
-    }
-  });
-
-  it("still assigns a clear leak in a seasonal let to the landlord", () => {
-    expect(
-      assessRepair({ contract: "temporada", item: "humedades", situation: "filtracion" }),
-    ).toMatchObject({
-      payer: "arrendador",
-      nuance: REFORM_2026_ACTIVE ? "temporal_habitabilidad" : "habitabilidad",
+  it("follows both values of the 2026 flag for seasonal wear, and still charges the tenant for fault", () => {
+    const wear = { contract: "temporada" as const, item: "grifos", situation: "goteo" };
+    const leak = { contract: "temporada" as const, item: "humedades", situation: "filtracion" };
+    const fault = { contract: "temporada" as const, item: "caldera", situation: "mal_uso" };
+    expect(assessRepair(wear, true)).toMatchObject({
+      status: "doubtful",
+      code: "temporal_desgaste",
     });
+    expect(assessRepair(wear, false)).toMatchObject({
+      status: "answered",
+      payer: "inquilino",
+      nuance: "pequena",
+    });
+    expect(assessRepair(leak, true)).toMatchObject({
+      payer: "arrendador",
+      nuance: "temporal_habitabilidad",
+    });
+    expect(assessRepair(leak, false)).toMatchObject({
+      payer: "arrendador",
+      nuance: "habitabilidad",
+    });
+    for (const active of [true, false]) {
+      const result = assessRepair(fault, active);
+      expect(result, String(active)).toMatchObject({
+        status: "answered",
+        payer: "inquilino",
+        nuance: "culpa",
+      });
+      if (result.status === "answered") {
+        expect(repairView(result).title).toMatch(/lo pagas tú/i);
+      }
+    }
   });
 
   it("marks a room as doubtful before asking what broke", () => {
@@ -135,14 +157,18 @@ describe("tenant tool catalog", () => {
     }
   });
 
-  it("hides post-8 October 2026 rules and shows the pending-validation note while the flag is off", () => {
-    expect(REFORM_2026_NOTE).toBe(
-      "Norma reciente pendiente de convalidación; revisado a fecha 20/10/2026.",
+  it("states the reform status for both flag values and drops the decree link if it is repealed", () => {
+    expect(reform2026Note(true)).toBe(
+      "Norma en vigor desde el 08/10/2026, pendiente de convalidación; revisado a fecha 20/10/2026.",
     );
-    if (REFORM_2026_ACTIVE) return;
+    expect(reform2026Note(false)).toBe("El RDL 29/2026 no fue convalidado");
+    expect(REFORM_2026_NOTE).toBe(reform2026Note(true));
+    expect(REFORM_2026_ACTIVE).toBe(true);
+    expect(reformStatuteLinks(true).map((link) => link.href)).toContain(BOE_RDL_29_2026);
+    expect(reformStatuteLinks(false)).toEqual([]);
     for (const tool of TENANT_TOOLS) {
-      const text = [tool.articleNote, ...tool.faqs.map((faq) => faq.answer)].join(" ");
-      expect(text, tool.id).not.toContain("8 de octubre de 2026");
+      const decree = tool.extraLinks.filter((link) => link.href === BOE_RDL_29_2026);
+      expect(decree, tool.id).toEqual(reformStatuteLinks(REFORM_2026_ACTIVE));
     }
   });
 });
