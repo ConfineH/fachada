@@ -24,15 +24,21 @@ import {
   REVIEW_TERMS_VERSION,
   WHOLE_NUMBER_RATING_ERROR,
 } from "@/lib/domain/review-authenticity";
+import {
+  REFORMULATION_HINT,
+  screenReviewText,
+} from "@/lib/domain/review-prefilter";
 import type { ReviewExperienceType } from "@/lib/domain/types";
 
 type Step = "verify" | "review" | "done";
 
 export function ReviewForm({
   agencySlug,
+  agencyName,
   cities = [],
 }: {
   agencySlug: string;
+  agencyName?: string;
   cities?: string[];
 }) {
   const [step, setStep] = useState<Step>("verify");
@@ -73,6 +79,9 @@ export function ReviewForm({
     | ""
   >("");
   const [loading, setLoading] = useState(false);
+  const [holdReady, setHoldReady] = useState(false);
+  const [holdNote, setHoldNote] = useState("");
+  const [publishedNow, setPublishedNow] = useState(false);
   const feedbackRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -82,6 +91,11 @@ export function ReviewForm({
       setStep("review");
     }
   }, []);
+
+  useEffect(() => {
+    setHoldReady(false);
+    setHoldNote("");
+  }, [title, pros, cons, publicName]);
 
   function showError(
     field:
@@ -184,6 +198,27 @@ export function ReviewForm({
       return;
     }
 
+    const screen = screenReviewText({
+      title: trimmedTitle,
+      pros: trimmedPros,
+      cons: trimmedCons,
+      publicName: anonymous ? undefined : publicName.trim(),
+      agencyName,
+      city: experienceCity,
+      extraAllowedNames: cities,
+    });
+    if (screen.outcome === "block") {
+      showError("form", screen.hits.map((hit) => hit.message).join(" "));
+      return;
+    }
+    if (screen.outcome === "hold" && !holdReady) {
+      setHoldReady(true);
+      setHoldNote(
+        `${REFORMULATION_HINT} ${screen.hits.map((hit) => hit.message).join(" ")}`,
+      );
+      return;
+    }
+
     setLoading(true);
     setError("");
     setErrorField("");
@@ -261,7 +296,7 @@ export function ReviewForm({
         res = await send(null);
         raw = await res.text();
       }
-      let data: { error?: string } = {};
+      let data: { error?: string; review?: { moderated?: boolean } } = {};
       try {
         data = raw ? (JSON.parse(raw) as { error?: string }) : {};
       } catch {
@@ -293,6 +328,7 @@ export function ReviewForm({
           "La reseña se ha enviado sin el archivo. Sube una foto de una página, no el contrato entero.",
         );
       }
+      setPublishedNow(Boolean(data.review?.moderated));
       setStep("done");
       feedbackRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
     } catch {
@@ -314,8 +350,9 @@ export function ReviewForm({
     >
       <h3 className="font-medium">Escribir reseña</h3>
       <p className="mt-1 text-sm text-stone-600">
-        Identifícate con Google o un código al correo. En la ficha no sale tu
-        correo; queda en nuestros registros para moderación.
+        Identifícate con Google o un código al correo. Si el texto pasa el
+        filtro y el correo está verificado, la reseña se publica al momento.
+        En la ficha no sale tu correo.
       </p>
 
       {error && (
@@ -661,8 +698,17 @@ export function ReviewForm({
             disabled={loading}
             className="btn-primary w-full min-h-11 disabled:opacity-60"
           >
-            {loading ? "Publicando…" : "Publicar reseña"}
+            {loading
+              ? "Publicando…"
+              : holdReady
+                ? "Enviar igualmente a revisión"
+                : "Publicar reseña"}
           </button>
+          {holdNote ? (
+            <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-950">
+              {holdNote}
+            </p>
+          ) : null}
           <button
             type="button"
             onClick={clearSession}
@@ -680,8 +726,9 @@ export function ReviewForm({
         >
           <p className="font-medium">Reseña enviada</p>
           <p className="mt-1">
-            Sale en la ficha cuando un moderador la revise. Puedes ver el estado
-            en tu cuenta.
+            {publishedNow
+              ? "Ya está en la ficha como experiencia declarada. Una prueba solo pasa a experiencia acreditada si una persona la aprueba."
+              : "No se ha publicado. Queda en revisión humana. Puedes ver el estado en tu cuenta."}
           </p>
           {evidenceNote ? <p className="mt-1">{evidenceNote}</p> : null}
         </div>

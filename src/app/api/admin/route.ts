@@ -45,6 +45,8 @@ export async function POST(request: Request) {
     kind?: string;
     note?: string;
     location?: unknown;
+    mode?: string;
+    changedBy?: string;
   };
   if (!action) {
     return NextResponse.json({ error: "action required" }, { status: 400 });
@@ -59,6 +61,13 @@ export async function POST(request: Request) {
       case "create-agency":
         return NextResponse.json({
           agency: await adminService.createAgency(body.agency),
+        });
+      case "set-publication-mode":
+        return NextResponse.json({
+          policy: await adminService.setPublicationMode(
+            body.mode === "premoderation" ? "premoderation" : "immediate",
+            String(body.changedBy ?? ""),
+          ),
         });
       case "add-alias":
         return NextResponse.json({

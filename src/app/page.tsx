@@ -169,9 +169,9 @@ export default async function Home({
               </h2>
               <p className="mt-4 text-zinc-600">
                 Para escribir, entras con un correo o con Google. Ese correo no
-                aparece en la ficha. Un moderador lee la reseña antes de
-                publicarla. La inmobiliaria puede responder; cualquiera puede
-                avisar de un texto concreto.
+                aparece en la ficha. Si el texto pasa un filtro automático, la
+                reseña se publica al momento. La inmobiliaria puede responder;
+                cualquiera puede denunciar un texto concreto.
               </p>
               <ul className="mt-6 space-y-3 text-sm text-zinc-700">
                 <li className="flex gap-2">
@@ -200,7 +200,7 @@ export default async function Home({
                 {sampleReviews.length === 0 && (
                   <p className="text-sm text-zinc-600">
                     Aún no hay reseñas publicadas. Las primeras experiencias
-                    aparecerán aquí tras moderación.
+                    aparecerán aquí al publicarse.
                   </p>
                 )}
                 {sampleReviews.map((review) => (

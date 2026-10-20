@@ -55,6 +55,11 @@ const contentNoticeCategories = [
   "intellectual_property",
   "fake_experience",
   "other_illegal",
+  "false_statement",
+  "not_customer",
+  "offensive_or_crime",
+  "spam",
+  "other",
 ] as const satisfies readonly ContentNoticeCategory[];
 
 export const claimEvidenceSchema = z.object({

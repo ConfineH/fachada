@@ -102,7 +102,7 @@ User ──< Review >── Agency
 1. `POST /api/auth/request-code` → código (visible en dev)
 2. `POST /api/auth/verify-code` → token de sesión
 3. `POST /api/reviews` con Bearer token
-4. Reseña visible en ficha (moderada vía admin)
+4. Reseña visible en la ficha si el modo es publicación inmediata, el correo está verificado y el prefiltro está limpio. Si no, queda en /admin.
 
 ### Reclamar y responder
 
@@ -114,7 +114,7 @@ User ──< Review >── Agency
 
 ### Moderación
 
-- Reseñas nuevas: `moderated: false` hasta acción admin
+- Reseñas nuevas: publicación inmediata si el modo es `immediate`, el correo está verificado y el prefiltro está limpio. Retenidas, sin correo verificado o en modo `premoderation`: `moderated: false` hasta acción admin. El modo y quién lo cambió viven en `publication_policy`.
 - Claims: `status: pendiente` → aprobado / rechazado
 
 ## Seguridad (MVP)

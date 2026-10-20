@@ -1,0 +1,95 @@
+import { describe, expect, it } from "vitest";
+
+import { screenReviewText } from "@/lib/domain/review-prefilter";
+
+const base = {
+  title: "Visita correcta",
+  pros: "La visita fue puntual y el piso estaba limpio.",
+  cons: "Tardaron una semana en contestar un correo.",
+  agencyName: "Inmobiliaria Sol",
+  city: "Madrid",
+  extraAllowedNames: ["Chamberí", "Salamanca"],
+};
+
+describe("screenReviewText", () => {
+  it("accepts a normal review and ignores cities, neighborhoods and the agency", () => {
+    expect(screenReviewText(base).outcome).toBe("clean");
+    expect(
+      screenReviewText({
+        ...base,
+        cons: "La oficina de Chamberí, en Salamanca, tardó en contestar.",
+      }).outcome,
+    ).toBe("clean");
+    expect(
+      screenReviewText({
+        ...base,
+        title: "Inmobiliaria Sol en Madrid",
+        cons: "Gestión lenta en la oficina de Sol durante el mes de mayo.",
+      }).outcome,
+    ).toBe("clean");
+  });
+
+  it("blocks contact data, identity documents and insults before send", () => {
+    expect(screenReviewText({ ...base, cons: "Escribidme a ana@gmail.com por favor." }).outcome).toBe("block");
+    expect(screenReviewText({ ...base, cons: "Mirad https://ejemplo.com/ficha antes de firmar." }).outcome).toBe("block");
+    expect(screenReviewText({ ...base, cons: "Llamad al 600 111 222 y lo explico." }).outcome).toBe("block");
+    expect(screenReviewText({ ...base, cons: "Mi DNI es 12345678Z y lo dejo aquí." }).outcome).toBe("block");
+    expect(screenReviewText({ ...base, cons: "El NIE X1234567L aparece en el contrato." }).outcome).toBe("block");
+    expect(
+      screenReviewText({
+        ...base,
+        cons: "El IBAN ES12 1234 1234 1234 1234 1234 no es mío.",
+      }).outcome,
+    ).toBe("block");
+    expect(screenReviewText({ ...base, cons: "El trato fue de gilipollas todo el mes." }).outcome).toBe("block");
+  });
+
+  it("holds crime accusations and person names, with a factual reformulation", () => {
+    const crime = screenReviewText({
+      ...base,
+      cons: "Son unos estafadores y no devolvieron la fianza.",
+    });
+    expect(crime.outcome).toBe("hold");
+    expect(crime.hits.some((hit) => hit.code === "crime_accusation")).toBe(true);
+    expect(crime.hits[0]?.message).toMatch(/me cobraron X sin factura/);
+
+    const named = screenReviewText({
+      ...base,
+      cons: "Hablé con Lucía y no contestó a los mensajes.",
+    });
+    expect(named.outcome).toBe("hold");
+    expect(named.hits.some((hit) => hit.code === "person_name")).toBe(true);
+
+    const titled = screenReviewText({
+      ...base,
+      cons: "El comercial Pedro no devolvió la fianza pactada.",
+    });
+    expect(titled.outcome).toBe("hold");
+    expect(titled.hits.some((hit) => hit.message.includes("Pedro"))).toBe(true);
+  });
+
+  it("does not treat a leading verb or a neighborhood as a person", () => {
+    expect(
+      screenReviewText({
+        ...base,
+        cons: "Tardaron en devolver la fianza de Chamberí.",
+      }).outcome,
+    ).toBe("clean");
+    expect(
+      screenReviewText({
+        ...base,
+        title: "Lucía no contestó",
+        cons: "La llamada quedó sin respuesta durante varios días.",
+      }).hits.some((hit) => hit.code === "person_name"),
+    ).toBe(true);
+  });
+
+  it("prefers a hard block when the text also accuses a crime", () => {
+    const result = screenReviewText({
+      ...base,
+      cons: "Son unos estafadores. Escribid a ana@gmail.com.",
+    });
+    expect(result.outcome).toBe("block");
+    expect(result.hits.some((hit) => hit.code === "email")).toBe(true);
+  });
+});

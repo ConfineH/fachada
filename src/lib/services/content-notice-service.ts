@@ -1,5 +1,9 @@
 import { randomUUID } from "node:crypto";
 
+import {
+  noticeHidesProvisionally,
+  noticeReasonLabel,
+} from "@/lib/domain/content-notice-reasons";
 import type { ContentNotice, User } from "@/lib/domain/types";
 import {
   contentNoticeAppealSchema,
@@ -59,6 +63,11 @@ export class ContentNoticeService {
     };
 
     await this.repo.createContentNotice(notice);
+    if (noticeHidesProvisionally(notice.category)) {
+      review.flagged = true;
+      review.moderationReason = `Oculta de forma provisional: ${noticeReasonLabel(notice.category)}.`;
+      await this.repo.updateReview(review);
+    }
     await notifyModerationQueue(this.email, {
       kind: "Aviso de contenido",
       detail: `Sobre la reseña «${review.title}». Referencia ${notice.id}.`,

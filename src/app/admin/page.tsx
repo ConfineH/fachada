@@ -38,7 +38,7 @@ export default async function AdminPage() {
     );
   }
 
-  const [claims, reviews, submissions, locations, tips, contentNotices, funnel] =
+  const [claims, reviews, submissions, locations, tips, contentNotices, funnel, policy, policyChanges] =
     await Promise.all([
       adminService.listPendingClaims(),
       adminService.listReviewsForModeration(),
@@ -47,6 +47,8 @@ export default async function AdminPage() {
       adminService.listPendingTips(),
       adminService.listPendingContentNotices(),
       adminService.reviewFunnel(),
+      adminService.getPublicationPolicy(),
+      adminService.listPublicationPolicyChanges(),
     ]);
 
   const tipsWithEvidence = await Promise.all(
@@ -104,6 +106,18 @@ export default async function AdminPage() {
             initialLocations={locations}
             initialTips={tipsWithEvidence}
             initialContentNotices={contentNotices}
+            initialPolicy={{
+              mode: policy.mode,
+              updatedAt: policy.updatedAt.toISOString(),
+              updatedBy: policy.updatedBy,
+            }}
+            initialPolicyChanges={policyChanges.map((change) => ({
+              id: change.id,
+              mode: change.mode,
+              previousMode: change.previousMode,
+              changedBy: change.changedBy,
+              changedAt: change.changedAt.toISOString(),
+            }))}
           />
         </div>
       </main>

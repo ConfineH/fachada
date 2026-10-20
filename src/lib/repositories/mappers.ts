@@ -84,6 +84,9 @@ type ReviewRow = {
   flagged: boolean;
   moderation_reason: string | null;
   moderated_at: string | null;
+  prefilter_outcome?: "clean" | "held" | null;
+  prefilter_codes?: string[] | null;
+  prefilter_reasons?: string[] | null;
 };
 
 type ClaimRow = {
@@ -230,6 +233,9 @@ export function mapReview(row: ReviewRow): Review {
     flagged: row.flagged,
     moderationReason: row.moderation_reason ?? undefined,
     moderatedAt: row.moderated_at ? new Date(row.moderated_at) : undefined,
+    prefilterOutcome: row.prefilter_outcome ?? undefined,
+    prefilterCodes: row.prefilter_codes ?? [],
+    prefilterReasons: row.prefilter_reasons ?? [],
   };
 }
 

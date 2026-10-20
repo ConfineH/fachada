@@ -8,6 +8,8 @@ import type {
   Claim,
   ContentNotice,
   PendingEmailVerification,
+  PublicationPolicy,
+  PublicationPolicyChange,
   PendingVerification,
   Review,
   Session,
@@ -115,4 +117,8 @@ export interface Repository {
   findTipById(id: string): Promise<AgencyTip | null>;
   updateTip(tip: AgencyTip): Promise<void>;
   countPendingTips(userId: string, agencyId: string): Promise<number>;
+
+  getPublicationPolicy(): Promise<PublicationPolicy>;
+  listPublicationPolicyChanges(): Promise<PublicationPolicyChange[]>;
+  setPublicationPolicy(change: PublicationPolicyChange): Promise<void>;
 }

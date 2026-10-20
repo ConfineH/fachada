@@ -69,6 +69,8 @@ describe("ReviewService", () => {
     expect(review.cons).toBe(CONS);
     expect(review.anonymous).toBe(true);
     expect(review.body).toContain("Ventajas:");
+    expect(review.moderated).toBe(true);
+    expect(review.verificationLevel).toBe("declarada");
   });
 
   it("creates review for verified user", async () => {
@@ -111,7 +113,7 @@ describe("ReviewService", () => {
     expect(review.incidentTags).toEqual(["fianza", "reparaciones"]);
   });
 
-  it("enforces 7-day rate limit per agency", async () => {
+  it("allows one live review per agency and three per day", async () => {
     const user = await verifiedUser();
     await service.create(user, payload({ title: "Primera reseña" }));
 
@@ -120,7 +122,56 @@ describe("ReviewService", () => {
         user,
         payload({ role: "propietario", rating: 3, title: "Segunda reseña" }),
       ),
-    ).rejects.toThrow(/Rate limit/);
+    ).rejects.toThrow(/una reseña por inmobiliaria/);
+  });
+
+  it("does not publish a crime accusation or a phone-only account", async () => {
+    const emailUser = await store.createUser({ email: "ana@gmail.com" });
+    emailUser.emailVerified = true;
+    await store.updateUser(emailUser);
+    const held = await service.create(
+      emailUser,
+      payload({
+        title: "Fianza",
+        cons: "Son unos estafadores y no devolvieron la fianza.",
+      }),
+    );
+    expect(held.moderated).toBe(false);
+    expect(held.prefilterCodes).toContain("crime_accusation");
+    expect(held.prefilterReasons?.join(" ")).toMatch(/estafadores/);
+
+    const phoneUser = await verifiedUser("+34600111000");
+    const queued = await service.create(
+      phoneUser,
+      payload({ title: "Otra visita", cons: "Tardaron una semana en entregar las llaves." }),
+    );
+    expect(queued.moderated).toBe(false);
+  });
+
+  it("rejects contact data before saving", async () => {
+    const user = await store.createUser({ email: "ana@gmail.com" });
+    user.emailVerified = true;
+    await store.updateUser(user);
+    await expect(
+      service.create(user, payload({ cons: "Escribidme a ana@gmail.com hoy mismo." })),
+    ).rejects.toThrow(/correo electrónico/);
+    expect(await store.listReviewsByUser(user.id)).toHaveLength(0);
+  });
+
+  it("keeps new reviews unpublished in pre-moderation mode", async () => {
+    await store.setPublicationPolicy({
+      id: "policy-1",
+      mode: "premoderation",
+      previousMode: "immediate",
+      changedBy: "Ana Admin",
+      changedAt: new Date(),
+    });
+    const user = await store.createUser({ email: "ana@gmail.com" });
+    user.emailVerified = true;
+    await store.updateUser(user);
+    const review = await service.create(user, payload());
+    expect(review.moderated).toBe(false);
+    expect((await store.getPublicationPolicy()).updatedBy).toBe("Ana Admin");
   });
 
   it("rejects invalid rating", async () => {

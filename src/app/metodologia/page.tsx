@@ -7,7 +7,7 @@ import { pageMeta } from "@/lib/seo";
 
 export const metadata = pageMeta(
   "Cómo publicamos una reseña",
-    "Puedes publicar en la ficha de forma anónima. Pedimos cuenta identificada, experiencia declarada o acreditada, nota de inquilino y de propietario, y moderación humana. Sin sello de reseña verificada.",
+    "Puedes publicar en la ficha de forma anónima. Con el correo verificado y un filtro limpio, la reseña sale al momento como experiencia declarada. Experiencia acreditada solo si una persona revisa pruebas.",
   "/metodologia",
 );
 
@@ -25,9 +25,10 @@ export default function MetodologiaPage() {
           Cómo publicamos una reseña
         </h1>
         <p className="mt-4 text-lg text-zinc-600">
-          Puedes publicar en la ficha de forma anónima o con seudónimo. Pedimos
-          una cuenta identificada, una experiencia propia declarada y que una
-          persona lea el texto. No es un sello de «reseña verificada».
+          Puedes publicar en la ficha de forma anónima o con seudónimo. Con el
+          correo verificado y un texto que pasa el filtro, la reseña sale al
+          momento. Eso no es un sello de «reseña verificada»: la experiencia
+          sigue siendo declarada hasta que una persona revise una prueba.
         </p>
 
         <section className="mt-10 space-y-8 text-zinc-700">
@@ -79,14 +80,18 @@ export default function MetodologiaPage() {
           </div>
           <div>
             <h2 className="text-xl font-semibold text-zinc-900">
-              5. Moderación humana
+              5. Publicación y revisión
             </h2>
             <p className="mt-2">
-              Una reseña no sale en la ficha hasta que un moderador la aprueba.
-              Retiramos contenido ilegal, fuera de experiencia real o que
-              identifique a terceros de forma innecesaria. Una crítica no se
-              retira por ser negativa. Las decisiones de restricción se
-              comunican con su motivo y pueden revisarse.
+              Fachada aloja la reseña. Si el correo está verificado y el filtro
+              no ve enlaces, teléfonos, documentos, insultos, acusaciones de
+              delito ni nombres de personas, se publica al momento. Si detecta
+              una acusación de delito o un nombre, no se publica y la revisa
+              una persona. Cualquiera puede denunciar un texto. Un aviso por
+              datos personales o por acusación de delito lo oculta hasta esa
+              revisión. El resto sigue visible. Una crítica no se retira por
+              ser negativa. La decisión se motiva y puede revisarse. La
+              inmobiliaria puede responder.
             </p>
           </div>
           <div>

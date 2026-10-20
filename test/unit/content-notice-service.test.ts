@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { REVIEW_TERMS_VERSION } from "@/lib/domain/review-authenticity";
+import { isPublicReview } from "@/lib/domain/review-visibility";
 import { MemoryStore } from "@/lib/repositories/memory-store";
 import { ContentNoticeService } from "@/lib/services/content-notice-service";
 import { MockEmailProvider } from "@/lib/services/email-provider";
@@ -56,6 +57,50 @@ describe("ContentNoticeService", () => {
 
     expect(notice.status).toBe("pendiente");
     expect(email.messages[0]?.subject).toContain(notice.id);
+    expect((await store.findReviewById(reviewId))?.flagged).toBe(false);
+  });
+
+  it("hides personal data and crime accusations until a person reviews them", async () => {
+    const personal = await service.create({
+      reviewId,
+      reporterName: "Agencia Ejemplo",
+      reporterEmail: "legal@agencia.example",
+      category: "personal_data",
+      exactExcerpt: "La comunicación posterior fue lenta",
+      legalReason:
+        "El fragmento identifica a una persona física con datos innecesarios.",
+      goodFaithAttested: true,
+    });
+    const hidden = await store.findReviewById(reviewId);
+    expect(hidden?.flagged).toBe(true);
+    expect(hidden?.moderationReason).toMatch(/Oculta de forma provisional/);
+    expect(isPublicReview(hidden!)).toBe(false);
+
+    await service.decide(personal.id, {
+      status: "mantenido",
+      decisionRule: "Normas: datos personales",
+      decisionReason:
+        "El fragmento no identifica a una persona más allá del seudónimo.",
+    });
+    const restored = await store.findReviewById(reviewId);
+    expect(restored?.flagged).toBe(false);
+    expect(isPublicReview(restored!)).toBe(true);
+  });
+
+  it("leaves a false-statement notice visible while it is reviewed", async () => {
+    await service.create({
+      reviewId,
+      reporterName: "Agencia Ejemplo",
+      reporterEmail: "legal@agencia.example",
+      category: "false_statement",
+      exactExcerpt: "La comunicación posterior fue lenta",
+      legalReason:
+        "El plazo de respuesta que se afirma no coincide con el expediente.",
+      goodFaithAttested: true,
+    });
+    const review = await store.findReviewById(reviewId);
+    expect(review?.flagged).toBe(false);
+    expect(isPublicReview(review!)).toBe(true);
   });
 
   it("records a reason, restricts the review and notifies both parties", async () => {

@@ -3,14 +3,20 @@ import { randomUUID } from "node:crypto";
 import { tagsFromSentiments } from "@/lib/domain/incidents";
 import { isAccountVerified } from "@/lib/domain/identity";
 import { composeReviewBody } from "@/lib/domain/review-copy";
-import { isPublicReview } from "@/lib/domain/review-visibility";
+import { reviewRateLimitMessage } from "@/lib/domain/review-limits";
+import {
+  screenReviewText,
+  type PrefilterResult,
+} from "@/lib/domain/review-prefilter";
+import {
+  decidePublication,
+  isPublicReview,
+} from "@/lib/domain/review-visibility";
 import type { Review, User } from "@/lib/domain/types";
 import { reviewEditSchema, reviewInputSchema } from "@/lib/domain/validation";
 import { notifyModerationQueue } from "@/lib/ops/moderation-alert";
 import type { Repository } from "@/lib/repositories/types";
 import type { EmailProvider } from "@/lib/services/email-provider";
-
-const RATE_LIMIT_MS = 7 * 24 * 60 * 60 * 1000;
 
 export class ReviewError extends Error {
   constructor(message: string) {
@@ -50,19 +56,25 @@ export class ReviewService {
     const agencyId = agency.id;
 
     const userReviews = await this.repo.listReviewsByUser(user.id);
-    const recent = userReviews.find(
-      (r) =>
-        !r.deletedAt &&
-        r.agencyId === agencyId &&
-        Date.now() - r.createdAt.getTime() < RATE_LIMIT_MS,
-    );
+    const limit = reviewRateLimitMessage(userReviews, agencyId);
+    if (limit) throw new ReviewError(limit);
 
-    if (recent) {
-      throw new ReviewError("Rate limit: one review per agency every 7 days");
-    }
-
-    const marked = markedExperience(data);
     const anonymous = data.anonymous ?? true;
+    const screen = screenReviewText({
+      title: data.title,
+      pros: data.pros,
+      cons: data.cons,
+      publicName: anonymous ? undefined : data.publicName,
+      agencyName: agency.name,
+      city: data.experienceCity ?? agency.city,
+      extraAllowedNames: [agency.legalName, agency.brandName].filter(
+        (name): name is string => Boolean(name),
+      ),
+    });
+    if (screen.outcome === "block") {
+      throw new ReviewError(screen.hits.map((hit) => hit.message).join(" "));
+    }
+    const marked = markedExperience(data);
     const review: Review = {
       id: randomUUID(),
       userId: user.id,
@@ -97,12 +109,15 @@ export class ReviewService {
       moderated: false,
       flagged: false,
     };
-
+    const notices = await this.publicationContext(user.id);
+    await this.applyPublication(review, screen, notices);
     await this.repo.createReview(review);
-    await notifyModerationQueue(this.email, {
-      kind: "Reseña",
-      detail: `«${review.title}» sobre ${agency.name} (${agency.city}).`,
-    });
+    if (!review.moderated) {
+      await notifyModerationQueue(this.email, {
+        kind: "Reseña",
+        detail: `«${review.title}» sobre ${agency.name} (${agency.city}).`,
+      });
+    }
     return review;
   }
 
@@ -117,6 +132,21 @@ export class ReviewService {
     const review = await this.ownedReview(user.id, reviewId);
     const data = reviewEditSchema.parse(input);
     const anonymous = data.anonymous ?? true;
+    const agency = await this.repo.findAgencyById(review.agencyId);
+    const screen = screenReviewText({
+      title: data.title,
+      pros: data.pros,
+      cons: data.cons,
+      publicName: anonymous ? undefined : data.publicName,
+      agencyName: agency?.name,
+      city: review.experienceCity ?? agency?.city,
+      extraAllowedNames: [agency?.legalName, agency?.brandName].filter(
+        (name): name is string => Boolean(name),
+      ),
+    });
+    if (screen.outcome === "block") {
+      throw new ReviewError(screen.hits.map((hit) => hit.message).join(" "));
+    }
     const marked = markedExperience(data);
     const next: Review = {
       ...review,
@@ -135,12 +165,15 @@ export class ReviewService {
       flagged: false,
       verificationLevel: "declarada",
     };
+    const notices = await this.publicationContext(user.id, review.id);
+    await this.applyPublication(next, screen, notices);
     await this.repo.updateReview(next);
-    const editedAgency = await this.repo.findAgencyById(next.agencyId);
-    await notifyModerationQueue(this.email, {
-      kind: "Reseña editada",
-      detail: `«${next.title}» sobre ${editedAgency?.name ?? "una ficha"} vuelve a la cola.`,
-    });
+    if (!next.moderated) {
+      await notifyModerationQueue(this.email, {
+        kind: "Reseña editada",
+        detail: `«${next.title}» sobre ${agency?.name ?? "una ficha"} vuelve a la cola.`,
+      });
+    }
     return next;
   }
 
@@ -171,6 +204,56 @@ export class ReviewService {
       throw new ReviewError("No puedes marcar tu propia reseña como útil");
     }
     return this.repo.addReviewHelpful(user.id, reviewId);
+  }
+
+  private async publicationContext(userId: string, reviewId?: string) {
+    const [ownReviews, notices] = await Promise.all([
+      this.repo.listReviewsByUser(userId),
+      this.repo.listContentNotices(),
+    ]);
+    const ids = new Set(ownReviews.map((review) => review.id));
+    return {
+      openNotices: notices.some(
+        (notice) =>
+          ids.has(notice.reviewId) &&
+          (notice.status === "pendiente" ||
+            notice.status === "informacion_requerida"),
+      ),
+      removedBefore: reviewId
+        ? notices.some(
+            (notice) =>
+              notice.reviewId === reviewId && notice.status === "retirado",
+          )
+        : false,
+    };
+  }
+
+  private async applyPublication(
+    review: Review,
+    screen: PrefilterResult,
+    notices: { openNotices: boolean; removedBefore: boolean },
+  ) {
+    const user = await this.repo.findUserById(review.userId);
+    const policy = await this.repo.getPublicationPolicy();
+    const decision = decidePublication({
+      mode: policy.mode,
+      emailVerified: Boolean(user?.emailVerified),
+      prefilter: screen.outcome === "hold" ? "hold" : "clean",
+      openNotices: notices.openNotices,
+      removedBefore: notices.removedBefore,
+    });
+    const held = screen.hits.filter(
+      (hit) => hit.code === "crime_accusation" || hit.code === "person_name",
+    );
+    review.prefilterOutcome = screen.outcome === "hold" ? "held" : "clean";
+    review.prefilterCodes = held.map((hit) => hit.code);
+    review.prefilterReasons = held.map((hit) => hit.message);
+    review.moderated = decision.publish;
+    review.flagged = false;
+    review.moderatedAt = decision.publish ? new Date() : undefined;
+    review.moderationReason = decision.publish
+      ? undefined
+      : [...decision.reasons, ...review.prefilterReasons].join(" ");
   }
 
   private async ownedReview(userId: string, reviewId: string) {

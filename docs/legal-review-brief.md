@@ -1,7 +1,7 @@
 # Revisión jurídica solicitada — Fachada
 
 **Estado:** pendiente de dictamen de abogado colegiado.  
-**Fecha de corte:** 12 de septiembre de 2026.  
+**Fecha de corte:** 20 de octubre de 2026.  
 **Código:** la lectura conservadora de abajo ya está aplicada en producto
 (reseñas, etiquetas, DSA, legales). El dictamen puede exigir cambios de
 redacción o de plazo; no da por cerrado este brief.
@@ -12,7 +12,13 @@ Fachada es un archivo público español de reseñas sobre la gestión de
 inmobiliarias. Publica valoraciones separadas de inquilinos y propietarios,
 respuestas de agencias, fichas elaboradas por el operador y resúmenes de
 patrones. La cuenta del autor se identifica por Google o código al email; su
-correo no se publica. Toda reseña se revisa antes de publicarse.
+correo no se publica. Desde octubre de 2026 una reseña ordinaria se
+publica al enviarla si el correo está verificado y un prefiltro automático
+no detecta datos de contacto, insultos, acusaciones de delito ni nombres de
+persona. Esos dos últimos casos no se publican y esperan revisión humana.
+Un aviso por datos personales o por contenido ofensivo o acusación de delito
+oculta la reseña hasta esa revisión. «Experiencia acreditada» sigue
+exigiendo una prueba aprobada a mano.
 
 Actualmente opera una persona física, sin monetización, con una reseña pública.
 La aplicación usa Vercel, Supabase, Google Identity y Resend. Existe una
@@ -28,9 +34,11 @@ lee el nombre visible del anunciante y consulta el API de Fachada.
 2. ¿Fachada es servicio de alojamiento y plataforma en línea a efectos del
    DSA? ¿Qué obligaciones de los artículos 11–18 siguen siendo exigibles como
    microempresa?
-3. ¿La revisión humana previa, el rating agregado y el resumen «Lo que más se
-   repite» afectan a la exención del artículo 6 DSA? ¿Qué separación editorial
-   y lenguaje reducen la adopción del contenido como propio?
+3. ¿El filtro automático previo a la publicación, el rating agregado y el
+   resumen «Lo que más se repite» afectan a la exención del artículo 6 DSA
+   y al régimen de alojador de la LSSI (art. 16)? La decisión sobre un aviso
+   o una reseña retenida sigue siendo humana. ¿Qué separación editorial y
+   lenguaje reducen la adopción del contenido como propio?
 4. ¿Debe habilitarse un procedimiento formal de rectificación conforme a la
    LO 2/1984 y al artículo 85.2 LOPDGDD para fichas y resúmenes?
 5. ¿Qué base jurídica corresponde a la publicación y conservación de reseñas,

@@ -2,22 +2,18 @@
 
 import { FormEvent, useState } from "react";
 
+import { PUBLIC_NOTICE_REASONS } from "@/lib/domain/content-notice-reasons";
 import type { ContentNoticeCategory } from "@/lib/domain/types";
 
-const CATEGORIES: Array<[ContentNoticeCategory, string]> = [
-  ["honor", "Honor o reputación"],
-  ["privacy", "Intimidad"],
-  ["personal_data", "Datos personales"],
-  ["threat", "Amenaza o acoso"],
-  ["intellectual_property", "Propiedad intelectual"],
-  ["fake_experience", "Experiencia presuntamente falsa"],
-  ["other_illegal", "Otro contenido presuntamente ilícito"],
-];
-
-export function ReviewReportForm({ reviewId }: { reviewId: string }) {
+export function ReviewReportForm({
+  reviewId,
+  label = "Denunciar",
+}: {
+  reviewId: string;
+  label?: string;
+}) {
   const [open, setOpen] = useState(false);
-  const [category, setCategory] =
-    useState<ContentNoticeCategory>("fake_experience");
+  const [category, setCategory] = useState<ContentNoticeCategory>("other");
   const [error, setError] = useState("");
   const [reference, setReference] = useState("");
   const [sending, setSending] = useState(false);
@@ -66,13 +62,13 @@ export function ReviewReportForm({ reviewId }: { reviewId: string }) {
   }
 
   return (
-    <div>
+    <div className="w-full">
       <button
         type="button"
         onClick={() => setOpen((current) => !current)}
-        className="text-xs text-stone-500 underline hover:text-zinc-800"
+        className="text-xs font-medium text-stone-600 underline hover:text-zinc-900"
       >
-        Avisar
+        {label}
       </button>
       {open ? (
         <form
@@ -80,11 +76,15 @@ export function ReviewReportForm({ reviewId }: { reviewId: string }) {
           className="mt-3 space-y-3 rounded-lg border border-stone-200 bg-stone-50 p-4"
         >
           <p className="text-sm font-semibold text-zinc-900">
-            Avisar de un contenido presuntamente ilícito
+            {label === "Solicitar revisión"
+              ? "Solicitar revisión de esta reseña"
+              : "Denunciar esta reseña"}
           </p>
           <p className="text-xs text-zinc-600">
             Una valoración negativa no es ilícita por sí sola. Señala el
-            fragmento concreto y explica el derecho o norma vulnerados.
+            fragmento concreto y explica el derecho o norma vulnerados. Si el
+            motivo es datos personales o contenido ofensivo o acusación de
+            delito, la reseña se oculta hasta que una persona la revise.
           </p>
           <div className="grid gap-3 sm:grid-cols-2">
             <input
@@ -115,9 +115,9 @@ export function ReviewReportForm({ reviewId }: { reviewId: string }) {
             }
             className="input-field"
           >
-            {CATEGORIES.map(([value, label]) => (
+            {PUBLIC_NOTICE_REASONS.map(([value, reason]) => (
               <option key={value} value={value}>
-                {label}
+                {reason}
               </option>
             ))}
           </select>

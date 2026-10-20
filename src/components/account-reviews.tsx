@@ -87,10 +87,10 @@ export function AccountReviews({
     <section className="rounded-xl border border-stone-200 bg-white p-5">
       <h2 className="font-medium">Tus reseñas</h2>
       <p className="mt-2 text-sm text-zinc-600">
-        Puedes editar o eliminar las que has escrito. Si las editas, dejan de
-        verse en la ficha hasta una nueva revisión y quedan marcadas como
-        editadas. El rol, la inmobiliaria y la fecha de la experiencia no se
-        pueden cambiar.
+        Puedes editar o eliminar las que has escrito. Si las editas, la
+        experiencia acreditada vuelve a declarada. Si el texto pasa el filtro,
+        se publica otra vez; si no, queda en revisión. El rol, la inmobiliaria
+        y la fecha de la experiencia no se pueden cambiar.
       </p>
       {reviews.length === 0 && (
         <p className="mt-2 text-sm text-zinc-600">Aún no has enviado reseñas.</p>

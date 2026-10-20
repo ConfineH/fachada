@@ -19,6 +19,17 @@ export function reviewProsCons(review: {
   return { body: review.body };
 }
 
+export const EXPERIENCE_LABELS = {
+  declarada: "Experiencia declarada",
+  acreditada: "Experiencia acreditada",
+} as const;
+
+export function experiencePublicLabel(
+  level: "declarada" | "acreditada",
+) {
+  return EXPERIENCE_LABELS[level];
+}
+
 export function reviewPublicByline(review: {
   anonymous: boolean;
   publicName?: string;
