@@ -9,8 +9,11 @@ import {
   diffHandover,
   emptyActa,
   handoverLegalNotes,
+  MAX_ACTA_PHOTO_CHARS,
+  MAX_PHOTOS_PER_ELEMENT,
   parseActaDepositDraft,
   parseActaFile,
+  photoLimitMessage,
   roomFromPreset,
   ROOM_PRESETS,
   sha256Hex,
@@ -121,6 +124,89 @@ describe("handover acta", () => {
     expect(draft.deductionDetail).not.toContain("Paredes");
     expect(parseActaDepositDraft(JSON.stringify(draft))?.address).toBe("Calle Mayor 1");
     expect(parseActaDepositDraft("{}")).toBeNull();
+  });
+
+  it("rejects a photo whose bytes no longer match the stored sha256", async () => {
+    const acta = sample();
+    const dataUrl = "data:image/jpeg;base64,AAAA";
+    acta.rooms[0]!.elements[0]!.photos = [
+      { id: "p1", name: "pared.jpg", sha256: await sha256Hex(dataUrl), dataUrl },
+    ];
+    const file: ActaFile = {
+      kind: ACTA_EXPORT_KIND,
+      exportedAt: "2026-10-21T10:30:00.000Z",
+      contentHash: await actaContentHash(acta),
+      acta,
+    };
+    expect(await verifyActaFile(file)).toBe("match");
+    const tampered = structuredClone(file);
+    tampered.acta.rooms[0]!.elements[0]!.photos[0]!.dataUrl = "data:image/jpeg;base64,BBBB";
+    expect(await verifyActaFile(tampered)).toBe("mismatch");
+  });
+
+  it("passes only damage that got worse than the entry acta", () => {
+    const entry = sample();
+    entry.rooms[0]!.elements[1]!.condition = "danado";
+    entry.rooms[0]!.elements[1]!.note = "Ya estaba";
+    entry.rooms[0]!.elements[2]!.condition = "desgaste";
+    const exit = structuredClone(entry);
+    exit.mode = "salida";
+    exit.rooms[0]!.elements[0]!.condition = "danado";
+    exit.rooms[0]!.elements[2]!.condition = "danado";
+    exit.rooms[0]!.elements[2]!.note = "Nuevo";
+    exit.rooms[0]!.elements.push({
+      id: "nuevo",
+      name: "Radiador",
+      condition: "danado",
+      note: "",
+      photos: [],
+    });
+    const draft = depositDraftFromActa(exit, entry);
+    expect(draft.deductionDetail).toContain("Paredes");
+    expect(draft.deductionDetail).toContain("Ventanas");
+    expect(draft.deductionDetail).toContain("Nuevo");
+    expect(draft.deductionDetail).toContain("Radiador");
+    expect(draft.deductionDetail).not.toContain("Suelo");
+    expect(draft.deductionDetail).not.toContain("Ya estaba");
+  });
+
+  it("rejects an acta with the wrong field types, a non-image photo, too many photos or too much data", async () => {
+    const acta = sample();
+    const file = {
+      kind: ACTA_EXPORT_KIND,
+      exportedAt: "2026-10-21T10:30:00.000Z",
+      contentHash: "abc",
+      acta,
+    };
+    expect(parseActaFile({ ...file, acta: { ...acta, landlordName: 1 } })).toBeNull();
+    expect(parseActaFile({ ...file, acta: { ...acta, keys: "3" } })).toBeNull();
+    expect(parseActaFile({ ...file, acta: { ...acta, remotes: 1.5 } })).toBeNull();
+    expect(parseActaFile({ ...file, acta: { ...acta, landlordSignature: 1 } })).toBeNull();
+    expect(parseActaFile({ ...file, acta: { ...acta, meters: { luz: 1, agua: "", gas: "" } } })).toBeNull();
+
+    const badPhoto = structuredClone(acta);
+    badPhoto.rooms[0]!.elements[0]!.photos = [
+      { id: "p1", name: "pared.jpg", sha256: "abc", dataUrl: "data:image/gif;base64,AAAA" },
+    ];
+    expect(parseActaFile({ ...file, acta: badPhoto })).toBeNull();
+
+    const tooMany = structuredClone(acta);
+    tooMany.rooms[0]!.elements[0]!.photos = Array.from({ length: MAX_PHOTOS_PER_ELEMENT + 1 }, (_, index) => ({
+      id: `p${index}`,
+      name: "pared.jpg",
+      sha256: "abc",
+      dataUrl: "data:image/jpeg;base64,AAAA",
+    }));
+    expect(parseActaFile({ ...file, acta: tooMany })).toBeNull();
+
+    const huge = `data:image/jpeg;base64,${"A".repeat(MAX_ACTA_PHOTO_CHARS)}`;
+    expect(photoLimitMessage(0, 0, [{ dataUrl: huge }])).toMatch(/tamaño/);
+    expect(photoLimitMessage(MAX_PHOTOS_PER_ELEMENT, 0, [{ dataUrl: "data:image/jpeg;base64,AAAA" }])).toMatch(/6 fotos/);
+    const oversized = structuredClone(acta);
+    oversized.rooms[0]!.elements[0]!.photos = [
+      { id: "p1", name: "pared.jpg", sha256: "abc", dataUrl: huge },
+    ];
+    expect(parseActaFile({ ...file, acta: oversized })).toBeNull();
   });
 
   it("puts the hash and the timestamp warning in the PDF", async () => {

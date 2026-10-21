@@ -5,7 +5,7 @@ import type { RepairResult } from "@/lib/domain/tools/repairs";
 import { REPAIR_FLOW } from "@/lib/domain/tools/repairs";
 import { formatSpanishDate } from "@/lib/domain/tools/dates";
 import { formatEuro } from "@/lib/domain/tools/money";
-import { REFORM_2026_ACTIVE } from "@/lib/domain/tools/constants";
+import { REFORM_2026_ACTIVE, REFORM_2026_START } from "@/lib/domain/tools/constants";
 import type { RentNeedsReference, RentReady, RentUpdateResult } from "@/lib/domain/tools/rent-update";
 
 function whenReform(text: string) {
@@ -620,9 +620,20 @@ export function rentUpdateView(result: RentUpdateResult): { title: string; body:
     };
   }
   if (result.status === "missing_irav") {
+    const pending = result.month ? ` El mes ${result.month} todavía no está publicado en la tabla.` : "";
     return {
-      title: "No hay IRAV para ese mes",
-      body: `El artículo 18 toma el último índice publicado en la fecha de la actualización. Para esta fecha correspondería el mes ${result.month || "anterior"}, y no está en la tabla cargada. No uso un mes más antiguo. ${anniversaryLine(result.onAnniversary)}`,
+      title: "No hay IRAV publicado en esa fecha",
+      body: `El artículo 18 toma el último índice publicado en la fecha de la actualización. En esa fecha la tabla no tiene ninguno.${pending} No invento el porcentaje. ${anniversaryLine(result.onAnniversary)}`,
+    };
+  }
+  if (result.status === "agreed_index") {
+    const why =
+      result.updateDate >= REFORM_2026_START && !result.reformActive
+        ? "El RDL 29/2026 no se aplica, así que tampoco el tope que desde el 8 de octubre de 2026 extiende el IRAV a los contratos anteriores al 26 de mayo de 2023."
+        : "La disposición transitoria cuarta de la Ley 12/2023 dejó los contratos anteriores al 26 de mayo de 2023 en el régimen de la firma. El IRAV no los limita.";
+    return {
+      title: "Manda el índice del contrato",
+      body: `${why} Se aplica el índice pactado, por ejemplo el IPC del mes que fije la cláusula. No doy una cifra. ${anniversaryLine(result.onAnniversary)}`,
     };
   }
   if (result.status === "needs_reference") {
@@ -651,9 +662,9 @@ function rentReadyBody(result: RentReady): string {
     : "";
   const cap =
     result.basis === "cap_2023"
-      ? "En 2023 el tope legal de la actualización fue el 2 %."
+      ? "En 2023 el tope legal de la actualización fue el 2 %. Si el arrendador no es gran tenedor, ese 2 % aplicaba salvo nuevo pacto entre las partes."
       : result.basis === "cap_2024"
-        ? "En 2024 el tope legal de la actualización fue el 3 %."
+        ? "En 2024 el tope legal de la actualización fue el 3 %. Si el arrendador no es gran tenedor, ese 3 % aplicaba salvo nuevo pacto entre las partes."
         : result.basis === "extraordinary_zero"
           ? "La disposición final sexta del RDL 29/2026 impide cualquier incremento cuando la renta supera el índice de precios de referencia."
           : result.basis === "extraordinary_two"

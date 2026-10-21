@@ -13,12 +13,15 @@ import {
   HASH_NOT_TIMESTAMP,
   ROOM_PRESETS,
   actaContentHash,
+  actaPhotoChars,
   cloneActa,
   depositDraftFromActa,
   diffHandover,
   emptyActa,
   handoverLegalNotes,
+  MAX_PHOTOS_PER_ELEMENT,
   parseActaFile,
+  photoLimitMessage,
   roomFromPreset,
   sha256Hex,
   verifyActaFile,
@@ -50,6 +53,8 @@ export function HandoverTool() {
   const [ready, setReady] = useState(false);
   const [integrity, setIntegrity] = useState<"match" | "mismatch" | null>(null);
   const [importError, setImportError] = useState("");
+  const [storageWarning, setStorageWarning] = useState("");
+  const [photoWarning, setPhotoWarning] = useState("");
   const [busy, setBusy] = useState<"pdf" | "json" | null>(null);
 
   useEffect(() => {
@@ -76,7 +81,13 @@ export function HandoverTool() {
   useEffect(() => {
     if (!ready) return;
     const handle = window.setTimeout(() => {
-      void saveActaDraft(acta).catch(() => undefined);
+      void saveActaDraft(acta).then(
+        () => setStorageWarning(""),
+        () =>
+          setStorageWarning(
+            "No se ha podido guardar el acta en este dispositivo. Si cierras la página, puedes perder los cambios.",
+          ),
+      );
     }, 400);
     return () => window.clearTimeout(handle);
   }, [acta, ready]);
@@ -103,6 +114,12 @@ export function HandoverTool() {
 
   async function addPhotos(roomId: string, elementId: string, files: FileList | null) {
     if (!files?.length) return;
+    const element = acta.rooms.find((room) => room.id === roomId)?.elements.find((entry) => entry.id === elementId);
+    if (!element) return;
+    if (element.photos.length + files.length > MAX_PHOTOS_PER_ELEMENT) {
+      setPhotoWarning(`Como máximo, ${MAX_PHOTOS_PER_ELEMENT} fotos por elemento.`);
+      return;
+    }
     const photos: ActaPhoto[] = [];
     for (const file of files) {
       const dataUrl = await shrinkToJpeg(file);
@@ -113,6 +130,12 @@ export function HandoverTool() {
         dataUrl,
       });
     }
+    const limit = photoLimitMessage(element.photos.length, actaPhotoChars(acta), photos);
+    if (limit) {
+      setPhotoWarning(limit);
+      return;
+    }
+    setPhotoWarning("");
     setActa((current) => ({
       ...current,
       rooms: current.rooms.map((room) =>
@@ -169,9 +192,16 @@ export function HandoverTool() {
         return;
       }
       const check = await verifyActaFile(parsed);
+      if (!window.confirm("Importar este archivo sustituye el borrador actual. ¿Seguir?")) return;
       setIntegrity(check);
       setBaseline(parsed.acta);
-      await saveActaBaseline(parsed.acta).catch(() => undefined);
+      try {
+        await saveActaBaseline(parsed.acta);
+      } catch {
+        setStorageWarning(
+          "No se ha podido guardar el acta en este dispositivo. Si cierras la página, puedes perder los cambios.",
+        );
+      }
       setActa({
         ...cloneActa(parsed.acta),
         mode: "salida",
@@ -222,11 +252,17 @@ export function HandoverTool() {
               className="input-field min-h-11"
               type="file"
               accept="application/json,.json"
-              onChange={(event) => void importEntry(event.target.files?.[0])}
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                event.target.value = "";
+                void importEntry(file);
+              }}
             />
           </Field>
         ) : null}
         {importError ? <p className="text-sm text-amber-800">{importError}</p> : null}
+        {storageWarning ? <p className="text-sm text-amber-800">{storageWarning}</p> : null}
+        {photoWarning ? <p className="text-sm text-amber-800">{photoWarning}</p> : null}
         {integrity === "mismatch" ? (
           <p className="text-sm text-amber-800">
             El código de integridad del archivo no coincide. Puedes compararlo, pero alguien ha podido modificarlo.
@@ -448,15 +484,20 @@ export function HandoverTool() {
         <button type="button" className="btn-secondary min-h-11" disabled={busy !== null} onClick={() => void exportJson()}>
           {busy === "json" ? "Preparando archivo…" : "Exportar archivo"}
         </button>
-        <Link
-          href="/herramientas/fianza"
-          className="btn-secondary inline-flex min-h-11 items-center"
-          onClick={() => {
-            sessionStorage.setItem(ACTA_DEPOSIT_STORAGE_KEY, JSON.stringify(depositDraftFromActa(acta)));
-          }}
-        >
-          Usar estos datos en la carta de la fianza
-        </Link>
+        {acta.mode === "salida" ? (
+          <Link
+            href="/herramientas/fianza"
+            className="btn-secondary inline-flex min-h-11 items-center"
+            onClick={() => {
+              sessionStorage.setItem(
+                ACTA_DEPOSIT_STORAGE_KEY,
+                JSON.stringify(depositDraftFromActa(acta, baseline)),
+              );
+            }}
+          >
+            Usar estos datos en la carta de la fianza
+          </Link>
+        ) : null}
       </div>
     </div>
   );

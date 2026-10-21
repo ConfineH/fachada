@@ -1,12 +1,13 @@
-import { addMonths, parseIsoDate } from "@/lib/domain/tools/dates";
+import { parseIsoDate } from "@/lib/domain/tools/dates";
 import { roundCents } from "@/lib/domain/tools/money";
 import {
   EXTRAORDINARY_RENT_CAP,
   EXTRAORDINARY_RENT_END,
-  IRAV_LOADED_ON,
+  FEE_RULE_START,
   IRAV_TABLE,
   REFORM_2026_ACTIVE,
   REFORM_2026_START,
+  reform2026Applies,
   type IravRow,
 } from "@/lib/domain/tools/constants";
 
@@ -63,6 +64,14 @@ export type RentNeedsReference = {
   askedRentEur: number | null;
 };
 
+export type RentAgreedIndex = {
+  status: "agreed_index";
+  index: RentIndex;
+  onAnniversary: boolean;
+  updateDate: string;
+  reformActive: boolean;
+};
+
 export type RentUpdateResult =
   | {
       status: "invalid";
@@ -76,36 +85,42 @@ export type RentUpdateResult =
     }
   | { status: "unsupported_period"; year: number }
   | { status: "missing_irav"; month: string; onAnniversary: boolean }
+  | RentAgreedIndex
   | RentNeedsReference
   | RentReady;
 
-/** Mes natural anterior a la fecha de actualización, YYYY-MM. */
-export function iravReferenceMonth(updateDate: string): string | null {
-  if (!parseIsoDate(updateDate)) return null;
-  const previous = addMonths(`${updateDate.slice(0, 7)}-01`, -1);
-  return previous ? previous.slice(0, 7) : null;
-}
-
 /**
- * IRAV del mes anterior. Si ese mes no está en la tabla, no se usa otro.
- * Si es el último mes cargado y la actualización es anterior a la fecha de
- * carga, tampoco: no sabemos si el INE ya lo había publicado ese día.
+ * Última fila ya publicada en la fecha de actualización (publishedOn <= fecha).
+ * No es el mes natural anterior: si ese mes aún no se ha publicado, vale el
+ * anterior que sí lo esté.
  */
 export function lookupIrav(
   updateDate: string,
   table: readonly IravRow[] = IRAV_TABLE,
-  loadedOn = IRAV_LOADED_ON,
 ): { status: "ok"; row: IravRow } | { status: "missing"; month: string } {
-  const month = iravReferenceMonth(updateDate);
-  if (!month) return { status: "missing", month: "" };
-  const row = table.find((entry) => entry.month === month);
-  if (!row) return { status: "missing", month };
-  const latest = table.reduce<string | null>(
-    (current, entry) => (current === null || entry.month > current ? entry.month : current),
-    null,
-  );
-  if (latest === row.month && updateDate < loadedOn) return { status: "missing", month };
-  return { status: "ok", row };
+  if (!parseIsoDate(updateDate)) return { status: "missing", month: "" };
+  let chosen: IravRow | null = null;
+  let upcoming: IravRow | null = null;
+  for (const entry of table) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(entry.publishedOn)) continue;
+    if (entry.publishedOn <= updateDate) {
+      if (!chosen || entry.month > chosen.month) chosen = entry;
+    } else if (!upcoming || entry.month < upcoming.month) {
+      upcoming = entry;
+    }
+  }
+  if (!chosen) return { status: "missing", month: upcoming?.month ?? "" };
+  return { status: "ok", row: chosen };
+}
+
+/**
+ * La Ley 12/2023 no somete al IRAV los contratos anteriores al 26/05/2023
+ * (DT 4.ª original). El art. 4.Dos del RDL 29/2026 sí les pone ese tope
+ * desde el 08/10/2026.
+ */
+function iravCapsContract(contractDate: string, updateDate: string, reformActive: boolean): boolean {
+  if (contractDate >= FEE_RULE_START) return true;
+  return reform2026Applies(updateDate, reformActive);
 }
 
 /** Aniversario del contrato, con el 29 de febrero sujeto al último día del mes. */
@@ -205,10 +220,20 @@ export function assessRentUpdate(input: RentUpdateInput): RentUpdateResult {
     });
   }
 
+  if (!iravCapsContract(input.contractDate, input.updateDate, reformActive)) {
+    return {
+      status: "agreed_index",
+      index: input.index,
+      onAnniversary: isRentAnniversary(input.contractDate, input.updateDate),
+      updateDate: input.updateDate,
+      reformActive,
+    };
+  }
+
   if (!irav || irav.status === "missing") {
     return {
       status: "missing_irav",
-      month: irav?.status === "missing" ? irav.month : (iravReferenceMonth(input.updateDate) ?? ""),
+      month: irav?.status === "missing" ? irav.month : "",
       onAnniversary: isRentAnniversary(input.contractDate, input.updateDate),
     };
   }

@@ -6,7 +6,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { parseIneSeries } from "./irav-parse.mjs";
+import { inePointsByMonth, iravPublication, parseIneSeries } from "./irav-parse.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const constantsPath = join(root, "src", "lib", "domain", "tools", "constants.ts");
@@ -17,7 +17,9 @@ if (!response.ok) {
   throw new Error(`El INE ha respondido ${response.status}. La tabla no se ha tocado.`);
 }
 
-const incoming = parseIneSeries(await response.json());
+const payload = await response.json();
+const incoming = parseIneSeries(payload);
+const points = inePointsByMonth(payload);
 const today = new Date();
 const loadedOn = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
 
@@ -30,10 +32,10 @@ for (const row of incoming) existing.set(row.month, row.value);
 
 const rows = [...existing.entries()]
   .sort(([left], [right]) => left.localeCompare(right))
-  .map(
-    ([month, value]) =>
-      `  { month: "${month}", value: ${value}, source: IRAV_SOURCE_URL, loadedOn: "${loadedOn}" },`,
-  );
+  .map(([month, value]) => {
+    const publication = iravPublication(month, points.get(month) ?? null);
+    return `  { month: "${month}", value: ${value}, source: IRAV_SOURCE_URL, loadedOn: "${loadedOn}", publishedOn: "${publication.publishedOn}", publishedOnEstimated: ${publication.publishedOnEstimated} },`;
+  });
 
 const table = `// IRAV_TABLE_START
 export const IRAV_TABLE: readonly IravRow[] = [

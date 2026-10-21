@@ -11,6 +11,9 @@ export const CONDITION_LABELS: Record<ItemCondition, string> = {
 };
 
 export const ACTA_EXPORT_KIND = "fachada-acta-v1" as const;
+export const MAX_PHOTOS_PER_ELEMENT = 6;
+/** Suma de los data URL de las fotos. Cabe en IndexedDB sin tragarse el dispositivo. */
+export const MAX_ACTA_PHOTO_CHARS = 8 * 1024 * 1024;
 
 export const HASH_NOT_TIMESTAMP =
   "Este código resume el contenido del acta (SHA-256). No es un sello de tiempo oficial ni prueba la fecha ante terceros.";
@@ -300,32 +303,102 @@ function isCondition(value: unknown): value is ItemCondition {
   return value === "bien" || value === "desgaste" || value === "danado";
 }
 
+function isCount(value: unknown): value is number | null {
+  return value === null || (typeof value === "number" && Number.isInteger(value) && value >= 0);
+}
+
+function isImageDataUrl(value: unknown): value is string {
+  if (typeof value !== "string") return false;
+  const match = /^data:image\/(?:jpeg|png);base64,([A-Za-z0-9+/]+={0,2})$/.exec(value);
+  if (!match?.[1]) return false;
+  return match[1].length % 4 === 0;
+}
+
+function isPhoto(value: unknown): value is ActaPhoto {
+  if (!value || typeof value !== "object") return false;
+  const photo = value as ActaPhoto;
+  return (
+    typeof photo.id === "string" &&
+    typeof photo.name === "string" &&
+    typeof photo.sha256 === "string" &&
+    isImageDataUrl(photo.dataUrl)
+  );
+}
+
+function isSignature(value: unknown): value is string | null {
+  return value === null || typeof value === "string";
+}
+
 function isActa(value: unknown): value is HandoverActa {
   if (!value || typeof value !== "object") return false;
   const acta = value as HandoverActa;
-  return (
-    (acta.mode === "entrada" || acta.mode === "salida") &&
-    typeof acta.address === "string" &&
-    typeof acta.date === "string" &&
-    typeof acta.time === "string" &&
-    Array.isArray(acta.rooms) &&
-    acta.rooms.every(
-      (room) =>
-        room &&
-        typeof room.id === "string" &&
-        typeof room.name === "string" &&
-        Array.isArray(room.elements) &&
-        room.elements.every(
-          (element) =>
-            element &&
-            typeof element.id === "string" &&
-            typeof element.name === "string" &&
-            isCondition(element.condition) &&
-            typeof element.note === "string" &&
-            Array.isArray(element.photos),
-        ),
-    )
-  );
+  if (acta.mode !== "entrada" && acta.mode !== "salida") return false;
+  if (typeof acta.address !== "string" || typeof acta.date !== "string" || typeof acta.time !== "string") {
+    return false;
+  }
+  if (typeof acta.landlordName !== "string" || typeof acta.tenantName !== "string") return false;
+  if (!acta.meters || typeof acta.meters !== "object") return false;
+  if (
+    typeof acta.meters.luz !== "string" ||
+    typeof acta.meters.agua !== "string" ||
+    typeof acta.meters.gas !== "string"
+  ) {
+    return false;
+  }
+  if (!isCount(acta.keys) || !isCount(acta.remotes)) return false;
+  if (!isSignature(acta.landlordSignature) || !isSignature(acta.tenantSignature)) return false;
+  if (!Array.isArray(acta.rooms)) return false;
+  let photoChars = 0;
+  for (const room of acta.rooms) {
+    if (!room || typeof room.id !== "string" || typeof room.name !== "string" || !Array.isArray(room.elements)) {
+      return false;
+    }
+    for (const element of room.elements) {
+      if (
+        !element ||
+        typeof element.id !== "string" ||
+        typeof element.name !== "string" ||
+        !isCondition(element.condition) ||
+        typeof element.note !== "string" ||
+        !Array.isArray(element.photos) ||
+        element.photos.length > MAX_PHOTOS_PER_ELEMENT
+      ) {
+        return false;
+      }
+      for (const photo of element.photos) {
+        if (!isPhoto(photo)) return false;
+        photoChars += photo.dataUrl.length;
+        if (photoChars > MAX_ACTA_PHOTO_CHARS) return false;
+      }
+    }
+  }
+  return true;
+}
+
+export function actaPhotoChars(acta: HandoverActa): number {
+  let chars = 0;
+  for (const room of acta.rooms) {
+    for (const element of room.elements) {
+      for (const photo of element.photos) chars += photo.dataUrl.length;
+    }
+  }
+  return chars;
+}
+
+/** Aviso si el lote no cabe en el elemento o en el tamaño total. Null si cabe. */
+export function photoLimitMessage(
+  elementCount: number,
+  totalChars: number,
+  incoming: readonly { dataUrl: string }[],
+): string | null {
+  if (elementCount + incoming.length > MAX_PHOTOS_PER_ELEMENT) {
+    return `Como máximo, ${MAX_PHOTOS_PER_ELEMENT} fotos por elemento.`;
+  }
+  const extra = incoming.reduce((sum, photo) => sum + photo.dataUrl.length, 0);
+  if (totalChars + extra > MAX_ACTA_PHOTO_CHARS) {
+    return "Las fotos superan el tamaño que cabe en este dispositivo.";
+  }
+  return null;
 }
 
 export function parseActaFile(raw: unknown): ActaFile | null {
@@ -340,6 +413,13 @@ export function parseActaFile(raw: unknown): ActaFile | null {
 export async function verifyActaFile(
   file: ActaFile,
 ): Promise<"match" | "mismatch"> {
+  for (const room of file.acta.rooms) {
+    for (const element of room.elements) {
+      for (const photo of element.photos) {
+        if ((await sha256Hex(photo.dataUrl)) !== photo.sha256) return "mismatch";
+      }
+    }
+  }
   const hash = await actaContentHash(file.acta);
   return hash === file.contentHash ? "match" : "mismatch";
 }
@@ -354,13 +434,32 @@ export type ActaDepositDraft = {
   deductionDetail: string;
 };
 
-export function depositDraftFromActa(acta: HandoverActa): ActaDepositDraft {
+function damageLine(room: string, element: ActaElement): string {
+  const note = element.note.trim();
+  return note ? `${room}: ${element.name} (${note})` : `${room}: ${element.name}`;
+}
+
+/**
+ * Sin acta de entrada, todos los elementos dañados. Con ella, solo lo que
+ * empeora: bien o desgaste que pasa a dañado, o un dañado que no estaba.
+ */
+export function depositDraftFromActa(acta: HandoverActa, entry?: HandoverActa | null): ActaDepositDraft {
   const damaged: string[] = [];
-  for (const room of acta.rooms) {
-    for (const element of room.elements) {
-      if (element.condition !== "danado") continue;
-      const note = element.note.trim();
-      damaged.push(note ? `${room.name}: ${element.name} (${note})` : `${room.name}: ${element.name}`);
+  if (!entry) {
+    for (const room of acta.rooms) {
+      for (const element of room.elements) {
+        if (element.condition === "danado") damaged.push(damageLine(room.name, element));
+      }
+    }
+  } else {
+    for (const rooms of pairByIdThenName(entry.rooms, acta.rooms)) {
+      if (!rooms.after) continue;
+      for (const elements of pairByIdThenName(rooms.before?.elements ?? [], rooms.after.elements)) {
+        const after = elements.after;
+        if (!after || after.condition !== "danado") continue;
+        if (elements.before?.condition === "danado") continue;
+        damaged.push(damageLine(rooms.after.name, after));
+      }
     }
   }
   return {
