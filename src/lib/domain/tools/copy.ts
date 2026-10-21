@@ -5,7 +5,8 @@ import type { RepairResult } from "@/lib/domain/tools/repairs";
 import { REPAIR_FLOW } from "@/lib/domain/tools/repairs";
 import { formatSpanishDate } from "@/lib/domain/tools/dates";
 import { formatEuro } from "@/lib/domain/tools/money";
-import { REFORM_2026_ACTIVE } from "@/lib/domain/tools/constants";
+import { REFORM_2026_ACTIVE, REFORM_2026_START } from "@/lib/domain/tools/constants";
+import type { RentNeedsReference, RentReady, RentUpdateResult } from "@/lib/domain/tools/rent-update";
 
 function whenReform(text: string) {
   return REFORM_2026_ACTIVE ? text : "";
@@ -575,4 +576,132 @@ function compensationCopy(
     title: "Indemnización",
     body: "No queda periodo que prorratear.",
   };
+}
+
+/** Porcentaje con coma decimal, sin ceros de más. */
+export function formatPercent(value: number): string {
+  const rounded = Math.round(value * 100) / 100;
+  const [whole, fraction] = rounded.toFixed(2).split(".");
+  if (!fraction || fraction === "00") return `${whole} %`;
+  const digits = fraction.endsWith("0") ? fraction.slice(0, 1) : fraction;
+  return `${whole},${digits} %`;
+}
+
+const RENT_INDEX_LABELS = {
+  irav: "al IRAV",
+  ipc: "al IPC",
+  igc: "al índice de garantía de competitividad",
+  otro: "al índice pactado",
+} as const;
+
+export const IRAV_ESTIMATE_NOTE =
+  "La fecha de publicación del INE es estimada; comprueba en ine.es qué IRAV estaba publicado ese día.";
+
+function estimateLine(close: boolean) {
+  return close ? `\n${IRAV_ESTIMATE_NOTE}` : "";
+}
+
+function anniversaryLine(onAnniversary: boolean) {
+  return onAnniversary
+    ? "La fecha cae en el aniversario del contrato, que es cuando el artículo 18 permite actualizar."
+    : "El artículo 18 solo permite actualizar el día en que se cumple cada año de contrato. En otra fecha la subida no es exigible.";
+}
+
+export function rentUpdateView(result: RentUpdateResult): { title: string; body: string } {
+  if (result.status === "invalid") {
+    const bodies = {
+      invalid_date: "Revisa la fecha de firma y la de la actualización.",
+      invalid_rent: "La renta tiene que ser un importe en euros, mayor que cero.",
+      update_before_contract: "La actualización no puede ser anterior a la firma del contrato.",
+      choose_clause: "Indica si el contrato prevé la actualización anual de la renta.",
+      choose_index: "Indica qué índice menciona el contrato.",
+      choose_reference:
+        "Para esta fecha hace falta saber si la renta supera el índice de precios de referencia. Si no lo sabes, márcalo: no te doy una sola cifra.",
+    };
+    return { title: "Falta un dato", body: bodies[result.code] };
+  }
+  if (result.status === "unsupported_period") {
+    return {
+      title: "Esta calculadora no cubre ese año",
+      body: `La actualización es de ${result.year}. Antes de 2023 el tope no era el 2 %, el 3 % ni el IRAV, y aquí no hay una serie de aquel índice. No invento el porcentaje.`,
+    };
+  }
+  if (result.status === "missing_irav") {
+    const pending = result.month ? ` El mes ${result.month} todavía no está publicado en la tabla.` : "";
+    return {
+      title: "No hay IRAV publicado en esa fecha",
+      body: `El artículo 18 toma el último índice publicado en la fecha de la actualización. En esa fecha la tabla no tiene ninguno.${pending} No invento el porcentaje. ${anniversaryLine(result.onAnniversary)}`,
+    };
+  }
+  if (result.status === "agreed_index") {
+    const why =
+      result.updateDate >= REFORM_2026_START && !result.reformActive
+        ? "El RDL 29/2026 no se aplica, así que tampoco el tope que desde el 8 de octubre de 2026 extiende el IRAV a los contratos anteriores al 26 de mayo de 2023."
+        : "La disposición transitoria cuarta de la Ley 12/2023 dejó los contratos anteriores al 26 de mayo de 2023 en el régimen de la firma. El IRAV no los limita.";
+    return {
+      title: "Manda el índice del contrato",
+      body: `${why} Se aplica el índice pactado, por ejemplo el IPC del mes que fije la cláusula. No doy una cifra. ${anniversaryLine(result.onAnniversary)}`,
+    };
+  }
+  if (result.status === "needs_reference") {
+    return {
+      title: "Depende del índice de precios de referencia",
+      body: `Entre el 8 de octubre de 2026 y el 31 de diciembre de 2027, la disposición final sexta del RDL 29/2026 impide subir la renta si ya supera ese índice. Si no lo supera y no hay un pacto nuevo, el tope es ${formatPercent(result.percentIfWithin)} (el menor entre el 2 % y el IRAV de ${result.iravMonth}, que es ${formatPercent(result.iravValue)}): la renta máxima sería ${formatEuro(result.maxIfWithin)}. Si sí lo supera, la renta se queda en ${formatEuro(result.maxIfAbove)}. ${anniversaryLine(result.onAnniversary)}${estimateLine(result.iravEstimateClose)}`,
+    };
+  }
+  return { title: rentReadyTitle(result), body: rentReadyBody(result) };
+}
+
+function rentReadyTitle(result: RentReady): string {
+  if (result.basis === "no_pact") return "No hay subida";
+  if (result.exceeds) return "Te piden más del tope";
+  if (result.exceeds === false) return "La cantidad pedida no pasa el tope";
+  return `Renta máxima: ${formatEuro(result.maxRentEur)}`;
+}
+
+function rentReadyBody(result: RentReady): string {
+  const anniversary = anniversaryLine(result.onAnniversary);
+  if (result.basis === "no_pact") {
+    return `El artículo 18.1 de la LAU dice que, si no hay pacto expreso, no se actualiza la renta durante el contrato. La renta sigue en ${formatEuro(result.currentRentEur)}. ${anniversary}`;
+  }
+  const index = result.index
+    ? ` El contrato remite ${RENT_INDEX_LABELS[result.index]}: si ese índice diera menos que el tope, manda el menor.`
+    : "";
+  const cap =
+    result.basis === "cap_2023"
+      ? "En 2023 el tope legal de la actualización fue el 2 %. Si el arrendador no es gran tenedor, ese 2 % aplicaba salvo nuevo pacto entre las partes."
+      : result.basis === "cap_2024"
+        ? "En 2024 el tope legal de la actualización fue el 3 %. Si el arrendador no es gran tenedor, ese 3 % aplicaba salvo nuevo pacto entre las partes."
+        : result.basis === "extraordinary_zero"
+          ? "La disposición final sexta del RDL 29/2026 impide cualquier incremento cuando la renta supera el índice de precios de referencia."
+          : result.basis === "extraordinary_two"
+            ? `Hasta el 31 de diciembre de 2027, si no hay un pacto nuevo, el tope es el menor entre el 2 % y el IRAV de ${result.iravMonth} (${formatPercent(result.iravValue ?? 0)}).`
+            : `Desde 2025 el tope es el IRAV del INE. El mes de referencia es ${result.iravMonth} (${formatPercent(result.iravValue ?? 0)}).`;
+  const money = `Sobre ${formatEuro(result.currentRentEur)}, la renta máxima es ${formatEuro(result.maxRentEur)} (${formatPercent(result.percent)}).`;
+  const asked =
+    result.exceeds === null
+      ? ""
+      : result.exceeds
+        ? ` Te piden ${formatEuro(result.askedRentEur ?? 0)}, por encima de ese tope.`
+        : ` Lo que te piden, ${formatEuro(result.askedRentEur ?? 0)}, no supera ese tope.`;
+  return `${cap} ${money}${asked}${index} ${anniversary}${estimateLine(result.iravEstimateClose)}`;
+}
+
+export function rentUpdateReply(result: RentReady): string | null {
+  if (!result.exceeds) return null;
+  return [
+    "He revisado la actualización de la renta que me propones.",
+    `El artículo 18 de la LAU solo permite actualizar la renta si el contrato lo prevé, y el incremento no puede pasar del tope legal aplicable. Con la renta actual de ${formatEuro(result.currentRentEur)}, el máximo es ${formatEuro(result.maxRentEur)} (${formatPercent(result.percent)}).`,
+    `La cantidad de ${formatEuro(result.askedRentEur ?? 0)} lo supera. Pagaré como máximo ${formatEuro(result.maxRentEur)}.`,
+  ].join("\n\n");
+}
+
+export function rentNeedsReferenceReply(result: RentNeedsReference): string | null {
+  if (result.askedRentEur === null) return null;
+  if (result.askedRentEur <= result.maxIfWithin + 0.001) return null;
+  return [
+    "He revisado la actualización de la renta que me propones.",
+    `Aunque la renta no supere el índice de precios de referencia, el tope hasta el 31 de diciembre de 2027 es ${formatEuro(result.maxIfWithin)} (${formatPercent(result.percentIfWithin)}). Si lo supera, no procede incremento y la renta sigue en ${formatEuro(result.maxIfAbove)}.`,
+    `La cantidad de ${formatEuro(result.askedRentEur)} queda por encima de las dos posibilidades.`,
+  ].join("\n\n");
 }

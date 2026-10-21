@@ -22,8 +22,9 @@ export default function HerramientasPage() {
         {TOOLS_INDEX.title}
       </h1>
       <p className="mt-4 max-w-2xl text-lg leading-relaxed text-zinc-600">
-        Cuatro cálculos sobre el alquiler de vivienda. Sirven cuando ya hay un cobro, una fianza,
-        una avería o una salida. Al terminar, puedes contar qué pasó con la agencia.
+        Seis cálculos sobre el alquiler de vivienda. Sirven cuando ya hay un cobro, una fianza,
+        una avería, una salida, la entrega de llaves o una subida de renta. Al terminar, puedes
+        contar qué pasó con la agencia.
       </p>
       <div className="mt-6 max-w-3xl space-y-3">
         <LegalNotice />

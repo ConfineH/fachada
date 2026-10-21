@@ -22,6 +22,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/herramientas/fianza",
     "/herramientas/reparaciones",
     "/herramientas/salida-anticipada",
+    "/herramientas/acta-entrega-llaves",
+    "/herramientas/subida-alquiler",
     "/agencia/acceso",
     "/agregar-inmobiliaria",
     "/legal/aviso-legal",
