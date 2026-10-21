@@ -369,6 +369,15 @@ export class MemoryStore implements Repository {
     );
   }
 
+  async listReviewVisibility() {
+    return this.reviews.map((review) => ({
+      agencyId: review.agencyId,
+      moderated: review.moderated,
+      flagged: review.flagged,
+      deletedAt: review.deletedAt,
+    }));
+  }
+
   async findReviewById(id: string) {
     return this.reviews.find((r) => r.id === id) ?? null;
   }

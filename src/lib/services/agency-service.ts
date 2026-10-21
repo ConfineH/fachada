@@ -116,15 +116,25 @@ export class AgencyService {
   }
 
   async exploreCities(options?: { publicOnly?: boolean }) {
-    const agencies = await this.repo.listAgencies();
-    const locations = await this.locationsByAgency();
+    const [agencies, locations, reviews] = await Promise.all([
+      this.repo.listAgencies(),
+      this.locationsByAgency(),
+      this.repo.listReviewVisibility(),
+    ]);
+    const reviewCountByAgency = new Map<string, number>();
+    for (const review of reviews) {
+      if (review.deletedAt) continue;
+      if (options?.publicOnly !== false && !isPublicReview(review)) continue;
+      reviewCountByAgency.set(
+        review.agencyId,
+        (reviewCountByAgency.get(review.agencyId) ?? 0) + 1,
+      );
+    }
+
     const map = new Map<string, CityExploreSummary>();
 
     for (const agency of agencies) {
-      const reviews = await this.filterReviews(
-        await this.repo.listReviewsByAgency(agency.id),
-        options,
-      );
+      const reviewCount = reviewCountByAgency.get(agency.id) ?? 0;
       for (const city of presenceCities(agency, locations.get(agency.id) ?? [])) {
         const slug = cityToSlug(city);
         const current = map.get(slug) ?? {
@@ -134,7 +144,7 @@ export class AgencyService {
           reviewCount: 0,
         };
         current.agencyCount += 1;
-        current.reviewCount += reviews.length;
+        current.reviewCount += reviewCount;
         map.set(slug, current);
       }
     }

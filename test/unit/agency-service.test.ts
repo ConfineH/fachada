@@ -93,6 +93,79 @@ describe("AgencyService.exploreCities", () => {
     const madrid = cities.find((c) => c.slug === "madrid");
     expect(madrid?.agencyCount).toBe(2);
   });
+
+  it("counts visible reviews in one read and repeats them on each city", async () => {
+    const store = new MemoryStore();
+    let perAgency = 0;
+    let visibilityReads = 0;
+    const originalPerAgency = store.listReviewsByAgency.bind(store);
+    const originalVisibility = store.listReviewVisibility.bind(store);
+    store.listReviewsByAgency = async (agencyId: string) => {
+      perAgency += 1;
+      return originalPerAgency(agencyId);
+    };
+    store.listReviewVisibility = async () => {
+      visibilityReads += 1;
+      return originalVisibility();
+    };
+
+    const service = new AgencyService(store);
+    const before = await service.exploreCities({ publicOnly: true });
+    const sol = (await store.listAgencies()).find(
+      (agency) => agency.slug === "inmobiliaria-sol-madrid",
+    )!;
+    const [sample] = await store.listAllReviews();
+    await store.createReview({
+      ...sample!,
+      id: crypto.randomUUID(),
+      agencyId: sol.id,
+      moderated: false,
+      flagged: false,
+      deletedAt: undefined,
+    });
+    await store.createReview({
+      ...sample!,
+      id: crypto.randomUUID(),
+      agencyId: sol.id,
+      moderated: true,
+      flagged: true,
+      deletedAt: undefined,
+    });
+    await store.createReview({
+      ...sample!,
+      id: crypto.randomUUID(),
+      agencyId: sol.id,
+      moderated: true,
+      flagged: false,
+      deletedAt: new Date(),
+    });
+    await store.createLocation({
+      id: crypto.randomUUID(),
+      agencyId: sol.id,
+      kind: "branch",
+      status: "publicado",
+      address: "Oficina en Sevilla",
+      city: "Sevilla",
+      postalCode: "41001",
+      createdAt: new Date(),
+    });
+
+    perAgency = 0;
+    visibilityReads = 0;
+    const cities = await service.exploreCities({ publicOnly: true });
+    const madridBefore = before.find((city) => city.slug === "madrid")!;
+    const madrid = cities.find((city) => city.slug === "madrid")!;
+    const sevilla = cities.find((city) => city.slug === "sevilla")!;
+    const publicSolReviews = (await originalPerAgency(sol.id)).filter(
+      (review) => review.moderated && !review.flagged && !review.deletedAt,
+    );
+
+    expect(perAgency).toBe(0);
+    expect(visibilityReads).toBe(1);
+    expect(madrid.reviewCount).toBe(madridBefore.reviewCount);
+    expect(sevilla.agencyCount).toBe(1);
+    expect(sevilla.reviewCount).toBe(publicSolReviews.length);
+  });
 });
 
 describe("AgencyService.matchByName", () => {
