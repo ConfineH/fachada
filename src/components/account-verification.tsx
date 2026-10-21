@@ -26,9 +26,12 @@ declare global {
 export function AccountVerification({
   onVerified,
   purpose,
+  layout = "stack",
 }: {
   onVerified: (token: string) => void;
   purpose?: string;
+  /** En la reseña, Google y el código al correo van juntos, también en móvil. */
+  layout?: "stack" | "beside";
 }) {
   const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID?.trim();
   const googleButtonRef = useRef<HTMLDivElement>(null);
@@ -52,12 +55,12 @@ export function AccountVerification({
         if (!cancelled) setEmailEnabled(Boolean(data.email));
       })
       .catch(() => {
-        if (!cancelled) setEmailEnabled(false);
+        if (!cancelled) setEmailEnabled(layout === "beside");
       });
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [layout]);
 
   useEffect(() => {
     if (!googleClientId || !googleRequested) return;
@@ -95,7 +98,7 @@ export function AccountVerification({
       window.google.accounts.id.renderButton(host, {
         theme: "outline",
         size: "large",
-        width: 320,
+        width: layout === "beside" ? 148 : 320,
         text: "continue_with",
       });
     }
@@ -121,7 +124,7 @@ export function AccountVerification({
     return () => {
       script.onload = null;
     };
-  }, [googleClientId, googleRequested]);
+  }, [googleClientId, googleRequested, layout]);
 
   async function sendCode() {
     setLoading(true);
@@ -193,6 +196,8 @@ export function AccountVerification({
 
   const waitingForMethods = emailEnabled === null;
   const noAuthReady = !googleClientId && emailEnabled === false;
+  const showEmailForm =
+    layout === "beside" ? emailEnabled !== false : Boolean(emailEnabled);
 
   return (
     <div className="space-y-4">
@@ -219,54 +224,71 @@ export function AccountVerification({
         </p>
       )}
 
-      {googleClientId && step === "email" && (
-        <div>
-          {googleRequested ? (
-            <div ref={googleButtonRef} className="flex min-h-11 justify-center" />
-          ) : (
-            <button
-              type="button"
-              className="btn-secondary w-full min-h-11"
-              onClick={() => setGoogleRequested(true)}
+      {step === "email" && (googleClientId || showEmailForm) ? (
+        <div
+          className={
+            layout === "beside" && googleClientId && showEmailForm
+              ? "grid grid-cols-2 items-start gap-3"
+              : "space-y-4"
+          }
+        >
+          {googleClientId ? (
+            <div>
+              {layout === "beside" ? (
+                <p className="mb-2 text-sm font-medium text-zinc-900">Google</p>
+              ) : null}
+              {googleRequested ? (
+                <div ref={googleButtonRef} className="flex min-h-11 justify-center overflow-hidden" />
+              ) : (
+                <button
+                  type="button"
+                  className="btn-secondary w-full min-h-11 px-2 text-sm"
+                  onClick={() => setGoogleRequested(true)}
+                >
+                  {layout === "beside"
+                    ? "Entrar con Google"
+                    : purpose
+                      ? `Continuar con Google ${purpose}`
+                      : "Continuar con Google"}
+                </button>
+              )}
+              {layout === "stack" && showEmailForm ? (
+                <p className="mt-3 text-center text-xs text-zinc-500">
+                  o con un código al correo
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+
+          {showEmailForm ? (
+            <form
+              key="email"
+              onSubmit={requestCode}
+              className="motion-scale-in space-y-3"
             >
-              {purpose ? `Continuar con Google ${purpose}` : "Continuar con Google"}
-            </button>
-          )}
-          {emailEnabled ? (
-            <p className="mt-3 text-center text-xs text-zinc-500">
-              o con un código al correo
-            </p>
+              <label className="block text-sm font-medium text-zinc-900">
+                {layout === "beside" ? "Código al correo" : "Correo"}
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="tu@correo.com"
+                  autoComplete="email"
+                  required
+                  className="input-field mt-1"
+                />
+              </label>
+              <button
+                type="submit"
+                disabled={loading}
+                className="btn-primary w-full min-h-11 px-2 text-sm"
+              >
+                {loading ? "Enviando…" : "Enviar código"}
+              </button>
+            </form>
           ) : null}
         </div>
-      )}
-
-      {step === "email" && emailEnabled && (
-        <form
-          key="email"
-          onSubmit={requestCode}
-          className="motion-scale-in space-y-3"
-        >
-          <label className="block text-sm text-zinc-700">
-            Correo
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="tu@correo.com"
-              autoComplete="email"
-              required
-              className="input-field mt-1"
-            />
-          </label>
-          <button
-            type="submit"
-            disabled={loading}
-            className="btn-primary w-full min-h-11"
-          >
-            {loading ? "Enviando…" : "Enviar código"}
-          </button>
-        </form>
-      )}
+      ) : null}
 
       {step === "code" && (
         <form key="code" onSubmit={verifyCode} className="motion-scale-in space-y-3">

@@ -74,6 +74,8 @@ export interface Agency {
   /** Marca compartida por varias empresas. La nota de marca solo suma si hay CIF distintos. */
   brandSlug?: string;
   brandName?: string;
+  /** Alta hecha desde una reseña. Visible, pero aún no contrastada. */
+  provisional?: boolean;
 }
 
 export type AgencyAliasKind = "commercial" | "legal" | "former";

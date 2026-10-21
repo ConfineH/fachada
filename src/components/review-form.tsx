@@ -39,12 +39,20 @@ export function ReviewForm({
   legalName,
   brandName,
   cities = [],
+  unlisted,
+  utmQuery = "",
 }: {
   agencySlug: string;
   agencyName?: string;
   legalName?: string;
   brandName?: string;
   cities?: string[];
+  unlisted?: {
+    name?: string;
+    city?: string;
+    address?: string;
+  };
+  utmQuery?: string;
 }) {
   const [step, setStep] = useState<Step>("verify");
   const [token, setToken] = useState("");
@@ -87,6 +95,10 @@ export function ReviewForm({
   const [holdReady, setHoldReady] = useState(false);
   const [holdNote, setHoldNote] = useState("");
   const [publishedNow, setPublishedNow] = useState(false);
+  const [createdSlug, setCreatedSlug] = useState(agencySlug);
+  const [newName, setNewName] = useState(unlisted?.name ?? "");
+  const [newCity, setNewCity] = useState(unlisted?.city ?? "");
+  const [newAddress, setNewAddress] = useState(unlisted?.address ?? "");
   const feedbackRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -203,16 +215,26 @@ export function ReviewForm({
       return;
     }
 
+    if (unlisted) {
+      if (newName.trim().length < 2) {
+        showError("form", "Indica el nombre de la inmobiliaria.");
+        return;
+      }
+      if (newCity.trim().length < 2) {
+        showError("form", "Indica la ciudad.");
+        return;
+      }
+    }
     const screen = screenReviewText({
       title: trimmedTitle,
       pros: trimmedPros,
       cons: trimmedCons,
       publicName: anonymous ? undefined : publicName.trim(),
       allowedNames: reviewAllowedNames({
-        name: agencyName,
+        name: unlisted ? newName : agencyName,
         legalName,
-        brandName,
-        cities: [experienceCity, ...cities],
+        brandName: unlisted ? newName : brandName,
+        cities: unlisted ? [experienceCity, newCity] : [experienceCity, ...cities],
       }),
     });
     if (screen.outcome === "block") {
@@ -233,7 +255,13 @@ export function ReviewForm({
     setEvidenceNote("");
     const sentiments = sentimentsFromMarks(marks);
     const payload = {
-      agencySlug,
+      ...(unlisted
+        ? {
+            name: newName.trim(),
+            city: newCity.trim(),
+            address: newAddress.trim(),
+          }
+        : { agencySlug }),
       role,
       rating,
       title: trimmedTitle,
@@ -286,7 +314,11 @@ export function ReviewForm({
           headers["Content-Type"] = "application/json";
           body = JSON.stringify(payload);
         }
-        return fetch(publicApiUrl("/api/reviews"), {
+        return fetch(
+          publicApiUrl(
+            unlisted ? "/api/reviews/nueva-inmobiliaria" : "/api/reviews",
+          ),
+          {
           method: "POST",
           headers,
           body,
@@ -304,7 +336,11 @@ export function ReviewForm({
         res = await send(null);
         raw = await res.text();
       }
-      let data: { error?: string; review?: { moderated?: boolean } } = {};
+      let data: {
+        error?: string;
+        review?: { moderated?: boolean };
+        agency?: { slug?: string };
+      } = {};
       try {
         data = raw ? (JSON.parse(raw) as { error?: string }) : {};
       } catch {
@@ -337,6 +373,7 @@ export function ReviewForm({
         );
       }
       setPublishedNow(Boolean(data.review?.moderated));
+      if (data.agency?.slug) setCreatedSlug(data.agency.slug);
       setStep("done");
       feedbackRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
     } catch {
@@ -372,11 +409,47 @@ export function ReviewForm({
         </p>
       )}
 
+      {unlisted ? (
+        <div className="mt-4 space-y-3">
+          <p className="text-sm text-zinc-700">
+            Si no está en el archivo, la ficha sale al momento como provisional,
+            pendiente de verificar. La reseña sigue el mismo filtro.
+          </p>
+          <label className="block text-sm font-medium text-zinc-900">
+            Nombre de la inmobiliaria
+            <input
+              value={newName}
+              onChange={(event) => setNewName(event.target.value)}
+              required
+              className="input-field mt-1"
+            />
+          </label>
+          <label className="block text-sm font-medium text-zinc-900">
+            Ciudad
+            <input
+              value={newCity}
+              onChange={(event) => setNewCity(event.target.value)}
+              required
+              className="input-field mt-1"
+            />
+          </label>
+          <label className="block text-sm font-medium text-zinc-900">
+            Dirección (opcional)
+            <input
+              value={newAddress}
+              onChange={(event) => setNewAddress(event.target.value)}
+              className="input-field mt-1"
+            />
+          </label>
+        </div>
+      ) : null}
+
       {step === "verify" && (
         <div key="verify" className="motion-scale-in mt-4">
           <AccountVerification
             onVerified={persistToken}
             purpose="para publicar la reseña"
+            layout="beside"
           />
         </div>
       )}
@@ -738,6 +811,14 @@ export function ReviewForm({
               ? "Ya está en la ficha como experiencia declarada. Una prueba solo pasa a experiencia acreditada si una persona la aprueba."
               : "No se ha publicado. Queda en revisión humana. Puedes ver el estado en tu cuenta."}
           </p>
+          {createdSlug ? (
+            <a
+              href={`/agencias/${createdSlug}${utmQuery}`}
+              className="mt-2 inline-flex min-h-11 items-center font-medium underline"
+            >
+              Ver la ficha
+            </a>
+          ) : null}
           {evidenceNote ? <p className="mt-1">{evidenceNote}</p> : null}
         </div>
       )}

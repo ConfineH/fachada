@@ -22,7 +22,7 @@ describe("agency presence copy", () => {
         city: "Madrid",
         postalCode: "28001",
       }),
-    ).toContain("Ubicación por confirmar");
+    ).toBe("");
   });
 });
 

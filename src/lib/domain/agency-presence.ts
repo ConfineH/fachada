@@ -12,9 +12,7 @@ export function publicStreetLine(agency: {
   city: string;
   postalCode: string;
 }) {
-  if (!isConfirmedStreetAddress(agency.address)) {
-    return `Ubicación por confirmar · ${agency.city}`;
-  }
+  if (!isConfirmedStreetAddress(agency.address)) return "";
   return `${agency.address}, ${agency.postalCode} ${agency.city}`;
 }
 

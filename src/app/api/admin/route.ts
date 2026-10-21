@@ -46,6 +46,7 @@ export async function POST(request: Request) {
     note?: string;
     location?: unknown;
     mode?: string;
+    targetSlug?: string;
   };
   if (!action) {
     return NextResponse.json({ error: "action required" }, { status: 400 });
@@ -60,6 +61,23 @@ export async function POST(request: Request) {
       case "create-agency":
         return NextResponse.json({
           agency: await adminService.createAgency(body.agency),
+        });
+      case "verify-provisional-agency":
+        if (!id) {
+          return NextResponse.json({ error: "id required" }, { status: 400 });
+        }
+        return NextResponse.json({
+          agency: await adminService.verifyProvisionalAgency(id),
+        });
+      case "merge-provisional-agency":
+        if (!id) {
+          return NextResponse.json({ error: "id required" }, { status: 400 });
+        }
+        return NextResponse.json({
+          agency: await adminService.mergeProvisionalAgency(
+            id,
+            String(body.targetSlug ?? ""),
+          ),
         });
       case "set-publication-mode": {
         const actor = adminActorFromToken(

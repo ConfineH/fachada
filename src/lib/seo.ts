@@ -1,3 +1,4 @@
+import { isConfirmedStreetAddress } from "@/lib/domain/agency-presence";
 import { getLegal, hasRegisteredHolder, isPlaceholder } from "@/lib/legal";
 import { getSiteUrl } from "@/lib/site-url";
 
@@ -131,9 +132,13 @@ export function agencyJsonLd(agency: {
     ...(agency.logoUrl ? { image: agency.logoUrl } : {}),
     address: {
       "@type": "PostalAddress",
-      streetAddress: agency.address,
+      ...(isConfirmedStreetAddress(agency.address)
+        ? {
+            streetAddress: agency.address,
+            postalCode: agency.postalCode,
+          }
+        : {}),
       addressLocality: agency.city,
-      postalCode: agency.postalCode,
       addressCountry: "ES",
     },
     ...(agency.reviewCount > 0

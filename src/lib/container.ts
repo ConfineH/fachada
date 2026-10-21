@@ -8,6 +8,8 @@ import { AuthService } from "@/lib/services/auth-service";
 import { AccountService } from "@/lib/services/account-service";
 import { ClaimService } from "@/lib/services/claim-service";
 import { ContentNoticeService } from "@/lib/services/content-notice-service";
+import { PromoVisitService } from "@/lib/services/promo-visit-service";
+import { ProvisionalAgencyService } from "@/lib/services/provisional-agency-service";
 import { ReviewService } from "@/lib/services/review-service";
 import { createEmailProvider, isResendConfigured } from "@/lib/services/email-provider";
 import {
@@ -42,6 +44,11 @@ export const authService = new AuthService(
 export const agencyService = new AgencyService(repo, email);
 export const agencySubmissionService = new AgencySubmissionService(repo, email);
 export const reviewService = new ReviewService(repo, email);
+export const provisionalAgencyService = new ProvisionalAgencyService(
+  repo,
+  reviewService,
+);
+export const promoVisitService = new PromoVisitService(repo);
 export const accountService = new AccountService(repo);
 export const claimService = new ClaimService(repo, isTwilioConfigured(), email);
 export const adminService = new AdminService(

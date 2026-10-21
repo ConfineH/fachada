@@ -60,9 +60,7 @@ export function publicPresenceLine(
   cities: string[],
 ) {
   if (cities.length > 1) return formatCityList(cities);
-  if (!isConfirmedStreetAddress(agency.address)) {
-    return `Calle por confirmar · ${agency.city}`;
-  }
+  if (!isConfirmedStreetAddress(agency.address)) return agency.city;
   return publicStreetLine(agency);
 }
 
@@ -94,21 +92,19 @@ export function presenceGroups(
   );
   return presenceCities(agency, published).map((city) => {
     const lines: string[] = [];
-    if (cityToSlug(agency.city) === cityToSlug(city)) {
-      lines.push(
-        isConfirmedStreetAddress(agency.address)
-          ? publicStreetLine(agency)
-          : "Calle por confirmar",
-      );
+    if (
+      cityToSlug(agency.city) === cityToSlug(city) &&
+      isConfirmedStreetAddress(agency.address)
+    ) {
+      const line = publicStreetLine(agency);
+      if (line) lines.push(line);
     }
     for (const location of published) {
       if (cityToSlug(location.city) !== cityToSlug(city)) continue;
-      const text = isConfirmedStreetAddress(location.address)
-        ? formatLocationLine(location)
-        : "Calle por confirmar";
-      if (!lines.includes(text)) lines.push(text);
+      if (!isConfirmedStreetAddress(location.address)) continue;
+      const text = formatLocationLine(location);
+      if (text && !lines.includes(text)) lines.push(text);
     }
-    if (lines.length === 0) lines.push("Calle por confirmar");
     return { city, lines };
   });
 }
