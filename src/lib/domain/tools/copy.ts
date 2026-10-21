@@ -594,6 +594,13 @@ const RENT_INDEX_LABELS = {
   otro: "al índice pactado",
 } as const;
 
+export const IRAV_ESTIMATE_NOTE =
+  "La fecha de publicación del INE es estimada; comprueba en ine.es qué IRAV estaba publicado ese día.";
+
+function estimateLine(close: boolean) {
+  return close ? `\n${IRAV_ESTIMATE_NOTE}` : "";
+}
+
 function anniversaryLine(onAnniversary: boolean) {
   return onAnniversary
     ? "La fecha cae en el aniversario del contrato, que es cuando el artículo 18 permite actualizar."
@@ -639,7 +646,7 @@ export function rentUpdateView(result: RentUpdateResult): { title: string; body:
   if (result.status === "needs_reference") {
     return {
       title: "Depende del índice de precios de referencia",
-      body: `Entre el 8 de octubre de 2026 y el 31 de diciembre de 2027, la disposición final sexta del RDL 29/2026 impide subir la renta si ya supera ese índice. Si no lo supera y no hay un pacto nuevo, el tope es ${formatPercent(result.percentIfWithin)} (el menor entre el 2 % y el IRAV de ${result.iravMonth}, que es ${formatPercent(result.iravValue)}): la renta máxima sería ${formatEuro(result.maxIfWithin)}. Si sí lo supera, la renta se queda en ${formatEuro(result.maxIfAbove)}. ${anniversaryLine(result.onAnniversary)}`,
+      body: `Entre el 8 de octubre de 2026 y el 31 de diciembre de 2027, la disposición final sexta del RDL 29/2026 impide subir la renta si ya supera ese índice. Si no lo supera y no hay un pacto nuevo, el tope es ${formatPercent(result.percentIfWithin)} (el menor entre el 2 % y el IRAV de ${result.iravMonth}, que es ${formatPercent(result.iravValue)}): la renta máxima sería ${formatEuro(result.maxIfWithin)}. Si sí lo supera, la renta se queda en ${formatEuro(result.maxIfAbove)}. ${anniversaryLine(result.onAnniversary)}${estimateLine(result.iravEstimateClose)}`,
     };
   }
   return { title: rentReadyTitle(result), body: rentReadyBody(result) };
@@ -677,7 +684,7 @@ function rentReadyBody(result: RentReady): string {
       : result.exceeds
         ? ` Te piden ${formatEuro(result.askedRentEur ?? 0)}, por encima de ese tope.`
         : ` Lo que te piden, ${formatEuro(result.askedRentEur ?? 0)}, no supera ese tope.`;
-  return `${cap} ${money}${asked}${index} ${anniversary}`;
+  return `${cap} ${money}${asked}${index} ${anniversary}${estimateLine(result.iravEstimateClose)}`;
 }
 
 export function rentUpdateReply(result: RentReady): string | null {

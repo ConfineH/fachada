@@ -142,7 +142,7 @@ export function RentUpdateTool() {
           tone={result.status === "ready" && result.exceeds ? "doubt" : result.status === "ready" ? "clear" : "neutral"}
           title={view.title}
         >
-          <p>{view.body}</p>
+          <p className="whitespace-pre-line">{view.body}</p>
           {result.status === "ready" ? (
             <p className="font-medium">
               Renta máxima: {formatEuro(result.maxRentEur)} ({formatPercent(result.percent)})

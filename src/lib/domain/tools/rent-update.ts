@@ -47,6 +47,8 @@ export type RentReady = {
   onAnniversary: boolean;
   iravMonth: string | null;
   iravValue: number | null;
+  /** La publicación estimada queda a 5 días o menos de la actualización. */
+  iravEstimateClose: boolean;
   index: RentIndex | null;
   extraordinary: boolean;
 };
@@ -57,6 +59,7 @@ export type RentNeedsReference = {
   onAnniversary: boolean;
   iravMonth: string;
   iravValue: number;
+  iravEstimateClose: boolean;
   percentIfWithin: number;
   maxIfWithin: number;
   percentIfAbove: 0;
@@ -116,7 +119,8 @@ export function lookupIrav(
 /**
  * La Ley 12/2023 no somete al IRAV los contratos anteriores al 26/05/2023
  * (DT 4.ª original). El art. 4.Dos del RDL 29/2026 sí les pone ese tope
- * desde el 08/10/2026.
+ * desde el 08/10/2026:
+ * https://www.boe.es/buscar/act.php?id=BOE-A-2026-20823#a4
  */
 function iravCapsContract(contractDate: string, updateDate: string, reformActive: boolean): boolean {
   if (contractDate >= FEE_RULE_START) return true;
@@ -136,6 +140,16 @@ export function isRentAnniversary(contractDate: string, updateDate: string): boo
   return update.getTime() === expected;
 }
 
+/** True si la fila estimada se publicó a 5 días o menos de la actualización. */
+export function iravEstimateUncertain(updateDate: string, row: IravRow): boolean {
+  if (!row.publishedOnEstimated) return false;
+  const published = parseIsoDate(row.publishedOn);
+  const update = parseIsoDate(updateDate);
+  if (!published || !update) return false;
+  const days = Math.abs(Math.round((update.getTime() - published.getTime()) / 86_400_000));
+  return days <= 5;
+}
+
 export function extraordinaryRentApplies(updateDate: string, reformActive: boolean): boolean {
   if (!reformActive || !parseIsoDate(updateDate)) return false;
   return updateDate >= REFORM_2026_START && updateDate <= EXTRAORDINARY_RENT_END;
@@ -145,7 +159,7 @@ function readyBase(
   input: RentUpdateInput,
   current: number,
   asked: number | null,
-  extra: Pick<RentReady, "basis" | "percent" | "iravMonth" | "iravValue" | "extraordinary">,
+  extra: Pick<RentReady, "basis" | "percent" | "iravMonth" | "iravValue" | "iravEstimateClose" | "extraordinary">,
 ): RentReady {
   const maxRentEur = roundCents(current * (1 + extra.percent / 100)) ?? current;
   return {
@@ -188,6 +202,7 @@ export function assessRentUpdate(input: RentUpdateInput): RentUpdateResult {
       percent: 0,
       iravMonth: null,
       iravValue: null,
+      iravEstimateClose: false,
       extraordinary: false,
     });
   }
@@ -205,6 +220,7 @@ export function assessRentUpdate(input: RentUpdateInput): RentUpdateResult {
       percent: 0,
       iravMonth: irav?.status === "ok" ? irav.row.month : null,
       iravValue: irav?.status === "ok" ? irav.row.value : null,
+      iravEstimateClose: irav?.status === "ok" && iravEstimateUncertain(input.updateDate, irav.row),
       extraordinary: true,
     });
   }
@@ -216,6 +232,7 @@ export function assessRentUpdate(input: RentUpdateInput): RentUpdateResult {
       percent,
       iravMonth: null,
       iravValue: null,
+      iravEstimateClose: false,
       extraordinary: false,
     });
   }
@@ -254,6 +271,7 @@ export function assessRentUpdate(input: RentUpdateInput): RentUpdateResult {
       onAnniversary: isRentAnniversary(input.contractDate, input.updateDate),
       iravMonth: irav.row.month,
       iravValue: irav.row.value,
+      iravEstimateClose: iravEstimateUncertain(input.updateDate, irav.row),
       percentIfWithin: withinPercent,
       maxIfWithin,
       percentIfAbove: 0,
@@ -267,6 +285,7 @@ export function assessRentUpdate(input: RentUpdateInput): RentUpdateResult {
     percent: withinPercent,
     iravMonth: irav.row.month,
     iravValue: irav.row.value,
+    iravEstimateClose: iravEstimateUncertain(input.updateDate, irav.row),
     extraordinary,
   });
 }

@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import { IRAV_TABLE } from "@/lib/domain/tools/constants";
-import { formatPercent, rentUpdateReply, rentUpdateView } from "@/lib/domain/tools/copy";
+import { formatPercent, IRAV_ESTIMATE_NOTE, rentUpdateReply, rentUpdateView } from "@/lib/domain/tools/copy";
 import { toolById } from "@/lib/domain/tools/catalog";
 import {
   assessRentUpdate,
+  iravEstimateUncertain,
   isRentAnniversary,
   lookupIrav,
   type RentUpdateInput,
@@ -95,6 +96,33 @@ describe("assessRentUpdate", () => {
       iravMonth: "2026-09",
       maxRentEur: 1025.4,
     });
+  });
+
+  it("warns when the estimated publication date is within five days of the update", () => {
+    const close = assessRentUpdate(
+      input({ contractDate: "2025-09-20", updateDate: "2026-09-20", reformActive: false }),
+    );
+    expect(close).toMatchObject({ status: "ready", iravMonth: "2026-08", iravEstimateClose: true });
+    if (close.status !== "ready") return;
+    expect(rentUpdateView(close).body).toContain(IRAV_ESTIMATE_NOTE);
+
+    const sixthDay = assessRentUpdate(
+      input({ contractDate: "2025-09-21", updateDate: "2026-09-21", reformActive: false }),
+    );
+    expect(sixthDay).toMatchObject({ status: "ready", iravMonth: "2026-08", iravEstimateClose: false });
+    if (sixthDay.status !== "ready") return;
+    expect(rentUpdateView(sixthDay).body).not.toContain(IRAV_ESTIMATE_NOTE);
+
+    expect(
+      iravEstimateUncertain("2026-09-20", {
+        month: "2026-08",
+        value: 2.47,
+        source: "test",
+        loadedOn: "2026-10-21",
+        publishedOn: "2026-09-15",
+        publishedOnEstimated: false,
+      }),
+    ).toBe(false);
   });
 
   it("keeps the agreed index for contracts signed before 26 May 2023 until the reform applies", () => {
