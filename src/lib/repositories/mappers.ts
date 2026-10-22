@@ -37,6 +37,7 @@ type AgencyRow = {
   logo_path?: string | null;
   brand_slug?: string | null;
   brand_name?: string | null;
+  provisional?: boolean | null;
 };
 
 type UserRow = {
@@ -181,6 +182,7 @@ export function mapAgency(row: AgencyRow): Agency {
     logoPath: row.logo_path ?? undefined,
     brandSlug: row.brand_slug ?? undefined,
     brandName: row.brand_name ?? undefined,
+    provisional: row.provisional === true ? true : undefined,
   };
 }
 

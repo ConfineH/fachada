@@ -24,6 +24,8 @@ export function AdminDashboard({
   initialContentNotices,
   initialPolicy,
   initialPolicyChanges,
+  initialPromoVisits,
+  initialProvisionalAgencies,
 }: {
   initialClaims: ClaimWithAgency[];
   initialReviews: ReviewWithAgency[];
@@ -42,6 +44,19 @@ export function AdminDashboard({
     previousMode: PublicationMode;
     changedBy: string;
     changedAt: string;
+  }>;
+  initialPromoVisits: Array<{
+    source: string;
+    campaign: string;
+    visits: number;
+  }>;
+  initialProvisionalAgencies: Array<{
+    id: string;
+    slug: string;
+    name: string;
+    city: string;
+    address: string;
+    reviewCount: number;
   }>;
 }) {
   const router = useRouter();
@@ -63,6 +78,10 @@ export function AdminDashboard({
   const [message, setMessage] = useState("");
   const [messageIsError, setMessageIsError] = useState(false);
   const [publicationMode, setPublicationMode] = useState(initialPolicy.mode);
+  const [provisionalAgencies, setProvisionalAgencies] = useState(
+    initialProvisionalAgencies,
+  );
+  const [mergeTargets, setMergeTargets] = useState<Record<string, string>>({});
 
   async function savePublicationMode() {
     setMessage("");
@@ -190,6 +209,105 @@ export function AdminDashboard({
       >
         Ejecutar borrado de evidencias vencidas
       </button>
+
+      <section className="rounded-xl border border-stone-200 bg-white p-5">
+        <h2 className="text-lg font-medium">Visitas de /inquilinos</h2>
+        <p className="mt-2 text-sm text-stone-600">
+          Cada carga de la landing con <code>utm_source</code> y{" "}
+          <code>utm_campaign</code> suma uno. No es un analytics.
+        </p>
+        {initialPromoVisits.length === 0 ? (
+          <p className="mt-3 text-sm text-stone-500">Aún no hay visitas contadas.</p>
+        ) : (
+          <ul className="mt-3 divide-y divide-stone-100 text-sm">
+            {initialPromoVisits.map((visit) => (
+              <li
+                key={`${visit.source}|${visit.campaign}`}
+                className="flex items-center justify-between gap-3 py-2"
+              >
+                <span>
+                  {visit.source || "(sin source)"} · {visit.campaign || "(sin campaign)"}
+                </span>
+                <strong>{visit.visits}</strong>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section className="rounded-xl border border-stone-200 bg-white p-5">
+        <h2 className="text-lg font-medium">Fichas provisionales</h2>
+        <p className="mt-2 text-sm text-stone-600">
+          Salieron de una reseña. Verificar quita la marca de provisional; no es
+          un reclamo de la inmobiliaria. Fusionar mueve las reseñas a otra ficha
+          y deja una redirección.
+        </p>
+        {provisionalAgencies.length === 0 ? (
+          <p className="mt-3 text-sm text-stone-500">No hay fichas provisionales.</p>
+        ) : (
+          <ul className="mt-4 space-y-4">
+            {provisionalAgencies.map((agency) => (
+              <li key={agency.id} className="rounded-lg border border-stone-200 p-3">
+                <p className="font-medium">
+                  {agency.name} · {agency.city}
+                </p>
+                <p className="text-sm text-stone-600">
+                  /agencias/{agency.slug} · {agency.reviewCount}{" "}
+                  {agency.reviewCount === 1 ? "reseña" : "reseñas"}
+                  {agency.address ? ` · ${agency.address}` : ""}
+                </p>
+                <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+                  <button
+                    type="button"
+                    className="btn-secondary min-h-11 px-3 text-sm"
+                    onClick={() =>
+                      void runAction("verify-provisional-agency", agency.id).then(
+                        (error) => {
+                          if (!error) {
+                            setProvisionalAgencies((current) =>
+                              current.filter((item) => item.id !== agency.id),
+                            );
+                          }
+                        },
+                      )
+                    }
+                  >
+                    Verificar ficha
+                  </button>
+                  <input
+                    value={mergeTargets[agency.id] ?? ""}
+                    onChange={(event) =>
+                      setMergeTargets((current) => ({
+                        ...current,
+                        [agency.id]: event.target.value,
+                      }))
+                    }
+                    placeholder="slug de la ficha que se queda"
+                    className="input-field min-h-11"
+                  />
+                  <button
+                    type="button"
+                    className="btn-primary min-h-11 px-3 text-sm"
+                    onClick={() =>
+                      void runAction("merge-provisional-agency", agency.id, {
+                        targetSlug: mergeTargets[agency.id] ?? "",
+                      }).then((error) => {
+                        if (!error) {
+                          setProvisionalAgencies((current) =>
+                            current.filter((item) => item.id !== agency.id),
+                          );
+                        }
+                      })
+                    }
+                  >
+                    Fusionar
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
       <section className="rounded-xl border border-stone-200 bg-white p-5">
         <h2 className="text-lg font-medium">Publicación de reseñas</h2>

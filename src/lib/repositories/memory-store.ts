@@ -118,6 +118,11 @@ export class MemoryStore implements Repository {
     updatedBy: "valor por defecto",
   };
   private publicationPolicyChanges: PublicationPolicyChange[] = [];
+  private slugRedirects = new Map<string, string>();
+  private promoVisits = new Map<
+    string,
+    { source: string; campaign: string; visits: number; updatedAt: Date }
+  >();
 
   private businessKey(userId: string, agencyId: string) {
     return `${userId}:${agencyId}`;
@@ -161,6 +166,8 @@ export class MemoryStore implements Repository {
     this.businessLineVerified.clear();
     this.reviewHelpful.clear();
     this.savedAgencies = [];
+    this.slugRedirects.clear();
+    this.promoVisits.clear();
     this.seedAgencies();
     this.seedDemoContent();
   }
@@ -314,8 +321,8 @@ export class MemoryStore implements Repository {
     return this.agencies.get(id) ?? null;
   }
 
-  async findAgencyIdByLegacySlug(_slug: string) {
-    return null;
+  async findAgencyIdByLegacySlug(slug: string) {
+    return this.slugRedirects.get(slug) ?? null;
   }
 
   async findAgencyBySlug(slug: string) {
@@ -605,6 +612,71 @@ export class MemoryStore implements Repository {
       updatedBy: change.changedBy,
     };
     this.publicationPolicyChanges.push(change);
+  }
+
+  async recordPromoVisit(source: string, campaign: string) {
+    const key = `${source}\0${campaign}`;
+    const current = this.promoVisits.get(key);
+    this.promoVisits.set(key, {
+      source,
+      campaign,
+      visits: (current?.visits ?? 0) + 1,
+      updatedAt: new Date(),
+    });
+  }
+
+  async listPromoVisits() {
+    return [...this.promoVisits.values()].sort((a, b) => b.visits - a.visits);
+  }
+
+  async reassignAgencyChildren(fromId: string, toId: string) {
+    for (const review of this.reviews) {
+      if (review.agencyId === fromId) review.agencyId = toId;
+    }
+    for (const location of this.locations) {
+      if (location.agencyId === fromId) location.agencyId = toId;
+    }
+    for (const alias of this.aliases) {
+      if (alias.agencyId === fromId) alias.agencyId = toId;
+    }
+    for (const response of this.responses.values()) {
+      if (response.agencyId === fromId) response.agencyId = toId;
+    }
+    for (const claim of this.claims) {
+      if (claim.agencyId === fromId) claim.agencyId = toId;
+    }
+    for (const tip of this.tips) {
+      if (tip.agencyId === fromId) tip.agencyId = toId;
+    }
+    for (const submission of this.submissions) {
+      if (submission.createdAgencyId === fromId) submission.createdAgencyId = toId;
+    }
+    const kept = new Set(
+      this.savedAgencies
+        .filter((item) => item.agencyId === toId)
+        .map((item) => item.userId),
+    );
+    this.savedAgencies = this.savedAgencies.flatMap((item) => {
+      if (item.agencyId !== fromId) return [item];
+      if (kept.has(item.userId)) return [];
+      return [{ ...item, agencyId: toId }];
+    });
+    for (const [slug, agencyId] of this.slugRedirects) {
+      if (agencyId === fromId) this.slugRedirects.set(slug, toId);
+    }
+  }
+
+  async saveSlugRedirect(slug: string, agencyId: string) {
+    this.slugRedirects.set(slug, agencyId);
+  }
+
+  async deleteAgency(id: string) {
+    this.agencies.delete(id);
+    for (const [slug, agencyId] of this.agenciesBySlug) {
+      if (agencyId === id) this.agenciesBySlug.delete(slug);
+    }
+    this.reviews = this.reviews.filter((review) => review.agencyId !== id);
+    this.locations = this.locations.filter((location) => location.agencyId !== id);
   }
 }
 

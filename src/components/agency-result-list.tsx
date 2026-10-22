@@ -11,10 +11,12 @@ export function AgencyResultList({
   agencies,
   empty,
   layout = "list",
+  hrefFor,
 }: {
   agencies: AgencyWithStats[];
   empty: ReactNode;
   layout?: "list" | "board";
+  hrefFor?: (agency: AgencyWithStats) => string;
 }) {
   if (agencies.length === 0) {
     return (
@@ -33,7 +35,7 @@ export function AgencyResultList({
       {agencies.map((agency) => (
         <li key={agency.id}>
           <Link
-            href={`/agencias/${agency.slug}`}
+            href={hrefFor ? hrefFor(agency) : `/agencias/${agency.slug}`}
             className="card-interactive block h-full p-5"
           >
             <div
@@ -50,9 +52,11 @@ export function AgencyResultList({
                 />
                 <div>
                   <h3 className="text-lg font-semibold">{agency.name}</h3>
-                  <p className="text-sm text-zinc-600">
-                    {publicPresenceLine(agency, agency.presenceCities ?? [agency.city])}
-                  </p>
+                  {publicPresenceLine(agency, agency.presenceCities ?? [agency.city]) ? (
+                    <p className="text-sm text-zinc-600">
+                      {publicPresenceLine(agency, agency.presenceCities ?? [agency.city])}
+                    </p>
+                  ) : null}
                 </div>
               </div>
               <div className={layout === "board" ? "mt-auto w-full" : "min-w-[240px]"}>

@@ -183,6 +183,11 @@ export default async function AgencyPage({
                 <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
                   {agency.name}
                 </h1>
+                {agency.provisional ? (
+                  <span className="badge-warning">
+                    Ficha provisional · pendiente de verificar
+                  </span>
+                ) : null}
                 {agency.verified && (
                   <span className="badge-trust">Ficha reclamada</span>
                 )}
@@ -199,7 +204,7 @@ export default async function AgencyPage({
               <div className="mt-3 flex flex-wrap gap-4 text-sm text-zinc-600">
                 {agencyHasPublishedPhone(agency) ? (
                   <span>Tel. {agency.phone}</span>
-                ) : (
+                ) : agency.provisional ? null : (
                   <span className="badge-warning">
                     Teléfono no publicado
                   </span>
@@ -296,6 +301,16 @@ export default async function AgencyPage({
           <h2 id="experiencias" className="mt-12 text-xl font-semibold tracking-tight">
             Registro de experiencias
           </h2>
+          {totalReviews === 0 ? (
+            <div className="mt-3 rounded-xl border border-stone-200 bg-stone-50 p-4">
+              <p className="font-medium text-zinc-900">
+                Sé la primera persona en contar tu experiencia
+              </p>
+              <Link href="/herramientas" className="link-brand mt-2 inline-flex min-h-11 items-center text-sm">
+                Herramientas para inquilinos
+              </Link>
+            </div>
+          ) : (
           <p className="mt-1 text-sm text-zinc-600">
             {totalReviews}{" "}
             {totalReviews === 1
@@ -305,6 +320,7 @@ export default async function AgencyPage({
               ? ` La nota de arriba es de toda la empresa. Abajo, lo contado en ${cityFilter}.`
               : ""}
           </p>
+          )}
           {cities.length > 1 ? (
             <div className="mt-3 flex flex-wrap gap-2 text-sm">
               <Link

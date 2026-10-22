@@ -127,4 +127,18 @@ export interface Repository {
   getPublicationPolicy(): Promise<PublicationPolicy>;
   listPublicationPolicyChanges(): Promise<PublicationPolicyChange[]>;
   setPublicationPolicy(change: PublicationPolicyChange): Promise<void>;
+
+  recordPromoVisit(source: string, campaign: string): Promise<void>;
+  listPromoVisits(): Promise<
+    Array<{
+      source: string;
+      campaign: string;
+      visits: number;
+      updatedAt: Date;
+    }>
+  >;
+
+  reassignAgencyChildren(fromId: string, toId: string): Promise<void>;
+  saveSlugRedirect(slug: string, agencyId: string): Promise<void>;
+  deleteAgency(id: string): Promise<void>;
 }

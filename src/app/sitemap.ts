@@ -17,6 +17,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/agencias",
     "/metodologia",
     "/sobre",
+    "/inquilinos",
     "/herramientas",
     "/herramientas/honorarios",
     "/herramientas/fianza",

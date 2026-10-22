@@ -39,6 +39,10 @@ function throwIfError(error: { message: string } | null) {
   if (error) throw new Error(error.message);
 }
 
+function isMissingPromoTable(message: string) {
+  return /promo_visits|schema cache|does not exist/i.test(message);
+}
+
 export class SupabaseRepository implements Repository {
   constructor(private readonly client: SupabaseClient) {}
 
@@ -247,6 +251,9 @@ export class SupabaseRepository implements Repository {
         logo_path: agency.logoPath ?? null,
         brand_slug: agency.brandSlug ?? null,
         brand_name: agency.brandName ?? null,
+        ...(agency.provisional !== undefined
+          ? { provisional: agency.provisional }
+          : {}),
       })
       .eq("id", agency.id);
     throwIfError(error);
@@ -277,6 +284,7 @@ export class SupabaseRepository implements Repository {
       brand_slug: agency.brandSlug ?? null,
       brand_name: agency.brandName ?? null,
       created_at: agency.createdAt.toISOString(),
+      ...(agency.provisional ? { provisional: true } : {}),
     });
     throwIfError(error);
   }
@@ -1073,6 +1081,131 @@ export class SupabaseRepository implements Repository {
       updated_at: change.changedAt.toISOString(),
       updated_by: change.changedBy,
     });
+    throwIfError(error);
+  }
+
+  async recordPromoVisit(source: string, campaign: string) {
+    const { data, error } = await this.client
+      .from("promo_visits")
+      .select("visits")
+      .eq("source", source)
+      .eq("campaign", campaign)
+      .maybeSingle();
+    if (error && isMissingPromoTable(error.message)) return;
+    throwIfError(error);
+    const now = new Date().toISOString();
+    if (!data) {
+      const { error: insertError } = await this.client.from("promo_visits").insert({
+        source,
+        campaign,
+        visits: 1,
+        updated_at: now,
+      });
+      if (insertError && /duplicate|unique/i.test(insertError.message)) {
+        await this.recordPromoVisit(source, campaign);
+        return;
+      }
+      if (insertError && isMissingPromoTable(insertError.message)) return;
+      throwIfError(insertError);
+      return;
+    }
+    const { error: updateError } = await this.client
+      .from("promo_visits")
+      .update({
+        visits: Number(data.visits ?? 0) + 1,
+        updated_at: now,
+      })
+      .eq("source", source)
+      .eq("campaign", campaign);
+    if (updateError && isMissingPromoTable(updateError.message)) return;
+    throwIfError(updateError);
+  }
+
+  async listPromoVisits() {
+    const { data, error } = await this.client
+      .from("promo_visits")
+      .select("source, campaign, visits, updated_at")
+      .order("visits", { ascending: false });
+    if (error && isMissingPromoTable(error.message)) return [];
+    throwIfError(error);
+    return (
+      (data ?? []) as Array<{
+        source: string;
+        campaign: string;
+        visits: number;
+        updated_at: string;
+      }>
+    ).map((row) => ({
+      source: row.source,
+      campaign: row.campaign,
+      visits: row.visits,
+      updatedAt: new Date(row.updated_at),
+    }));
+  }
+
+  async reassignAgencyChildren(fromId: string, toId: string) {
+    const tables = [
+      "reviews",
+      "agency_locations",
+      "agency_name_aliases",
+      "agency_responses",
+      "claims",
+      "agency_tips",
+      "agency_slug_redirects",
+    ];
+    for (const table of tables) {
+      const { error } = await this.client
+        .from(table)
+        .update({ agency_id: toId })
+        .eq("agency_id", fromId);
+      throwIfError(error);
+    }
+
+    const { data: fromSaves, error: fromError } = await this.client
+      .from("saved_agencies")
+      .select("user_id")
+      .eq("agency_id", fromId);
+    throwIfError(fromError);
+    const { data: toSaves, error: toError } = await this.client
+      .from("saved_agencies")
+      .select("user_id")
+      .eq("agency_id", toId);
+    throwIfError(toError);
+    const targetUsers = new Set(
+      (toSaves ?? []).map((row) => row.user_id as string),
+    );
+    for (const row of fromSaves ?? []) {
+      if (!targetUsers.has(row.user_id as string)) continue;
+      const { error } = await this.client
+        .from("saved_agencies")
+        .delete()
+        .eq("agency_id", fromId)
+        .eq("user_id", row.user_id);
+      throwIfError(error);
+    }
+    const { error: moveSaves } = await this.client
+      .from("saved_agencies")
+      .update({ agency_id: toId })
+      .eq("agency_id", fromId);
+    throwIfError(moveSaves);
+
+    const { error: submissions } = await this.client
+      .from("agency_submissions")
+      .update({ created_agency_id: toId })
+      .eq("created_agency_id", fromId);
+    throwIfError(submissions);
+  }
+
+  async saveSlugRedirect(slug: string, agencyId: string) {
+    const { error } = await this.client.from("agency_slug_redirects").upsert({
+      slug,
+      agency_id: agencyId,
+    });
+    throwIfError(error);
+  }
+
+  async deleteAgency(id: string) {
+    const { error } = await this.client.from("agencies").delete().eq("id", id);
     throwIfError(error);
   }
 

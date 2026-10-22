@@ -411,4 +411,55 @@ export class AdminService {
     await this.repo.updateTip(tip);
     return tip;
   }
+
+  async listPromoVisits() {
+    return this.repo.listPromoVisits();
+  }
+
+  async listProvisionalAgencies() {
+    const agencies = (await this.repo.listAgencies()).filter(
+      (agency) => agency.provisional,
+    );
+    return Promise.all(
+      agencies.map(async (agency) => ({
+        id: agency.id,
+        slug: agency.slug,
+        name: agency.name,
+        city: agency.city,
+        address: agency.address,
+        reviewCount: (await this.repo.listReviewsByAgency(agency.id)).filter(
+          (review) => !review.deletedAt,
+        ).length,
+      })),
+    );
+  }
+
+  async verifyProvisionalAgency(id: string) {
+    const agency = await this.repo.findAgencyById(id);
+    if (!agency) throw new AdminError("Ficha no encontrada");
+    if (!agency.provisional) {
+      throw new AdminError("Esa ficha ya no está marcada como provisional");
+    }
+    agency.provisional = false;
+    await this.repo.updateAgency(agency);
+    return agency;
+  }
+
+  async mergeProvisionalAgency(id: string, targetSlug: string) {
+    const source = await this.repo.findAgencyById(id);
+    if (!source) throw new AdminError("Ficha no encontrada");
+    if (!source.provisional) {
+      throw new AdminError("Solo se fusionan fichas provisionales");
+    }
+    const slug = targetSlug.trim();
+    const target = await this.repo.findAgencyBySlug(slug);
+    if (!target) throw new AdminError("No hay una ficha con ese slug");
+    if (target.id === source.id) {
+      throw new AdminError("Elige otra ficha distinta");
+    }
+    await this.repo.reassignAgencyChildren(source.id, target.id);
+    await this.repo.saveSlugRedirect(source.slug, target.id);
+    await this.repo.deleteAgency(source.id);
+    return target;
+  }
 }

@@ -1,5 +1,5 @@
 import type { Agency, AgencyNameAlias } from "@/lib/domain/types";
-import { publicStreetLine } from "@/lib/domain/agency-presence";
+import { isConfirmedStreetAddress, publicStreetLine } from "@/lib/domain/agency-presence";
 
 export function AgencyMetadataCard({
   agency,
@@ -16,10 +16,12 @@ export function AgencyMetadataCard({
         Ficha
       </h2>
       <dl className="mt-4 space-y-3 text-sm">
-        <div>
-          <dt className="text-zinc-500">Oficina principal</dt>
-          <dd className="font-medium text-zinc-900">{publicStreetLine(agency)}</dd>
-        </div>
+        {isConfirmedStreetAddress(agency.address) ? (
+          <div>
+            <dt className="text-zinc-500">Oficina principal</dt>
+            <dd className="font-medium text-zinc-900">{publicStreetLine(agency)}</dd>
+          </div>
+        ) : null}
         {agency.legalName && (
           <div>
             <dt className="text-zinc-500">Razón social</dt>

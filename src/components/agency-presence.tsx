@@ -16,6 +16,10 @@ export function AgencyPresence({
   const former = aliases.filter((alias) => alias.kind === "former");
   const legalAliases = aliases.filter((alias) => alias.kind === "legal");
   const portalNames = aliases.filter((alias) => alias.kind === "commercial");
+  const groups = presenceGroups(agency, locations).filter(
+    (group) => group.lines.length > 0,
+  );
+  const showWhere = groups.length > 0 || legalDistinct;
   const showHistory =
     former.length > 0 ||
     legalAliases.length > 0 ||
@@ -23,6 +27,7 @@ export function AgencyPresence({
 
   return (
     <div className="mt-8 space-y-6">
+      {showWhere ? (
       <section className="rounded-xl border border-stone-200 bg-white p-5">
         <h2 className="text-lg font-semibold tracking-tight">
           ¿Dónde los puedes encontrar?
@@ -31,7 +36,7 @@ export function AgencyPresence({
           El domicilio que figura en papeles no siempre es donde atienden.
         </p>
         <div className="mt-4 space-y-4 text-sm">
-          {presenceGroups(agency, locations).map((group) => (
+          {groups.map((group) => (
             <div key={group.city}>
               <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
                 {group.city}
@@ -55,6 +60,7 @@ export function AgencyPresence({
           ) : null}
         </div>
       </section>
+      ) : null}
 
       {showHistory ? (
         <section className="rounded-xl border border-stone-200 bg-zinc-50 p-5">
