@@ -16,6 +16,11 @@ import type {
   User,
 } from "@/lib/domain/types";
 
+export type ReviewVisibilityRow = Pick<
+  Review,
+  "agencyId" | "moderated" | "flagged" | "deletedAt"
+>;
+
 export interface Repository {
   findUserByPhone(phone: string): Promise<User | null>;
   findUserByEmail(email: string): Promise<User | null>;
@@ -74,6 +79,7 @@ export interface Repository {
   listReviewsByAgency(agencyId: string): Promise<Review[]>;
   listReviewsByUser(userId: string): Promise<Review[]>;
   listAllReviews(): Promise<Review[]>;
+  listReviewVisibility(): Promise<ReviewVisibilityRow[]>;
   findReviewById(id: string): Promise<Review | null>;
   updateReview(review: Review): Promise<void>;
   createReview(review: Review): Promise<void>;

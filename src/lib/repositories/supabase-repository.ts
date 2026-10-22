@@ -308,6 +308,42 @@ export class SupabaseRepository implements Repository {
     return (data as ReviewRow[]).map(mapReview);
   }
 
+  async listReviewVisibility() {
+    const pageSize = 1000;
+    const rows: {
+      agencyId: string;
+      moderated: boolean;
+      flagged: boolean;
+      deletedAt?: Date;
+    }[] = [];
+
+    for (let from = 0; ; from += pageSize) {
+      const { data, error } = await this.client
+        .from("reviews")
+        .select("agency_id, moderated, flagged, deleted_at")
+        .order("id", { ascending: true })
+        .range(from, from + pageSize - 1);
+      throwIfError(error);
+      const batch = (data ?? []) as {
+        agency_id: string;
+        moderated: boolean;
+        flagged: boolean;
+        deleted_at: string | null;
+      }[];
+      for (const row of batch) {
+        rows.push({
+          agencyId: row.agency_id,
+          moderated: row.moderated,
+          flagged: row.flagged,
+          deletedAt: row.deleted_at ? new Date(row.deleted_at) : undefined,
+        });
+      }
+      if (batch.length < pageSize) break;
+    }
+
+    return rows;
+  }
+
   async findReviewById(id: string) {
     const { data, error } = await this.client
       .from("reviews")

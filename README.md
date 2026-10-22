@@ -2,7 +2,7 @@
 
 Plataforma web para buscar inmobiliarias en España y leer/escribir experiencias de inquilinos y propietarios con cuenta identificada y moderación.
 
-> **Estado:** MVP funcional en desarrollo local. **No hay producción live** con datos persistentes — los slots Supabase cloud están asignados a Meant To B2C y Migajas.  
+> **Estado:** Producción live en [fachada.app](https://fachada.app), con Supabase (datos persistentes) y Resend (correo).  
 > **Documentación completa:** [`docs/`](./docs/README.md)
 
 ## Quick start
@@ -16,12 +16,13 @@ npm test
 ## Stack
 
 - Next.js 16 · React 19 · Tailwind CSS 4
-- Repository pattern: memoria (default) · Supabase opcional
+- Repository pattern: memoria en local (sin `.env`) · Supabase en producción
+- Correo: Resend en producción
 - Vitest + OpenSpec (SDD/TDD)
 
-## Demo (efímera, sin DB)
+## Producción
 
-https://fachada-tau.vercel.app — navegable; los datos **no persisten** entre sesiones. Ver [limitaciones](./docs/infraestructura.md#limitaciones-demo-importante).
+https://fachada.app — live, con Supabase y Resend. El host `fachada-tau.vercel.app` redirige aquí.
 
 Si el Congreso no convalida el RDL 29/2026 (plazo hacia el 13/11/2026), poner `REFORM_2026_ACTIVE = false` en `src/lib/domain/tools/constants.ts` y desplegar.
 
