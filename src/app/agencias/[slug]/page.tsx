@@ -25,6 +25,7 @@ import {
 } from "@/lib/domain/claim-verification";
 import { agencyService, usingSupabase } from "@/lib/container";
 import { cityToSlug } from "@/lib/domain/city";
+import { parseReviewOrigin } from "@/lib/domain/review-origin";
 import { agencyJsonLd, pageMeta } from "@/lib/seo";
 import { agencyLogoUrl } from "@/lib/ops/agency-logos";
 import { isTwilioConfigured } from "@/lib/services/sms-provider";
@@ -33,10 +34,12 @@ function fichaQuery(
   slug: string,
   perspective: "inquilino" | "propietario" | null,
   city: string | null,
+  desde?: string,
 ) {
   const params = new URLSearchParams();
   if (perspective) params.set("perspectiva", perspective);
   if (city) params.set("ciudad", city);
+  if (desde) params.set("desde", desde);
   const query = params.toString();
   return query ? `/agencias/${slug}?${query}` : `/agencias/${slug}`;
 }
@@ -71,24 +74,26 @@ export default async function AgencyPage({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ perspectiva?: string; ciudad?: string }>;
+  searchParams: Promise<{ perspectiva?: string; ciudad?: string; desde?: string }>;
 }) {
   const { slug } = await params;
-  const { perspectiva, ciudad } = await searchParams;
-  const agency = await agencyService.getBySlug(slug, { publicOnly: true });
-  if (!agency) {
-    const canonical = await agencyService.findCanonicalSlug(slug);
-    if (canonical && canonical !== slug) redirect(`/agencias/${canonical}`);
-    notFound();
-  }
-  const cities = agency.presenceCities ?? [agency.city];
+  const { perspectiva, ciudad, desde: desdeParam } = await searchParams;
+  const desde = parseReviewOrigin(desdeParam);
   const cityFilter = ciudad?.trim() || null;
-  const brand = await agencyService.brandRollup(agency);
-
   const perspective =
     perspectiva === "inquilino" || perspectiva === "propietario"
       ? perspectiva
       : null;
+  const agency = await agencyService.getBySlug(slug, { publicOnly: true });
+  if (!agency) {
+    const canonical = await agencyService.findCanonicalSlug(slug);
+    if (canonical && canonical !== slug) {
+      redirect(fichaQuery(canonical, perspective, cityFilter, desde));
+    }
+    notFound();
+  }
+  const cities = agency.presenceCities ?? [agency.city];
+  const brand = await agencyService.brandRollup(agency);
   const perspectiveHint =
     perspective === "inquilino"
       ? "Mostrando la nota y las experiencias de inquilinos."
@@ -265,19 +270,19 @@ export default async function AgencyPage({
           ) : null}
           <div className="mt-3 flex flex-wrap gap-2 text-sm">
             <Link
-              href={fichaQuery(slug, null, cityFilter)}
+              href={fichaQuery(slug, null, cityFilter, desde)}
               className={`filter-chip ${perspective ? "filter-chip-idle" : "filter-chip-active"}`}
             >
               Las dos notas ({totalReviews})
             </Link>
             <Link
-              href={fichaQuery(slug, "inquilino", cityFilter)}
+              href={fichaQuery(slug, "inquilino", cityFilter, desde)}
               className={`filter-chip ${perspective === "inquilino" ? "filter-chip-active" : "filter-chip-idle"}`}
             >
               Solo inquilinos ({inquilinoReviews})
             </Link>
             <Link
-              href={fichaQuery(slug, "propietario", cityFilter)}
+              href={fichaQuery(slug, "propietario", cityFilter, desde)}
               className={`filter-chip ${perspective === "propietario" ? "filter-chip-active" : "filter-chip-idle"}`}
             >
               Solo propietarios ({propietarioReviews})
@@ -324,7 +329,7 @@ export default async function AgencyPage({
           {cities.length > 1 ? (
             <div className="mt-3 flex flex-wrap gap-2 text-sm">
               <Link
-                href={fichaQuery(agency.slug, perspective, null)}
+                href={fichaQuery(agency.slug, perspective, null, desde)}
                 className={`filter-chip ${cityFilter ? "filter-chip-idle" : "filter-chip-active"}`}
               >
                 Todas las ciudades
@@ -332,7 +337,7 @@ export default async function AgencyPage({
               {cities.map((city) => (
                 <Link
                   key={city}
-                  href={fichaQuery(agency.slug, perspective, city)}
+                  href={fichaQuery(agency.slug, perspective, city, desde)}
                   className={`filter-chip ${cityFilter?.toLowerCase() === city.toLowerCase() ? "filter-chip-active" : "filter-chip-idle"}`}
                 >
                   {city}
@@ -384,6 +389,7 @@ export default async function AgencyPage({
               legalName={agency.legalName}
               brandName={agency.brandName}
               cities={cities}
+              origen={desde}
             />
           </div>
           {(agency.idealistaUrl || agency.fotocasaUrl) && (

@@ -107,6 +107,7 @@ export class ReviewService {
       createdAt: new Date(),
       moderated: false,
       flagged: false,
+      origen: data.origen,
     };
     await this.applyPublication(review, screen, notices);
     await this.repo.createReview(review);

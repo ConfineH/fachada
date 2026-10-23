@@ -5,6 +5,7 @@ import { AgencyBrowseControls } from "@/components/agency-browse-controls";
 import { AgencyResultList } from "@/components/agency-result-list";
 import { PublicShell } from "@/components/public-shell";
 import { parseAgencySort } from "@/lib/domain/agency-browse";
+import { parseReviewOrigin, withReviewOrigin } from "@/lib/domain/review-origin";
 import { agencyService, usingSupabase } from "@/lib/container";
 import { pageMeta } from "@/lib/seo";
 
@@ -17,9 +18,10 @@ export const metadata = pageMeta(
 export default async function AgencyRegistryPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; orden?: string }>;
+  searchParams: Promise<{ q?: string; orden?: string; desde?: string }>;
 }) {
-  const { q, orden } = await searchParams;
+  const { q, orden, desde: desdeParam } = await searchParams;
+  const desde = parseReviewOrigin(desdeParam);
   const sort = parseAgencySort(orden);
   const query = q?.trim() ?? "";
   const agencies = await agencyService.search(query || undefined, {
@@ -49,6 +51,7 @@ export default async function AgencyRegistryPage({
           action="/agencias"
           query={query}
           sort={sort}
+          desde={desde}
           placeholder="Nombre de la agencia o ciudad…"
         />
         <div className="flex items-end justify-between gap-2">
@@ -72,6 +75,11 @@ export default async function AgencyRegistryPage({
         ))}
         <AgencyResultList
           agencies={agencies}
+          hrefFor={
+            desde
+              ? (agency) => withReviewOrigin(`/agencias/${agency.slug}`, desde)
+              : undefined
+          }
           empty={
             <>
               No hay resultados.{" "}

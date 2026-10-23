@@ -3,7 +3,10 @@ import { randomUUID } from "node:crypto";
 import { buildAgencySlug } from "@/lib/domain/agency-slug";
 import { brandSlugFromName, companyKey, servesCity } from "@/lib/domain/company-presence";
 import { noticeQueueRisk } from "@/lib/domain/content-notice-reasons";
-import { summarizeReviewFunnel } from "@/lib/domain/review-funnel";
+import {
+  summarizeReviewFunnel,
+  summarizeReviewOrigins,
+} from "@/lib/domain/review-funnel";
 import { compareModerationQueue } from "@/lib/domain/review-visibility";
 import type { Agency, AgencyLocation, AgencySubmission, AgencyTip, Claim, ContentNotice, PublicationMode, Review } from "@/lib/domain/types";
 import {
@@ -121,7 +124,11 @@ export class AdminService {
   }
 
   async reviewFunnel() {
-    return summarizeReviewFunnel(await this.repo.listAllReviews());
+    const reviews = await this.repo.listAllReviews();
+    return {
+      ...summarizeReviewFunnel(reviews),
+      origins: summarizeReviewOrigins(reviews),
+    };
   }
 
   async listReviewsForModeration(): Promise<ReviewWithAgency[]> {

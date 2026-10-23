@@ -9,12 +9,14 @@ export function AgencyBrowseControls({
   action,
   query,
   sort,
+  desde,
   searchLabel = "Buscar inmobiliaria",
   placeholder = "Nombre de la agencia…",
 }: {
   action: string;
   query: string;
   sort: AgencySort;
+  desde?: string;
   searchLabel?: string;
   placeholder?: string;
 }) {
@@ -22,6 +24,7 @@ export function AgencyBrowseControls({
     <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
       <form action={action} method="get" className="relative max-w-md flex-1">
         <input type="hidden" name="orden" value={sort} />
+        {desde ? <input type="hidden" name="desde" value={desde} /> : null}
         <label className="sr-only" htmlFor="agency-browse-q">
           {searchLabel}
         </label>
@@ -45,6 +48,7 @@ export function AgencyBrowseControls({
           const params = new URLSearchParams();
           if (query) params.set("q", query);
           if (option.id !== "reviews") params.set("orden", option.id);
+          if (desde) params.set("desde", desde);
           const href = params.size > 0 ? `${action}?${params}` : action;
           const active = sort === option.id;
           return (

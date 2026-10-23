@@ -1,5 +1,6 @@
 import type { IncidentSentiments, IncidentTag } from "@/lib/domain/incidents";
 import type { AgencyRoleRatings } from "@/lib/domain/ratings";
+import type { ReviewOrigin } from "@/lib/domain/review-origin";
 
 export type UserRole = "inquilino" | "propietario";
 
@@ -176,6 +177,8 @@ export interface Review {
   prefilterOutcome?: "clean" | "held";
   prefilterCodes?: string[];
   prefilterReasons?: string[];
+  /** Calculadora de la que llegó (?desde=). Vacío si no vino de ninguna. */
+  origen?: ReviewOrigin;
 }
 
 export type PublicationMode = "immediate" | "premoderation";

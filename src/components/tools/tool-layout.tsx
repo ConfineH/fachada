@@ -9,6 +9,7 @@ import {
   REFORM_2026_NOTE,
   toolTextsReviewedIso,
 } from "@/lib/domain/tools/constants";
+import { toolReviewOrigin } from "@/lib/domain/review-origin";
 import { faqJsonLd, webApplicationJsonLd } from "@/lib/seo";
 
 export function ToolLayout({
@@ -104,7 +105,7 @@ export function ToolLayout({
             ))}
           </dl>
         </section>
-        <ReviewCta />
+        <ReviewCta desde={toolReviewOrigin(tool.id)} />
       </div>
     </main>
   );

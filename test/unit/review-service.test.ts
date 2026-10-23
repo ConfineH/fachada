@@ -80,6 +80,30 @@ describe("ReviewService", () => {
     expect(review.agencyId).toBe(agencyId);
     expect(review.moderated).toBe(false);
     expect(review.incidentTags).toEqual([]);
+    expect(review.origen).toBeUndefined();
+  });
+
+  it("stores the calculator origin and keeps it on edit", async () => {
+    const user = await verifiedUser();
+    const review = await service.create(
+      user,
+      payload({ origen: "desistimiento" }),
+    );
+    expect(review.origen).toBe("desistimiento");
+
+    const other = await verifiedUser("+34600111333");
+    const ignored = await service.create(other, payload({ origen: "google" }));
+    expect(ignored.origen).toBeUndefined();
+
+    const updated = await service.update(user, review.id, {
+      rating: 3,
+      title: "Cambié de opinión",
+      pros: "Siguieron contestando con claridad en el contrato.",
+      cons: "Los plazos de las llaves se alargaron más de lo dicho.",
+      anonymous: true,
+      incidentTags: ["fianza"],
+    });
+    expect(updated.origen).toBe("desistimiento");
   });
 
   it("stores public name when not anonymous", async () => {

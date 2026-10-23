@@ -1,3 +1,8 @@
+import {
+  REVIEW_ORIGINS,
+  REVIEW_ORIGIN_LABELS,
+  type ReviewOrigin,
+} from "@/lib/domain/review-origin";
 import { isPublicReview } from "@/lib/domain/review-visibility";
 
 export type FunnelReview = {
@@ -5,6 +10,14 @@ export type FunnelReview = {
   moderated: boolean;
   flagged: boolean;
   deletedAt?: Date;
+  origen?: string;
+};
+
+export type ReviewOriginCount = {
+  origen: ReviewOrigin;
+  label: string;
+  submitted: number;
+  published: number;
 };
 
 export type ReviewFunnel = {
@@ -31,4 +44,17 @@ export function summarizeReviewFunnel(reviews: FunnelReview[]): ReviewFunnel {
       published.map((review) => review.agencyId),
     ).size,
   };
+}
+
+export function summarizeReviewOrigins(reviews: FunnelReview[]): ReviewOriginCount[] {
+  const active = reviews.filter((review) => !review.deletedAt);
+  return REVIEW_ORIGINS.map((origen) => {
+    const matching = active.filter((review) => review.origen === origen);
+    return {
+      origen,
+      label: REVIEW_ORIGIN_LABELS[origen],
+      submitted: matching.length,
+      published: matching.filter((review) => isPublicReview(review)).length,
+    };
+  });
 }

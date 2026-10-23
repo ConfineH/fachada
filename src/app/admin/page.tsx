@@ -96,7 +96,7 @@ export default async function AdminPage() {
           </p>
         )}
         <div className="space-y-10">
-          <AdminReviewSummary funnel={funnel} />
+          <AdminReviewSummary funnel={funnel} origins={funnel.origins} />
           <AdminCreateAgencyForm />
           <AdminMatchProbe />
           <AdminAddAliasForm />
