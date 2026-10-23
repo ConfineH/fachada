@@ -35,6 +35,36 @@
   --font-mono: var(--font-geist-mono);
 }
 
+html {
+  color-scheme: light;
+}
+
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="hidden"]):not([type="image"]),
+textarea,
+select {
+  color: #18181b;
+  background-color: #ffffff;
+  color-scheme: light;
+  -webkit-text-fill-color: #18181b;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #52525b;
+  -webkit-text-fill-color: #52525b;
+  opacity: 1;
+}
+
+select option {
+  color: #18181b;
+  background-color: #ffffff;
+}
+
+input:-webkit-autofill,
+textarea:-webkit-autofill {
+  -webkit-text-fill-color: #18181b;
+}
+
 body {
   background: var(--surface-canvas);
   color: var(--text-primary);
@@ -116,9 +146,24 @@ body {
 
   .input-field {
     @apply w-full rounded-lg border border-stone-300 bg-white px-3 py-2.5 text-base outline-none;
+    color: #18181b;
+    background-color: #ffffff;
+    color-scheme: light;
+    -webkit-text-fill-color: #18181b;
     transition:
       border-color var(--duration-fast) var(--ease-soft),
       box-shadow var(--duration-fast) var(--ease-soft);
+  }
+
+  .input-field::placeholder {
+    color: #52525b;
+    -webkit-text-fill-color: #52525b;
+    opacity: 1;
+  }
+
+  .input-field option {
+    color: #18181b;
+    background-color: #ffffff;
   }
 
   .input-field:focus {
