@@ -17,10 +17,13 @@ function withHttps(host: string) {
   return `https://${trimmed}`;
 }
 
+/**
+ * Same-origin path for review requests.
+ * A hop to www.fachada.app is a 308 back to fachada.app. The CORS preflight
+ * dies on that redirect, and a redirected POST can drop the body (including
+ * a photo up to 3 MB). The page is already on the host that serves the API.
+ */
 export function publicApiUrl(path: string) {
-  if (typeof window !== "undefined" && window.location.hostname === "fachada.app") {
-    return `https://www.fachada.app${path}`;
-  }
   return path;
 }
 
