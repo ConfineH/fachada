@@ -39,7 +39,7 @@ export const TENANT_TOOLS: ToolDefinition[] = [
     label: "Honorarios de agencia",
     title: "¿Te cobró honorarios la inmobiliaria?",
     description:
-      "Orientación sobre si los honorarios, la gestión o el estudio de solvencia que te cobró la inmobiliaria pueden reclamarse según el artículo 20 de la LAU.",
+      "Mira si puedes reclamar honorarios de la inmobiliaria en el alquiler, la gestión o el estudio de solvencia. El artículo 20 de la LAU los carga al arrendador.",
     card: "Si te cobraron gestión, honorarios o un estudio de solvencia al firmar el alquiler.",
     articleLabel: "Artículo 20 de la LAU",
     articleUrl: BOE_ART.fees,
@@ -78,7 +78,7 @@ export const TENANT_TOOLS: ToolDefinition[] = [
     label: "Reclamar la fianza",
     title: "Carta para reclamar la fianza del alquiler",
     description:
-      "Genera en tu navegador una carta y un texto de burofax para reclamar la fianza. El artículo 36 de la LAU da un mes desde la entrega de llaves. Los datos no se envían ni se guardan.",
+      "Carta y burofax para reclamar la fianza del alquiler. El artículo 36 de la LAU da un mes desde la entrega de llaves. Se hace en el navegador y no se guarda.",
     card: "Prepara la carta y el texto del burofax cuando no te devuelven la fianza.",
     articleLabel: "Artículo 36 de la LAU",
     articleUrl: BOE_ART.deposit,
@@ -112,9 +112,9 @@ export const TENANT_TOOLS: ToolDefinition[] = [
     id: "reparaciones",
     path: "/herramientas/reparaciones",
     label: "¿Quién paga la reparación?",
-    title: "¿Quién paga esta reparación del alquiler?",
+    title: "¿Quién paga las reparaciones del alquiler?",
     description:
-      "Orientación sobre caldera, electrodomésticos, humedades, persianas, cerraduras, grifos y pintura según el artículo 21 de la LAU. Si el caso es dudoso, lo dice.",
+      "Caldera, humedades, persianas o grifos: quién paga cada reparación del alquiler según el artículo 21 de la LAU. Si el caso es dudoso, lo dice.",
     card: "Caldera, humedades, persianas, grifos y otros desperfectos frecuentes.",
     articleLabel: "Artículo 21 de la LAU",
     articleUrl: BOE_ART.repairs,
@@ -148,9 +148,9 @@ export const TENANT_TOOLS: ToolDefinition[] = [
     id: "salida-anticipada",
     path: "/herramientas/salida-anticipada",
     label: "Salir antes del contrato",
-    title: "Salir del alquiler antes de tiempo",
+    title: "Desistir del alquiler antes de tiempo",
     description:
-      "Calcula si puedes dejar un alquiler de vivienda tras seis meses, con treinta días de preaviso, y qué pasa con la indemnización del artículo 11 de la LAU.",
+      "Calcula si puedes desistir y salir del alquiler tras seis meses, con treinta días de preaviso, y la indemnización del artículo 11 de la LAU.",
     card: "Seis meses, treinta días de preaviso y el tope de indemnización si estaba pactada.",
     articleLabel: "Artículo 11 de la LAU",
     articleUrl: BOE_ART.earlyExit,
@@ -186,7 +186,7 @@ export const TENANT_TOOLS: ToolDefinition[] = [
     label: "Acta de entrega de llaves",
     title: "Acta de entrega de llaves del alquiler",
     description:
-      "Acta entrega llaves alquiler, al entrar o al salir del piso: estancias, fotos, contadores y firmas. Se guarda en el dispositivo y el PDF se genera en el navegador.",
+      "Acta entrega llaves alquiler, al entrar o al salir del piso: estancias, fotos, contadores y firmas. El PDF se genera en el navegador y no se envía.",
     card: "Deja por escrito el estado del piso, con fotos y la firma de las dos partes.",
     articleLabel: "Artículo 36 de la LAU",
     articleUrl: BOE_ART.deposit,
@@ -225,7 +225,7 @@ export const TENANT_TOOLS: ToolDefinition[] = [
     label: "Subida del alquiler",
     title: "¿Cuánto me pueden subir el alquiler?",
     description:
-      "Calcula cuánto me pueden subir el alquiler: si el contrato no lo prevé no hay subida, y si lo prevé aplica el tope de 2023, el de 2024 o el IRAV.",
+      "Calcula cuánto me pueden subir el alquiler en 2026: sin pacto no hay subida; con pacto se aplica el tope de 2023, el de 2024 o el IRAV.",
     card: "Mira el tope legal de la actualización y si lo que te piden lo pasa.",
     articleLabel: "Artículo 18 de la LAU",
     articleUrl: BOE_ART.rent,
@@ -267,9 +267,9 @@ export function toolById(id: ToolDefinition["id"]): ToolDefinition {
 }
 
 export const TOOLS_INDEX = {
-  title: "Herramientas para inquilinos",
+  title: "Calculadoras de alquiler para inquilinos",
   description:
-    "Seis herramientas gratuitas sobre honorarios, fianza, reparaciones, salir del alquiler, el acta de entrega de llaves y la subida de la renta. Se calculan en el navegador y no se envían a ningún servidor.",
+    "Honorarios de agencia, carta de fianza, reparaciones, desistimiento, acta de llaves y subida del alquiler. Gratuitas, en el navegador, según la LAU.",
   faqs: [
     {
       question: "¿Estas herramientas son asesoramiento jurídico?",

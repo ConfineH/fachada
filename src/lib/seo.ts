@@ -97,6 +97,49 @@ export function breadcrumbJsonLd(
   };
 }
 
+export function webApplicationJsonLd(app: {
+  name: string;
+  description: string;
+  path: string;
+  dateModified: string;
+}) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    name: app.name,
+    url: absoluteUrl(app.path),
+    description: app.description,
+    applicationCategory: "UtilitiesApplication",
+    operatingSystem: "Web",
+    inLanguage: "es-ES",
+    isAccessibleForFree: true,
+    dateModified: app.dateModified,
+    offers: {
+      "@type": "Offer",
+      price: "0",
+      priceCurrency: "EUR",
+    },
+    publisher: {
+      "@type": "Organization",
+      name: SITE_NAME,
+      url: absoluteUrl("/"),
+    },
+  };
+}
+
+export function itemListJsonLd(items: Array<{ name: string; path: string }>) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    itemListElement: items.map((item, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: item.name,
+      item: absoluteUrl(item.path),
+    })),
+  };
+}
+
 export function faqJsonLd(pairs: Array<{ question: string; answer: string }>) {
   return {
     "@context": "https://schema.org",

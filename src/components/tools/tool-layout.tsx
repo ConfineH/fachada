@@ -5,8 +5,11 @@ import { JsonLd } from "@/components/json-ld";
 import { LegalNotice } from "@/components/tools/legal-notice";
 import { ReviewCta } from "@/components/tools/review-cta";
 import { TENANT_TOOLS, type ToolDefinition } from "@/lib/domain/tools/catalog";
-import { REFORM_2026_NOTE } from "@/lib/domain/tools/constants";
-import { faqJsonLd } from "@/lib/seo";
+import {
+  REFORM_2026_NOTE,
+  toolTextsReviewedIso,
+} from "@/lib/domain/tools/constants";
+import { faqJsonLd, webApplicationJsonLd } from "@/lib/seo";
 
 export function ToolLayout({
   tool,
@@ -20,6 +23,14 @@ export function ToolLayout({
   return (
     <main className="mx-auto max-w-3xl px-6 py-14">
       <JsonLd data={faqJsonLd(tool.faqs)} />
+      <JsonLd
+        data={webApplicationJsonLd({
+          name: tool.title,
+          description: tool.description,
+          path: tool.path,
+          dateModified: toolTextsReviewedIso(),
+        })}
+      />
       <div className="no-print">
         <Breadcrumbs
           items={[
@@ -71,12 +82,12 @@ export function ToolLayout({
 
       <div className="no-print mt-14 space-y-10">
         <section>
-          <h2 className="text-lg font-semibold">Otras herramientas</h2>
+          <h2 className="text-lg font-semibold">Otras calculadoras de alquiler</h2>
           <ul className="mt-3 space-y-2 text-sm">
             {related.map((entry) => (
               <li key={entry.id}>
                 <Link href={entry.path} className="link-brand">
-                  {entry.label}
+                  {entry.title}
                 </Link>
               </li>
             ))}
