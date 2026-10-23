@@ -35,7 +35,7 @@ export function SiteFooter() {
               </li>
               <li>
                 <Link href="/herramientas" className="hover:text-brand">
-                  Herramientas para inquilinos
+                  Calculadoras de alquiler
                 </Link>
               </li>
             </ul>

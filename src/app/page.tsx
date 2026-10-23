@@ -237,14 +237,14 @@ export default async function Home({
                 </p>
               </div>
               <Link href="/herramientas" className="link-brand text-sm">
-                Ver las seis
+                Calculadoras de alquiler
               </Link>
             </div>
             <ul className="mt-6 grid gap-4 sm:grid-cols-2">
               {TENANT_TOOLS.map((tool) => (
                 <li key={tool.id}>
                   <Link href={tool.path} className="card-interactive block h-full p-5">
-                    <h3 className="font-semibold">{tool.label}</h3>
+                    <h3 className="font-semibold">{tool.title}</h3>
                     <p className="mt-1 text-sm text-zinc-600">{tool.card}</p>
                   </Link>
                 </li>

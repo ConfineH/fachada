@@ -58,6 +58,12 @@ export const BOE_ART = {
 /** Textos de las herramientas nuevas, revisados sobre el BOE consolidado. */
 export const TOOL_TEXTS_REVIEWED_ON = "21/10/2026";
 
+/** YYYY-MM-DD. Misma fecha que `TOOL_TEXTS_REVIEWED_ON`, para sitemap y schema. */
+export function toolTextsReviewedIso() {
+  const [day, month, year] = TOOL_TEXTS_REVIEWED_ON.split("/");
+  return `${year}-${month}-${day}`;
+}
+
 /**
  * Tope de la disposición final sexta del RDL 29/2026 cuando la renta no supera
  * el índice de precios de referencia y no hay un pacto nuevo.

@@ -1,6 +1,8 @@
 import type { MetadataRoute } from "next";
 
 import { agencyService } from "@/lib/container";
+import { TENANT_TOOLS } from "@/lib/domain/tools/catalog";
+import { toolTextsReviewedIso } from "@/lib/domain/tools/constants";
 import { absoluteUrl } from "@/lib/seo";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -18,13 +20,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/metodologia",
     "/sobre",
     "/inquilinos",
-    "/herramientas",
-    "/herramientas/honorarios",
-    "/herramientas/fianza",
-    "/herramientas/reparaciones",
-    "/herramientas/salida-anticipada",
-    "/herramientas/acta-entrega-llaves",
-    "/herramientas/subida-alquiler",
     "/agencia/acceso",
     "/agregar-inmobiliaria",
     "/legal/aviso-legal",
@@ -36,13 +31,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     lastModified,
     changeFrequency: path === "" || path === "/agencias" ? "daily" : "weekly",
     priority:
-      path === ""
-        ? 1
-        : path === "/agencias" || path === "/explorar"
-          ? 0.8
-          : path.startsWith("/herramientas")
-            ? 0.7
-            : 0.5,
+      path === "" ? 1 : path === "/agencias" || path === "/explorar" ? 0.8 : 0.5,
+  }));
+
+  const toolsUpdated = new Date(`${toolTextsReviewedIso()}T00:00:00.000Z`);
+  const toolRoutes: MetadataRoute.Sitemap = [
+    "/herramientas",
+    ...TENANT_TOOLS.map((tool) => tool.path),
+  ].map((path) => ({
+    url: absoluteUrl(path),
+    lastModified: toolsUpdated,
+    changeFrequency: "monthly" as const,
+    priority: 0.8,
   }));
 
   const cityRoutes = cities.map((city) => ({
@@ -59,5 +59,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: agency.reviewCount > 0 ? 0.8 : 0.6,
   }));
 
-  return [...staticRoutes, ...cityRoutes, ...agencyRoutes];
+  return [...staticRoutes, ...toolRoutes, ...cityRoutes, ...agencyRoutes];
 }
