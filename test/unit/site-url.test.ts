@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 
-import { getSiteUrl, isVercelAppHost } from "@/lib/site-url";
+import { getSiteUrl, isVercelAppHost, publicApiUrl } from "@/lib/site-url";
 
 const ENV_KEYS = [
   "NEXT_PUBLIC_SITE_URL",
@@ -20,6 +20,28 @@ describe("site url", () => {
       const value = previous[key];
       if (value === undefined) delete process.env[key];
       else process.env[key] = value;
+    }
+  });
+
+  it("keeps review requests on the same origin", () => {
+    const previous = globalThis.window;
+    Object.defineProperty(globalThis, "window", {
+      configurable: true,
+      value: { location: { hostname: "fachada.app" } },
+    });
+    expect(publicApiUrl("/api/reviews")).toBe("/api/reviews");
+    expect(publicApiUrl("/api/reviews/nueva-inmobiliaria")).toBe(
+      "/api/reviews/nueva-inmobiliaria",
+    );
+    expect(publicApiUrl("/api/reviews/abc")).toBe("/api/reviews/abc");
+    expect(publicApiUrl("/api/reviews")).not.toContain("www.fachada.app");
+    if (previous === undefined) {
+      delete (globalThis as { window?: unknown }).window;
+    } else {
+      Object.defineProperty(globalThis, "window", {
+        configurable: true,
+        value: previous,
+      });
     }
   });
 
