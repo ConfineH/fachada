@@ -20,7 +20,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/metodologia",
     "/sobre",
     "/inquilinos",
-    "/agencia/acceso",
     "/agregar-inmobiliaria",
     "/legal/aviso-legal",
     "/legal/privacidad",

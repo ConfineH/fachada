@@ -5,11 +5,14 @@ import { SearchForm } from "@/components/search-form";
 import { usingSupabase } from "@/lib/container";
 import { pageMeta } from "@/lib/seo";
 
-export const metadata = pageMeta(
-  "Acceso para inmobiliarias",
-  "Reclama la ficha de tu inmobiliaria, responde experiencias publicadas y completa los datos públicos. Reclamar no borra reseñas.",
-  "/agencia/acceso",
-);
+export const metadata = {
+  ...pageMeta(
+    "Acceso para inmobiliarias",
+    "Reclama la ficha de tu inmobiliaria, responde experiencias publicadas y completa los datos públicos. Reclamar no borra reseñas.",
+    "/agencia/acceso",
+  ),
+  robots: { index: false, follow: false },
+};
 
 export default function AccesoAgenciasPage() {
   return (
