@@ -1,4 +1,7 @@
-import type { ReviewFunnel } from "@/lib/domain/review-funnel";
+import type {
+  ReviewFunnel,
+  ReviewOriginCount,
+} from "@/lib/domain/review-funnel";
 import { hasPublicContact } from "@/lib/legal";
 import { isResendConfigured } from "@/lib/services/email-provider";
 
@@ -10,7 +13,13 @@ const FIGURES: Array<{ key: keyof ReviewFunnel; label: string }> = [
   { key: "agenciesWithPublishedReview", label: "Fichas con reseña publicada" },
 ];
 
-export function AdminReviewSummary({ funnel }: { funnel: ReviewFunnel }) {
+export function AdminReviewSummary({
+  funnel,
+  origins,
+}: {
+  funnel: ReviewFunnel;
+  origins: ReviewOriginCount[];
+}) {
   const mailReady = hasPublicContact() && isResendConfigured();
   return (
     <section>
@@ -33,6 +42,27 @@ export function AdminReviewSummary({ funnel }: { funnel: ReviewFunnel }) {
           </li>
         ))}
       </ul>
+      <table className="mt-6 w-full max-w-md text-sm">
+        <caption className="mb-2 text-left font-medium text-zinc-900">
+          Según la calculadora de origen
+        </caption>
+        <thead>
+          <tr className="text-left text-zinc-500">
+            <th className="py-1 pr-4 font-medium">Calculadora</th>
+            <th className="py-1 pr-4 font-medium">Enviadas</th>
+            <th className="py-1 font-medium">Publicadas</th>
+          </tr>
+        </thead>
+        <tbody>
+          {origins.map((row) => (
+            <tr key={row.origen} className="border-t border-stone-200">
+              <td className="py-1.5 pr-4">{row.label}</td>
+              <td className="py-1.5 pr-4">{row.submitted}</td>
+              <td className="py-1.5">{row.published}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
       {mailReady ? null : (
         <p className="mt-3 text-sm text-amber-800">
           El aviso por correo no está activo. Hacen falta LEGAL_CONTACT_EMAIL,

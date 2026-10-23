@@ -1,13 +1,15 @@
 import Link from "next/link";
 
+import { parseReviewOrigin, withReviewOrigin } from "@/lib/domain/review-origin";
 import { REVIEW_CTA } from "@/lib/domain/tools/copy";
 
-export function ReviewCta() {
+export function ReviewCta({ desde }: { desde?: string }) {
+  const origin = parseReviewOrigin(desde);
   return (
     <section className="rounded-xl bg-brand px-6 py-8 text-white">
       <h2 className="text-xl font-semibold tracking-tight">
         <Link
-          href="/agencias"
+          href={withReviewOrigin("/agencias", origin)}
           className="underline decoration-white/40 underline-offset-4 hover:decoration-white"
         >
           {REVIEW_CTA}
@@ -20,6 +22,7 @@ export function ReviewCta() {
         <label className="sr-only" htmlFor="tool-agency-search">
           Nombre de la agencia
         </label>
+        {origin ? <input type="hidden" name="desde" value={origin} /> : null}
         <input
           id="tool-agency-search"
           name="q"

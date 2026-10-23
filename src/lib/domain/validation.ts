@@ -9,6 +9,7 @@ import {
   REVIEW_TERMS_VERSION,
   WHOLE_NUMBER_RATING_ERROR,
 } from "@/lib/domain/review-authenticity";
+import { REVIEW_ORIGINS } from "@/lib/domain/review-origin";
 import type {
   ClaimEvidenceType,
   ContentNoticeCategory,
@@ -135,6 +136,10 @@ export const reviewInputSchema = z
       error: "Acepta las normas de uso y contenidos",
     }),
     termsVersion: z.literal(REVIEW_TERMS_VERSION),
+    origen: z.preprocess(
+      (value) => (typeof value === "string" ? value.trim() : undefined),
+      z.enum(REVIEW_ORIGINS).optional().catch(undefined),
+    ),
   })
   .superRefine((data, ctx) => {
     if (!data.agencyId && !data.agencySlug) {

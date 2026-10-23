@@ -86,6 +86,7 @@ export async function POST(request: Request) {
         noConflictAttested: text("noConflictAttested") === "true",
         termsAccepted: text("termsAccepted") === "true",
         termsVersion: text("termsVersion"),
+        origen: text("origen"),
       };
     } else {
       body = await request.json();

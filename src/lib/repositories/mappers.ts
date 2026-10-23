@@ -1,5 +1,6 @@
 import { parseIncidentSentiments, parseIncidentTags } from "@/lib/domain/incidents";
 import { REVIEW_TERMS_VERSION } from "@/lib/domain/review-authenticity";
+import { parseReviewOrigin } from "@/lib/domain/review-origin";
 import type {
   Agency,
   AgencyResponse,
@@ -88,6 +89,7 @@ type ReviewRow = {
   prefilter_outcome?: "clean" | "held" | null;
   prefilter_codes?: string[] | null;
   prefilter_reasons?: string[] | null;
+  origen?: string | null;
 };
 
 type ClaimRow = {
@@ -239,6 +241,7 @@ export function mapReview(row: ReviewRow): Review {
     prefilterOutcome: row.prefilter_outcome ?? undefined,
     prefilterCodes: row.prefilter_codes ?? [],
     prefilterReasons: row.prefilter_reasons ?? [],
+    origen: parseReviewOrigin(row.origen),
   };
 }
 

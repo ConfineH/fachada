@@ -431,6 +431,7 @@ export class SupabaseRepository implements Repository {
       prefilter_outcome: review.prefilterOutcome ?? null,
       prefilter_codes: review.prefilterCodes ?? [],
       prefilter_reasons: review.prefilterReasons ?? [],
+      origen: review.origen ?? null,
     });
     throwIfError(error);
   }
