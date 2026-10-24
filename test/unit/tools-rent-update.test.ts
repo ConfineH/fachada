@@ -75,43 +75,48 @@ describe("assessRentUpdate", () => {
     );
   });
 
-  it("uses July on 5 September 2026 and August on 20 September 2026", () => {
+  it("does not treat an estimated day as the INE publication date", () => {
     expect(IRAV_TABLE.find((row) => row.month === "2026-07")).toMatchObject({
-      publishedOn: "2026-08-15",
+      publishedOn: "2026-09-01",
       publishedOnEstimated: true,
       value: 2.49,
     });
     expect(IRAV_TABLE.find((row) => row.month === "2026-08")).toMatchObject({
-      publishedOn: "2026-09-15",
+      publishedOn: "2026-10-01",
       publishedOnEstimated: true,
     });
+    expect(IRAV_TABLE.some((row) => row.publishedOn.endsWith("-15"))).toBe(false);
     expect(lookupIrav("2026-09-05")).toMatchObject({ status: "ok", row: { month: "2026-07", value: 2.49 } });
-    expect(lookupIrav("2026-09-20")).toMatchObject({ status: "ok", row: { month: "2026-08", value: 2.47 } });
+    expect(lookupIrav("2026-09-20")).toMatchObject({ status: "ok", row: { month: "2026-07", value: 2.49 } });
+    expect(lookupIrav("2026-10-21")).toMatchObject({ status: "ok", row: { month: "2026-08", value: 2.47 } });
     expect(
       assessRentUpdate(input({ contractDate: "2025-10-21", updateDate: "2026-10-21", reformActive: false })),
     ).toMatchObject({
       status: "ready",
       basis: "irav",
-      percent: 2.54,
-      iravMonth: "2026-09",
-      maxRentEur: 1025.4,
+      percent: 2.47,
+      iravMonth: "2026-08",
+      maxRentEur: 1024.7,
+      iravEstimateClose: true,
     });
   });
 
-  it("warns when the estimated publication date is within five days of the update", () => {
+  it("warns whenever the publication date is estimated, not only within five days of a fixed day", () => {
     const close = assessRentUpdate(
       input({ contractDate: "2025-09-20", updateDate: "2026-09-20", reformActive: false }),
     );
-    expect(close).toMatchObject({ status: "ready", iravMonth: "2026-08", iravEstimateClose: true });
+    expect(close).toMatchObject({ status: "ready", iravMonth: "2026-07", iravEstimateClose: true });
     if (close.status !== "ready") return;
     expect(rentUpdateView(close).body).toContain(IRAV_ESTIMATE_NOTE);
+    expect(rentUpdateView(close).body).toContain("no lo da por publicado");
+    expect(rentUpdateView(close).body).toContain("no se da un mes por publicado");
 
-    const sixthDay = assessRentUpdate(
+    const later = assessRentUpdate(
       input({ contractDate: "2025-09-21", updateDate: "2026-09-21", reformActive: false }),
     );
-    expect(sixthDay).toMatchObject({ status: "ready", iravMonth: "2026-08", iravEstimateClose: false });
-    if (sixthDay.status !== "ready") return;
-    expect(rentUpdateView(sixthDay).body).not.toContain(IRAV_ESTIMATE_NOTE);
+    expect(later).toMatchObject({ status: "ready", iravMonth: "2026-07", iravEstimateClose: true });
+    if (later.status !== "ready") return;
+    expect(rentUpdateView(later).body).toContain(IRAV_ESTIMATE_NOTE);
 
     expect(
       iravEstimateUncertain("2026-09-20", {
@@ -119,7 +124,7 @@ describe("assessRentUpdate", () => {
         value: 2.47,
         source: "test",
         loadedOn: "2026-10-21",
-        publishedOn: "2026-09-15",
+        publishedOn: "2026-09-12",
         publishedOnEstimated: false,
       }),
     ).toBe(false);
@@ -157,8 +162,8 @@ describe("assessRentUpdate", () => {
       status: "ready",
       basis: "extraordinary_two",
       percent: 2,
-      iravMonth: "2026-09",
-      iravValue: 2.54,
+      iravMonth: "2026-08",
+      iravValue: 2.47,
       maxRentEur: 1020,
     });
     expect(
@@ -185,7 +190,13 @@ describe("assessRentUpdate", () => {
         aboveReference: "within",
       }),
     );
-    expect(result).toMatchObject({ status: "ready", basis: "irav", percent: 2.54, extraordinary: false });
+    expect(result).toMatchObject({
+      status: "ready",
+      basis: "irav",
+      percent: 2.47,
+      iravMonth: "2026-08",
+      extraordinary: false,
+    });
   });
 
   it("applies the extraordinary limit only inside the reform window", () => {
@@ -239,6 +250,17 @@ describe("assessRentUpdate", () => {
     if (over.status !== "ready") return;
     expect(rentUpdateReply(over)).toContain("1.030,00 €");
     expect(rentUpdateReply(over)).toContain("1.100,00 €");
+    expect(rentUpdateReply(over)).toContain("no es gran tenedor");
+    expect(rentUpdateReply(over)).toContain("nuevo pacto");
+    expect(rentUpdateReply(over)).toContain("3 %");
+    const over2023 = assessRentUpdate(
+      input({ contractDate: "2022-06-01", updateDate: "2023-06-01", askedRentEur: 1100 }),
+    );
+    expect(over2023).toMatchObject({ status: "ready", exceeds: true, basis: "cap_2023" });
+    if (over2023.status !== "ready") return;
+    expect(rentUpdateReply(over2023)).toContain("no es gran tenedor");
+    expect(rentUpdateReply(over2023)).toContain("2 %");
+    expect(rentUpdateReply(over2023)).toContain("nuevo pacto");
     const under = assessRentUpdate(
       input({ contractDate: "2023-05-01", updateDate: "2024-05-01", askedRentEur: 1030 }),
     );
@@ -270,17 +292,17 @@ describe("assessRentUpdate", () => {
 });
 
 describe("parseIneSeries", () => {
-  it("reads an INE publication date and otherwise estimates the 15th of the next month", () => {
+  it("reads an INE publication date and otherwise waits until the following month has ended", () => {
     expect(iravPublication("2026-07", { FechaPublicacion: "2026-08-12" })).toEqual({
       publishedOn: "2026-08-12",
       publishedOnEstimated: false,
     });
     expect(iravPublication("2026-07", { Fecha: 1782856800000, Anyo: 2026, FK_Periodo: 7 })).toEqual({
-      publishedOn: "2026-08-15",
+      publishedOn: "2026-09-01",
       publishedOnEstimated: true,
     });
     expect(iravPublication("2026-12", null)).toEqual({
-      publishedOn: "2027-01-15",
+      publishedOn: "2027-02-01",
       publishedOnEstimated: true,
     });
     expect(IRAV_TABLE.every((row) => row.publishedOnEstimated && row.publishedOn > row.month)).toBe(true);

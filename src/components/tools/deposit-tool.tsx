@@ -2,11 +2,12 @@
 
 import { useState, useSyncExternalStore } from "react";
 
-import { Field, Result } from "@/components/tools/fields";
+import { ChoiceGroup, Field, Result } from "@/components/tools/fields";
 import {
   DEPOSIT_STAYS_LOCAL,
   FIELD_HINTS,
   depositDocuments,
+  depositGuaranteeText,
   depositView,
 } from "@/lib/domain/tools/copy";
 import { assessDeposit } from "@/lib/domain/tools/deposit";
@@ -28,6 +29,7 @@ export function DepositTool() {
   const [extra, setExtra] = useState("");
   const [monthlyRent, setMonthlyRent] = useState("");
   const [contractKind, setContractKind] = useState<"vivienda" | "temporada">("vivienda");
+  const [landlordLegalEntity, setLandlordLegalEntity] = useState<"unknown" | "yes" | "no">("unknown");
   const [deduction, setDeduction] = useState("");
   const [deductionDetail, setDeductionDetail] = useState("");
   const [acceptDeduction, setAcceptDeduction] = useState(false);
@@ -74,6 +76,14 @@ export function DepositTool() {
           today: localTodayIso(),
           monthlyRentEur,
           contractKind,
+          landlordLegalEntity:
+            contractKind === "vivienda"
+              ? landlordLegalEntity === "yes"
+                ? true
+                : landlordLegalEntity === "no"
+                  ? false
+                  : null
+              : null,
         })
       : null;
   const docs = result?.status === "ready" ? depositDocuments(result) : null;
@@ -140,10 +150,26 @@ export function DepositTool() {
               <option value="temporada">Vivienda temporal</option>
             </select>
           </Field>
-          <Field label="Renta mensual" hint="Opcional. Sirve para avisar si la fianza o las garantías pasan el tope legal.">
+          <Field label="Renta mensual" hint="Opcional. Sirve para avisar si las garantías pasan el tope del artículo 36.5.">
             <input className="input-field min-h-11" inputMode="decimal" value={monthlyRent} onChange={(event) => setMonthlyRent(event.target.value)} placeholder="900" />
           </Field>
         </div>
+        {contractKind === "vivienda" ? (
+          <ChoiceGroup
+            legend="¿El arrendador es persona jurídica?"
+            name="landlord-entity"
+            value={landlordLegalEntity}
+            options={[
+              { value: "no", label: "No. Es una persona física" },
+              { value: "yes", label: "Sí. Es una empresa, sociedad o entidad" },
+              { value: "unknown", label: "No lo sé" },
+            ]}
+            onChange={setLandlordLegalEntity}
+          />
+        ) : null}
+        {contractKind === "vivienda" ? (
+          <p className="text-xs text-zinc-500">{FIELD_HINTS.landlordEntity}</p>
+        ) : null}
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Fianza" hint={FIELD_HINTS.euro}>
             <input className="input-field min-h-11" inputMode="decimal" value={deposit} onChange={(event) => setDeposit(event.target.value)} placeholder="900" />
@@ -191,16 +217,7 @@ export function DepositTool() {
                   ? "El mes termina hoy. Si no ingresan el saldo, desde mañana devenga el interés legal."
                   : "Todavía no ha pasado el mes siguiente a la entrega de llaves. La carta sirve para pedirlo ya. El interés legal solo corre si ese plazo vence sin pago."}
             </p>
-            {result.excessiveDeposit ? (
-              <p>La fianza supera una mensualidad. El artículo 36.1 de la LAU puede hacer de ese exceso un cobro indebido. La carta lo dice.</p>
-            ) : null}
-            {result.excessiveGuarantee ? (
-              <p>
-                Las garantías adicionales superan el tope del artículo 36.5
-                {result.contractKind === "temporada" ? " (una mensualidad en vivienda temporal)" : " (dos mensualidades en vivienda)"}
-                . La carta lo dice.
-              </p>
-            ) : null}
+            {depositGuaranteeText(result) ? <p>{depositGuaranteeText(result)} La carta lo dice.</p> : null}
           </Result>
           <div className="no-print flex flex-wrap gap-2">
             <button type="button" className="btn-primary min-h-11" onClick={() => window.print()}>

@@ -83,7 +83,7 @@ export const TENANT_TOOLS: ToolDefinition[] = [
     articleLabel: "Artículo 36 de la LAU",
     articleUrl: BOE_ART.deposit,
     articleNote:
-      `El saldo de la fianza debe devolverse en el mes siguiente a la entrega de las llaves. Si no se hace, devenga el interés legal del dinero. ${whenReform("Desde el 8 de octubre de 2026, si no hay un documento de finalización que anote desperfectos, se presume que la vivienda se entregó en buen estado.")}`.trim(),
+      `El saldo de la fianza debe devolverse en el mes siguiente a la entrega de las llaves. Si no se hace, devenga el interés legal del dinero. ${whenReform("Desde el 8 de octubre de 2026, si no hay un documento de finalización que anote desperfectos, se presume que la vivienda se entregó en buen estado. Un temporada iniciado antes de esa fecha sigue como uso distinto y no tiene esa presunción.")}`.trim(),
     extraLinks: reformStatuteLinks(REFORM_2026_ACTIVE),
     faqs: [
       {
@@ -104,7 +104,7 @@ export const TENANT_TOOLS: ToolDefinition[] = [
       {
         question: "¿Las garantías adicionales también se reclaman?",
         answer:
-          "La carta puede incluirlas junto a la fianza. Si indicas la renta mensual, avisa cuando la fianza supere una mensualidad o las garantías adicionales superen el tope del artículo 36.5.",
+          "La carta puede incluirlas junto a la fianza. Si indicas la renta y las fechas, avisa cuando las garantías superan el tope del artículo 36.5: dos mensualidades en vivienda de hasta cinco años, o de hasta siete si el arrendador es persona jurídica, y una en temporada desde el 8 de octubre de 2026. Lo que la fianza pase de una mensualidad no se trata como cobro indebido si cabe en esa garantía.",
       },
     ],
   },

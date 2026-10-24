@@ -93,9 +93,10 @@ export type RentUpdateResult =
   | RentReady;
 
 /**
- * Última fila ya publicada en la fecha de actualización (publishedOn <= fecha).
- * No es el mes natural anterior: si ese mes aún no se ha publicado, vale el
- * anterior que sí lo esté.
+ * Última fila utilizable en la fecha de actualización (publishedOn <= fecha).
+ * Si publishedOnEstimated, esa fecha no es la del INE: es el primer día en que
+ * el mes siguiente al de referencia ya ha terminado. No se usa el día 15 para
+ * dar el mes por publicado. El aviso sigue encendido.
  */
 export function lookupIrav(
   updateDate: string,
@@ -140,14 +141,14 @@ export function isRentAnniversary(contractDate: string, updateDate: string): boo
   return update.getTime() === expected;
 }
 
-/** True si la fila estimada se publicó a 5 días o menos de la actualización. */
+/**
+ * El artículo 18 toma el último índice realmente publicado. Una fecha fija
+ * (el día 15 o el día 1 de guarda) no demuestra la publicación, así que el
+ * aviso no se apaga por alejarse de ese día.
+ */
 export function iravEstimateUncertain(updateDate: string, row: IravRow): boolean {
-  if (!row.publishedOnEstimated) return false;
-  const published = parseIsoDate(row.publishedOn);
-  const update = parseIsoDate(updateDate);
-  if (!published || !update) return false;
-  const days = Math.abs(Math.round((update.getTime() - published.getTime()) / 86_400_000));
-  return days <= 5;
+  if (!parseIsoDate(updateDate)) return false;
+  return row.publishedOnEstimated;
 }
 
 export function extraordinaryRentApplies(updateDate: string, reformActive: boolean): boolean {
