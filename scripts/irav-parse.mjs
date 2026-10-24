@@ -39,7 +39,9 @@ export function inePointsByMonth(payload) {
 /**
  * Fecha de publicación del INE (YYYY-MM-DD). `Fecha` no vale: en IRAV1 es el
  * último día del mes anterior, no el día en que el INE publica el índice.
- * Si el punto no trae fecha, el día 15 del mes siguiente y estimated true.
+ * Si el punto no trae fecha, no se finge el día 15. Se anota el día 1 en que
+ * ya terminó el mes siguiente al de referencia, y estimated true. El artículo 18
+ * usa el último índice realmente publicado; esa fecha solo evita adelantar el mes.
  */
 export function iravPublication(month, point) {
   const publishedOn = readPublication(point);
@@ -53,7 +55,7 @@ export function estimatedPublication(month) {
   const year = Number(match[1]);
   const mon = Number(match[2]);
   if (mon < 1 || mon > 12) throw new Error(`Mes IRAV no válido: ${month}`);
-  return new Date(Date.UTC(year, mon, 15)).toISOString().slice(0, 10);
+  return new Date(Date.UTC(year, mon + 1, 1)).toISOString().slice(0, 10);
 }
 
 function seriesData(payload) {

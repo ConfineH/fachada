@@ -42,7 +42,10 @@ export const FEE_COLLECTOR_LABELS = {
 export const FIELD_HINTS = {
   euro: "Escribe el importe con céntimos si hace falta. Por ejemplo, 1.200,50.",
   duration: "5 años son 60 meses. 7 años son 84.",
-  optionalEnd: "Si sigue en prórroga y no hay fecha de fin, déjalo vacío.",
+  optionalEnd:
+    "Si sigue en prórroga y no hay fecha de fin, déjalo vacío. Sin esa fecha no se aplica el tope de garantías del artículo 36.5.",
+  landlordEntity:
+    "El tope de dos mensualidades llega hasta cinco años, y hasta siete solo si el arrendador es persona jurídica.",
 } as const;
 
 const FEE_TITLES = {
@@ -178,16 +181,7 @@ export function depositDocuments(ready: DepositReady): { letter: string; burofax
   const presumption = ready.presumptionApplies
     ? "Si no hay un documento de finalización que anote desperfectos, o no se firmó, el artículo 36.7 presume que la vivienda se entregó en estado adecuado, salvo prueba en contrario."
     : "";
-  const excess = [
-    ready.excessiveDeposit
-      ? "La fianza supera una mensualidad de renta. El artículo 36.1 de la LAU fija la fianza de vivienda en una mensualidad, así que ese exceso puede ser un cobro indebido."
-      : "",
-    ready.excessiveGuarantee
-      ? ready.contractKind === "temporada"
-        ? "Las garantías adicionales superan una mensualidad. El artículo 36.5 de la LAU limita esas garantías a una mensualidad en vivienda temporal."
-        : "Las garantías adicionales superan dos mensualidades de renta. El artículo 36.5 de la LAU fija ese tope en el arrendamiento de vivienda."
-      : "",
-  ].filter(Boolean);
+  const guarantee = depositGuaranteeText(ready);
 
   const letter = [
     ready.tenantName,
@@ -205,7 +199,7 @@ export function depositDocuments(ready: DepositReady): { letter: string; burofax
     "",
     ...lines,
     "",
-    ...excess,
+    guarantee,
     "",
     presumption,
     "Les ruego el ingreso y la confirmación por escrito. Si alegan daños, necesito el detalle y las facturas.",
@@ -228,7 +222,7 @@ export function depositDocuments(ready: DepositReady): { letter: string; burofax
     ready.deductionEur > 0 && !ready.acceptDeduction
       ? `No acepto el descuento alegado de ${formatEuro(ready.deductionEur)} sin prueba de un daño imputable a mí.`
       : "",
-    ...excess,
+    guarantee,
     presumption,
     "Quedo a la espera del ingreso y de la confirmación escrita.",
   ]
@@ -236,6 +230,37 @@ export function depositDocuments(ready: DepositReady): { letter: string; burofax
     .join(" ");
 
   return { letter, burofax };
+}
+
+/** Texto de la carta, el burofax y el aviso en pantalla sobre el art. 36.5. */
+export function depositGuaranteeText(ready: DepositReady): string {
+  if (ready.guaranteeCap === "uncertain_landlord") {
+    return "Las garantías adicionales superan dos mensualidades de renta. El artículo 36.5 de la LAU solo impone ese tope en contratos de hasta cinco años, o de hasta siete años si el arrendador es persona jurídica. Este contrato dura más de cinco años y no más de siete, y no consta si el arrendador es persona jurídica. No se puede afirmar que ese exceso sea ilegal.";
+  }
+  if (ready.guaranteeCap === "uncertain_end") {
+    return "Las garantías adicionales superan dos mensualidades de renta. El artículo 36.5 de la LAU solo impone ese tope en contratos de hasta cinco años, o de hasta siete años si el arrendador es persona jurídica. Sin la fecha de fin no se sabe si este contrato entra en ese plazo, así que no se afirma que el exceso sea ilegal.";
+  }
+  if (ready.guaranteeCap === "none") return "";
+
+  const rule =
+    ready.guaranteeCap === "temporal"
+      ? "El artículo 36.5 de la LAU limita las garantías adicionales a una mensualidad en el arrendamiento temporal celebrado a partir del 8 de octubre de 2026. Un contrato de temporada anterior sigue como uso distinto y no tiene ese tope. Este contrato entra en el plazo nuevo, así que el tope sí rige."
+      : ready.guaranteeCap === "housing_seven"
+        ? "El artículo 36.5 de la LAU no fija el tope de dos mensualidades en todo arrendamiento de vivienda. Lo impone en contratos de hasta cinco años, o de hasta siete años si el arrendador es persona jurídica. Este contrato supera los cinco años, no supera los siete y el arrendador es persona jurídica, así que el tope sí rige."
+        : "El artículo 36.5 de la LAU no fija el tope de dos mensualidades en todo arrendamiento de vivienda. Lo impone en contratos de hasta cinco años, o de hasta siete años si el arrendador es persona jurídica. Este contrato no supera los cinco años, así que el tope sí rige.";
+
+  const amounts =
+    ready.extraEur > 0
+      ? ready.guaranteeCap === "temporal"
+        ? "Las garantías adicionales superan una mensualidad."
+        : "Las garantías adicionales superan dos mensualidades de renta."
+      : "Contada como garantía adicional, la fianza que pasa de una mensualidad supera ese tope.";
+
+  const deposit = ready.excessiveDeposit
+    ? "La fianza supera una mensualidad. El artículo 36.1 fija la fianza de vivienda en una mensualidad y lo que pasa de ahí cuenta como garantía adicional. Solo el sobrante que no cabe en ese tope puede ser un cobro indebido."
+    : "";
+
+  return [amounts, rule, deposit].filter(Boolean).join(" ");
 }
 
 const REPAIR_ITEM_LABELS: Record<string, string> = {
@@ -595,7 +620,7 @@ const RENT_INDEX_LABELS = {
 } as const;
 
 export const IRAV_ESTIMATE_NOTE =
-  "La fecha de publicación del INE es estimada; comprueba en ine.es qué IRAV estaba publicado ese día.";
+  "El artículo 18 usa el último índice realmente publicado por el INE. Esta tabla no tiene esa fecha y el día 15 no la sustituye: no se da un mes por publicado con una fecha fija. Comprueba en ine.es cuál era el último índice ese día; la cifra puede corresponder a otro mes.";
 
 function estimateLine(close: boolean) {
   return close ? `\n${IRAV_ESTIMATE_NOTE}` : "";
@@ -676,7 +701,9 @@ function rentReadyBody(result: RentReady): string {
           ? "La disposición final sexta del RDL 29/2026 impide cualquier incremento cuando la renta supera el índice de precios de referencia."
           : result.basis === "extraordinary_two"
             ? `Hasta el 31 de diciembre de 2027, si no hay un pacto nuevo, el tope es el menor entre el 2 % y el IRAV de ${result.iravMonth} (${formatPercent(result.iravValue ?? 0)}).`
-            : `Desde 2025 el tope es el IRAV del INE. El mes de referencia es ${result.iravMonth} (${formatPercent(result.iravValue ?? 0)}).`;
+            : result.iravEstimateClose
+              ? `Desde 2025 el tope es el último IRAV realmente publicado por el INE. Sin esa fecha, la cifra orientativa usa el mes ${result.iravMonth} (${formatPercent(result.iravValue ?? 0)}) y no lo da por publicado.`
+              : `Desde 2025 el tope es el IRAV del INE. El mes de referencia es ${result.iravMonth} (${formatPercent(result.iravValue ?? 0)}).`;
   const money = `Sobre ${formatEuro(result.currentRentEur)}, la renta máxima es ${formatEuro(result.maxRentEur)} (${formatPercent(result.percent)}).`;
   const asked =
     result.exceeds === null
@@ -689,11 +716,20 @@ function rentReadyBody(result: RentReady): string {
 
 export function rentUpdateReply(result: RentReady): string | null {
   if (!result.exceeds) return null;
+  const holderCaveat =
+    result.basis === "cap_2023"
+      ? "En 2023 el tope legal de la actualización fue el 2 %. Si el arrendador no es gran tenedor, ese 2 % aplicaba salvo nuevo pacto entre las partes."
+      : result.basis === "cap_2024"
+        ? "En 2024 el tope legal de la actualización fue el 3 %. Si el arrendador no es gran tenedor, ese 3 % aplicaba salvo nuevo pacto entre las partes."
+        : "";
   return [
     "He revisado la actualización de la renta que me propones.",
     `El artículo 18 de la LAU solo permite actualizar la renta si el contrato lo prevé, y el incremento no puede pasar del tope legal aplicable. Con la renta actual de ${formatEuro(result.currentRentEur)}, el máximo es ${formatEuro(result.maxRentEur)} (${formatPercent(result.percent)}).`,
+    holderCaveat,
     `La cantidad de ${formatEuro(result.askedRentEur ?? 0)} lo supera. Pagaré como máximo ${formatEuro(result.maxRentEur)}.`,
-  ].join("\n\n");
+  ]
+    .filter(Boolean)
+    .join("\n\n");
 }
 
 export function rentNeedsReferenceReply(result: RentNeedsReference): string | null {
