@@ -1,4 +1,5 @@
 import { isConfirmedStreetAddress } from "@/lib/domain/agency-presence";
+import { MAX_EXPERIENCE_AGE_MONTHS } from "@/lib/domain/review-authenticity";
 import { getLegal, hasRegisteredHolder, isPlaceholder } from "@/lib/legal";
 import { getSiteUrl } from "@/lib/site-url";
 
@@ -202,7 +203,7 @@ export const HOME_FAQS = [
   {
     question: "¿Fachada verifica que la experiencia ocurrió?",
     answer:
-      "No de forma automática. Quien escribe entra con un correo verificado y declara una experiencia propia reciente. Si el texto pasa un filtro automático, se publica al momento como experiencia declarada. Solo marcamos «experiencia acreditada» si una persona revisa pruebas privadas.",
+      `No de forma automática. Quien escribe entra con un correo verificado y declara una experiencia propia de los últimos ${MAX_EXPERIENCE_AGE_MONTHS} meses. Si el texto pasa un filtro automático, se publica al momento como experiencia declarada. Solo marcamos «experiencia acreditada» si una persona revisa pruebas privadas.`,
   },
   {
     question: "¿En qué se diferencia de las reseñas de Google o Idealista?",
