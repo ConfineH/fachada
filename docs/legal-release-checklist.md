@@ -13,7 +13,7 @@ Nombre/NIF/domicilio (`LEGAL_HOLDER_*`) solo al constituir la SL. Seguridad
 ## Producto
 
 - Crear reseña con experiencia de hoy y todas las declaraciones.
-- Rechazar fecha futura, fecha de más de 30 días y términos antiguos.
+- Rechazar fecha futura, fecha de más de 36 meses y términos antiguos.
 - Confirmar que el email/teléfono no aparece en HTML, API pública ni metadatos.
 - Comprobar etiqueta «experiencia declarada» sin evidencia.
 - Adjuntar evidencia, comprobar bucket privado y URL firmada temporal.
