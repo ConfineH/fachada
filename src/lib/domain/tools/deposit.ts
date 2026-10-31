@@ -18,6 +18,14 @@ export type GuaranteeCap =
   | "uncertain_landlord"
   | "uncertain_end";
 
+/**
+ * Por qué se cruza el tope del art. 36.5, si se cruza.
+ * `extra`: las garantías adicionales, solas, lo superan.
+ * `deposit`: no hay garantía adicional; lo supera la fianza que pasa de una mensualidad.
+ * `sum`: las garantías solas no lo superan; lo cruza su suma con ese exceso de fianza.
+ */
+export type GuaranteeExcess = "none" | "extra" | "deposit" | "sum";
+
 export type DepositInput = {
   landlordName: string;
   tenantName: string;
@@ -52,6 +60,7 @@ export type DepositReady = {
   excessiveDeposit: boolean;
   excessiveGuarantee: boolean;
   guaranteeCap: GuaranteeCap;
+  guaranteeExcess: GuaranteeExcess;
   monthlyRentEur: number | null;
   landlordLegalEntity: boolean | null;
   contractKind: "vivienda" | "temporada";
@@ -121,6 +130,18 @@ function temporalGuaranteeCap(contractStart: string, reformActive: boolean): Gua
   return "temporal";
 }
 
+/** El tope se cruza con depositOver + extra, no por el mero hecho de que extra sea positivo. */
+function guaranteeExcessOf(
+  depositOverCents: number,
+  extraCents: number,
+  capCents: number | null,
+): GuaranteeExcess {
+  if (capCents === null || depositOverCents + extraCents <= capCents) return "none";
+  if (extraCents > capCents) return "extra";
+  if (extraCents <= 0) return "deposit";
+  return "sum";
+}
+
 function depositExcess(
   kind: "vivienda" | "temporada",
   depositEur: number,
@@ -137,6 +158,7 @@ function depositExcess(
       excessiveDeposit: false,
       excessiveGuarantee: false,
       guaranteeCap: "none" as const,
+      guaranteeExcess: "none" as const,
       monthlyRentEur: null,
     };
   }
@@ -151,22 +173,15 @@ function depositExcess(
   const capMonths = regime === "temporal" ? 1 : regime === "none" ? null : 2;
   const depositOver =
     kind === "temporada" && regime !== "temporal" ? 0 : Math.max(0, depositCents - rentCents);
+  const capCents = capMonths === null ? null : capMonths * rentCents;
+  const guaranteeExcess = guaranteeExcessOf(depositOver, extraCents, capCents);
 
-  if (capMonths === null) {
+  if (capCents === null || guaranteeExcess === "none") {
     return {
       excessiveDeposit: false,
       excessiveGuarantee: false,
       guaranteeCap: "none" as const,
-      monthlyRentEur: rent,
-    };
-  }
-
-  const overCap = depositOver + extraCents > capMonths * rentCents;
-  if (!overCap) {
-    return {
-      excessiveDeposit: false,
-      excessiveGuarantee: false,
-      guaranteeCap: "none" as const,
+      guaranteeExcess: "none" as const,
       monthlyRentEur: rent,
     };
   }
@@ -176,6 +191,7 @@ function depositExcess(
       excessiveDeposit: false,
       excessiveGuarantee: false,
       guaranteeCap: regime,
+      guaranteeExcess,
       monthlyRentEur: rent,
     };
   }
@@ -184,6 +200,7 @@ function depositExcess(
     excessiveDeposit: depositOver > 0,
     excessiveGuarantee: true,
     guaranteeCap: regime,
+    guaranteeExcess,
     monthlyRentEur: rent,
   };
 }

@@ -232,15 +232,38 @@ export function depositDocuments(ready: DepositReady): { letter: string; burofax
   return { letter, burofax };
 }
 
+/**
+ * El tope es una mensualidad en temporada desde el 08/10/2026 y dos en vivienda.
+ * No dice que las garantías lo superan si el exceso sale de sumarlas a la fianza,
+ * ni si la garantía adicional es cero.
+ */
+function guaranteeAmountText(ready: DepositReady): string {
+  const capLabel =
+    ready.guaranteeCap === "temporal" ? "una mensualidad" : "dos mensualidades de renta";
+  if (ready.guaranteeExcess === "extra") {
+    return ready.guaranteeCap === "temporal"
+      ? "Las garantías adicionales superan una mensualidad."
+      : "Las garantías adicionales superan dos mensualidades de renta.";
+  }
+  if (ready.guaranteeExcess === "deposit") {
+    return "Contada como garantía adicional, la fianza que pasa de una mensualidad supera ese tope.";
+  }
+  if (ready.guaranteeExcess === "sum") {
+    return `Las garantías adicionales no superan por sí solas ${capLabel}. El tope se cruza al sumarlas a lo que la fianza pasa de una mensualidad.`;
+  }
+  return "";
+}
+
 /** Texto de la carta, el burofax y el aviso en pantalla sobre el art. 36.5. */
 export function depositGuaranteeText(ready: DepositReady): string {
+  const amounts = guaranteeAmountText(ready);
   if (ready.guaranteeCap === "uncertain_landlord") {
-    return "Las garantías adicionales superan dos mensualidades de renta. El artículo 36.5 de la LAU solo impone ese tope en contratos de hasta cinco años, o de hasta siete años si el arrendador es persona jurídica. Este contrato dura más de cinco años y no más de siete, y no consta si el arrendador es persona jurídica. No se puede afirmar que ese exceso sea ilegal.";
+    return `${amounts} El artículo 36.5 de la LAU solo impone ese tope en contratos de hasta cinco años, o de hasta siete años si el arrendador es persona jurídica. Este contrato dura más de cinco años y no más de siete, y no consta si el arrendador es persona jurídica. No se puede afirmar que ese exceso sea ilegal.`;
   }
   if (ready.guaranteeCap === "uncertain_end") {
-    return "Las garantías adicionales superan dos mensualidades de renta. El artículo 36.5 de la LAU solo impone ese tope en contratos de hasta cinco años, o de hasta siete años si el arrendador es persona jurídica. Sin la fecha de fin no se sabe si este contrato entra en ese plazo, así que no se afirma que el exceso sea ilegal.";
+    return `${amounts} El artículo 36.5 de la LAU solo impone ese tope en contratos de hasta cinco años, o de hasta siete años si el arrendador es persona jurídica. Sin la fecha de fin no se sabe si este contrato entra en ese plazo, así que no se afirma que el exceso sea ilegal.`;
   }
-  if (ready.guaranteeCap === "none") return "";
+  if (ready.guaranteeCap === "none" || !amounts) return "";
 
   const rule =
     ready.guaranteeCap === "temporal"
@@ -248,13 +271,6 @@ export function depositGuaranteeText(ready: DepositReady): string {
       : ready.guaranteeCap === "housing_seven"
         ? "El artículo 36.5 de la LAU no fija el tope de dos mensualidades en todo arrendamiento de vivienda. Lo impone en contratos de hasta cinco años, o de hasta siete años si el arrendador es persona jurídica. Este contrato supera los cinco años, no supera los siete y el arrendador es persona jurídica, así que el tope sí rige."
         : "El artículo 36.5 de la LAU no fija el tope de dos mensualidades en todo arrendamiento de vivienda. Lo impone en contratos de hasta cinco años, o de hasta siete años si el arrendador es persona jurídica. Este contrato no supera los cinco años, así que el tope sí rige.";
-
-  const amounts =
-    ready.extraEur > 0
-      ? ready.guaranteeCap === "temporal"
-        ? "Las garantías adicionales superan una mensualidad."
-        : "Las garantías adicionales superan dos mensualidades de renta."
-      : "Contada como garantía adicional, la fianza que pasa de una mensualidad supera ese tope.";
 
   const deposit = ready.excessiveDeposit
     ? "La fianza supera una mensualidad. El artículo 36.1 fija la fianza de vivienda en una mensualidad y lo que pasa de ahí cuenta como garantía adicional. Solo el sobrante que no cabe en ese tope puede ser un cobro indebido."
@@ -632,6 +648,47 @@ function anniversaryLine(onAnniversary: boolean) {
     : "El artículo 18 solo permite actualizar el día en que se cumple cada año de contrato. En otra fecha la subida no es exigible.";
 }
 
+const REFERENCE_MONTHS = [
+  "enero",
+  "febrero",
+  "marzo",
+  "abril",
+  "mayo",
+  "junio",
+  "julio",
+  "agosto",
+  "septiembre",
+  "octubre",
+  "noviembre",
+  "diciembre",
+] as const;
+
+function formatReferenceMonth(month: string): string {
+  const match = /^(\d{4})-(\d{2})$/.exec(month);
+  const name = match ? REFERENCE_MONTHS[Number(match[2]) - 1] : undefined;
+  if (!match || !name) return month;
+  return `${name} de ${match[1]}`;
+}
+
+/**
+ * Art. 46 del RDL 6/2022, en la redacción de la DF 6.ª de la Ley 12/2023.
+ * El anexo de la Ley 2/2015 deja la tasa negativa en el 0 % y la que pasa del 2 % en el 2 %.
+ */
+function rentCap2023Sentence(result: RentReady): string {
+  const holder =
+    "Si el arrendador no es gran tenedor, ese tope aplicaba salvo nuevo pacto entre las partes.";
+  if (result.igcMonth === null || result.igcRate === null) {
+    return `En 2023 el tope es el último Índice de Garantía de Competitividad publicado en la fecha de la actualización. No se puede afirmar el porcentaje. ${holder}`;
+  }
+  const bound =
+    result.igcRate < 0
+      ? " El anexo de la Ley 2/2015 deja la tasa en el 0 % cuando es negativa."
+      : result.igcRate > 2
+        ? " El anexo de la Ley 2/2015 deja la tasa en el 2 % cuando pasa de ese porcentaje."
+        : "";
+  return `En 2023 el tope es la variación anual del Índice de Garantía de Competitividad, el último publicado en la fecha de la actualización (artículo 46 del Real Decreto-ley 6/2022, en la redacción de la disposición final sexta de la Ley 12/2023). El de ${formatReferenceMonth(result.igcMonth)} es el ${formatPercent(result.igcRate)}.${bound} ${holder}`;
+}
+
 export function rentUpdateView(result: RentUpdateResult): { title: string; body: string } {
   if (result.status === "invalid") {
     const bodies = {
@@ -656,6 +713,12 @@ export function rentUpdateView(result: RentUpdateResult): { title: string; body:
     return {
       title: "No hay IRAV publicado en esa fecha",
       body: `El artículo 18 toma el último índice publicado en la fecha de la actualización. En esa fecha la tabla no tiene ninguno.${pending} No invento el porcentaje. ${anniversaryLine(result.onAnniversary)}`,
+    };
+  }
+  if (result.status === "missing_igc") {
+    return {
+      title: "No se puede afirmar el tope",
+      body: `En 2023 el tope es el último Índice de Garantía de Competitividad publicado en la fecha de la actualización. Aquí no hay un valor verificado del INE para esa fecha. No se puede afirmar el porcentaje. ${anniversaryLine(result.onAnniversary)}`,
     };
   }
   if (result.status === "agreed_index") {
@@ -694,7 +757,7 @@ function rentReadyBody(result: RentReady): string {
     : "";
   const cap =
     result.basis === "cap_2023"
-      ? "En 2023 el tope legal de la actualización fue el 2 %. Si el arrendador no es gran tenedor, ese 2 % aplicaba salvo nuevo pacto entre las partes."
+      ? rentCap2023Sentence(result)
       : result.basis === "cap_2024"
         ? "En 2024 el tope legal de la actualización fue el 3 %. Si el arrendador no es gran tenedor, ese 3 % aplicaba salvo nuevo pacto entre las partes."
         : result.basis === "extraordinary_zero"
@@ -718,7 +781,7 @@ export function rentUpdateReply(result: RentReady): string | null {
   if (!result.exceeds) return null;
   const holderCaveat =
     result.basis === "cap_2023"
-      ? "En 2023 el tope legal de la actualización fue el 2 %. Si el arrendador no es gran tenedor, ese 2 % aplicaba salvo nuevo pacto entre las partes."
+      ? rentCap2023Sentence(result)
       : result.basis === "cap_2024"
         ? "En 2024 el tope legal de la actualización fue el 3 %. Si el arrendador no es gran tenedor, ese 3 % aplicaba salvo nuevo pacto entre las partes."
         : "";

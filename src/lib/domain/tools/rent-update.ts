@@ -51,6 +51,10 @@ export type RentReady = {
   iravEstimateClose: boolean;
   index: RentIndex | null;
   extraordinary: boolean;
+  /** Mes de referencia del IGC de 2023, YYYY-MM. Null fuera de ese tope. */
+  igcMonth: string | null;
+  /** Variación anual publicada por el INE, antes del suelo 0 % y el techo 2 %. */
+  igcRate: number | null;
 };
 
 export type RentNeedsReference = {
@@ -88,6 +92,7 @@ export type RentUpdateResult =
     }
   | { status: "unsupported_period"; year: number }
   | { status: "missing_irav"; month: string; onAnniversary: boolean }
+  | { status: "missing_igc"; onAnniversary: boolean }
   | RentAgreedIndex
   | RentNeedsReference
   | RentReady;
@@ -114,6 +119,63 @@ export function lookupIrav(
     }
   }
   if (!chosen) return { status: "missing", month: upcoming?.month ?? "" };
+  return { status: "ok", row: chosen };
+}
+
+/**
+ * Variación anual del Índice de Garantía de Competitividad, sin el suelo ni el techo.
+ * Valores: INE, tabla 10802 (variación anual).
+ * https://www.ine.es/jaxiT3/Tabla.htm?t=10802
+ * Fechas de publicación: calendario de disponibilidad del INE, 2022 y 2023.
+ * https://www.ine.es/dynt3/Calendario/es/calenHTML.htm
+ * El anexo de la Ley 2/2015 deja la tasa negativa en 0 % y la que pasa del 2 % en el 2 %.
+ */
+type IgcRow = {
+  /** Mes de referencia, YYYY-MM. */
+  month: string;
+  /** Variación anual publicada, en porcentaje. */
+  rate: number;
+  /** YYYY-MM-DD del calendario del INE. */
+  publishedOn: string;
+};
+
+const IGC_TABLE: readonly IgcRow[] = [
+  { month: "2022-10", rate: 8.6, publishedOn: "2022-12-19" },
+  { month: "2022-11", rate: 8.17, publishedOn: "2023-01-19" },
+  { month: "2022-12", rate: 7.19, publishedOn: "2023-02-24" },
+  { month: "2023-01", rate: 6.42, publishedOn: "2023-03-21" },
+  { month: "2023-02", rate: 6.14, publishedOn: "2023-04-20" },
+  { month: "2023-03", rate: 4.49, publishedOn: "2023-05-18" },
+  { month: "2023-04", rate: 4.65, publishedOn: "2023-06-19" },
+  { month: "2023-05", rate: 3.83, publishedOn: "2023-07-20" },
+  { month: "2023-06", rate: 3.11, publishedOn: "2023-08-21" },
+  { month: "2023-07", rate: 3.04, publishedOn: "2023-09-20" },
+  { month: "2023-08", rate: 3.11, publishedOn: "2023-10-19" },
+  { month: "2023-09", rate: 2.15, publishedOn: "2023-11-20" },
+  { month: "2023-10", rate: 0.58, publishedOn: "2023-12-20" },
+];
+
+/** Anexo de la Ley 2/2015: tasa negativa → 0 %; por encima del 2 % → 2 %; en medio, la publicada. */
+export function igcApplicablePercent(rate: number): number {
+  if (rate < 0) return 0;
+  if (rate > 2) return 2;
+  return rate;
+}
+
+/** Última fila del IGC con publicación en o antes de la fecha de actualización. */
+export function lookupIgc(
+  updateDate: string,
+  table: readonly IgcRow[] = IGC_TABLE,
+): { status: "ok"; row: IgcRow } | { status: "missing" } {
+  if (!parseIsoDate(updateDate)) return { status: "missing" };
+  let chosen: IgcRow | null = null;
+  for (const entry of table) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(entry.publishedOn)) continue;
+    if (entry.publishedOn <= updateDate && (!chosen || entry.month > chosen.month)) {
+      chosen = entry;
+    }
+  }
+  if (!chosen) return { status: "missing" };
   return { status: "ok", row: chosen };
 }
 
@@ -160,7 +222,11 @@ function readyBase(
   input: RentUpdateInput,
   current: number,
   asked: number | null,
-  extra: Pick<RentReady, "basis" | "percent" | "iravMonth" | "iravValue" | "iravEstimateClose" | "extraordinary">,
+  extra: Pick<
+    RentReady,
+    "basis" | "percent" | "iravMonth" | "iravValue" | "iravEstimateClose" | "extraordinary"
+  > &
+    Partial<Pick<RentReady, "igcMonth" | "igcRate">>,
 ): RentReady {
   const maxRentEur = roundCents(current * (1 + extra.percent / 100)) ?? current;
   return {
@@ -171,6 +237,8 @@ function readyBase(
     exceeds: asked === null ? null : asked > maxRentEur + 0.001,
     onAnniversary: isRentAnniversary(input.contractDate, input.updateDate),
     index: input.hasClause ? input.index : null,
+    igcMonth: null,
+    igcRate: null,
     ...extra,
   };
 }
@@ -226,11 +294,30 @@ export function assessRentUpdate(input: RentUpdateInput): RentUpdateResult {
     });
   }
 
-  if (year === 2023 || year === 2024) {
-    const percent = year === 2023 ? 2 : 3;
+  if (year === 2023) {
+    const igc = lookupIgc(input.updateDate);
+    if (igc.status !== "ok") {
+      return {
+        status: "missing_igc",
+        onAnniversary: isRentAnniversary(input.contractDate, input.updateDate),
+      };
+    }
     return readyBase(input, current, asked, {
-      basis: year === 2023 ? "cap_2023" : "cap_2024",
-      percent,
+      basis: "cap_2023",
+      percent: igcApplicablePercent(igc.row.rate),
+      iravMonth: null,
+      iravValue: null,
+      iravEstimateClose: false,
+      extraordinary: false,
+      igcMonth: igc.row.month,
+      igcRate: igc.row.rate,
+    });
+  }
+
+  if (year === 2024) {
+    return readyBase(input, current, asked, {
+      basis: "cap_2024",
+      percent: 3,
       iravMonth: null,
       iravValue: null,
       iravEstimateClose: false,
