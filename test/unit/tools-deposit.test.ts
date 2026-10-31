@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import { REFORM_2026_ACTIVE } from "@/lib/domain/tools/constants";
-import { DEPOSIT_ART_36, DEPOSIT_STAYS_LOCAL, depositDocuments } from "@/lib/domain/tools/copy";
+import {
+  DEPOSIT_ART_36,
+  DEPOSIT_STAYS_LOCAL,
+  depositDocuments,
+  depositGuaranteeText,
+} from "@/lib/domain/tools/copy";
 import { assessDeposit, type DepositInput, type DepositReady } from "@/lib/domain/tools/deposit";
 import { formatEuro } from "@/lib/domain/tools/money";
 
@@ -211,6 +216,47 @@ describe("assessDeposit", () => {
     expect(docs.letter).toContain("No se puede afirmar que ese exceso sea ilegal");
     expect(docs.burofax).toContain("No se puede afirmar que ese exceso sea ilegal");
     expect(docs.letter).not.toContain("el tope sí rige");
+  });
+
+  it("does not blame extra guarantees when only their sum with the deposit surplus crosses the cap", () => {
+    const housing = ready({ monthlyRentEur: 900, depositEur: 2700, extraEur: 0.01 });
+    expect(housing).toMatchObject({
+      guaranteeCap: "housing_five",
+      guaranteeExcess: "sum",
+      excessiveGuarantee: true,
+    });
+    const housingText = depositGuaranteeText(housing);
+    expect(housingText).not.toMatch(/Las garantías adicionales superan dos mensualidades/);
+    expect(housingText).toContain("no superan por sí solas dos mensualidades de renta");
+    expect(housingText).toContain("sumarlas a lo que la fianza pasa de una mensualidad");
+    expect(depositDocuments(housing).letter).toContain(housingText);
+    expect(depositDocuments(housing).burofax).not.toMatch(
+      /Las garantías adicionales superan dos mensualidades/,
+    );
+
+    const openEnded = ready({ monthlyRentEur: 900, depositEur: 4000, extraEur: 0, contractEnd: "" });
+    expect(openEnded).toMatchObject({ guaranteeCap: "uncertain_end", guaranteeExcess: "deposit" });
+    const openText = depositGuaranteeText(openEnded);
+    expect(openText).not.toMatch(/garantías adicionales superan/i);
+    expect(openText).toContain("la fianza que pasa de una mensualidad");
+    expect(depositDocuments(openEnded).letter).not.toMatch(/garantías adicionales superan/i);
+    expect(depositDocuments(openEnded).burofax).not.toMatch(/garantías adicionales superan/i);
+
+    const seasonal = ready({
+      monthlyRentEur: 900,
+      depositEur: 1800,
+      extraEur: 0.01,
+      contractKind: "temporada",
+      contractStart: "2026-10-08",
+      contractEnd: "2027-04-08",
+      keysDate: "2027-04-08",
+      today: "2027-04-09",
+    });
+    expect(seasonal).toMatchObject({ guaranteeCap: "temporal", guaranteeExcess: "sum" });
+    const seasonalText = depositGuaranteeText(seasonal);
+    expect(seasonalText).not.toMatch(/Las garantías adicionales superan una mensualidad/);
+    expect(seasonalText).toContain("no superan por sí solas una mensualidad");
+    expect(seasonalText).toContain("sumarlas a lo que la fianza pasa de una mensualidad");
   });
 
   it("refuses a letter when the dates or the accepted deduction do not add up", () => {

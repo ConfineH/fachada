@@ -5,8 +5,10 @@ import { formatPercent, IRAV_ESTIMATE_NOTE, rentUpdateReply, rentUpdateView } fr
 import { toolById } from "@/lib/domain/tools/catalog";
 import {
   assessRentUpdate,
+  igcApplicablePercent,
   iravEstimateUncertain,
   isRentAnniversary,
+  lookupIgc,
   lookupIrav,
   type RentUpdateInput,
 } from "@/lib/domain/tools/rent-update";
@@ -32,12 +34,14 @@ describe("assessRentUpdate", () => {
     expect(result).toMatchObject({ status: "ready", basis: "no_pact", percent: 0, maxRentEur: 1000 });
   });
 
-  it("caps 2023 at 2% and 2024 at 3%", () => {
+  it("caps a June 2023 update at 2% because the published IGC was above that, and 2024 at 3%", () => {
     expect(assessRentUpdate(input({ contractDate: "2022-06-01", updateDate: "2023-06-01" }))).toMatchObject({
       status: "ready",
       basis: "cap_2023",
       percent: 2,
       maxRentEur: 1020,
+      igcMonth: "2023-03",
+      igcRate: 4.49,
     });
     expect(assessRentUpdate(input({ contractDate: "2023-05-01", updateDate: "2024-05-01" }))).toMatchObject({
       status: "ready",
@@ -171,14 +175,76 @@ describe("assessRentUpdate", () => {
     ).not.toBe("agreed_index");
   });
 
-  it("says the 2% and 3% caps gave way to a new agreement if the landlord is not a large holder", () => {
+  it("cites the 2023 IGC and keeps the 2024 3% cap, including the large-holder nuance", () => {
     const cap2023 = assessRentUpdate(input({ contractDate: "2022-06-01", updateDate: "2023-06-01" }));
     const cap2024 = assessRentUpdate(input({ contractDate: "2022-06-01", updateDate: "2024-06-01" }));
+    if (cap2023.status !== "ready") throw new Error(cap2023.status);
+    expect(rentUpdateView(cap2023).body).toContain("Índice de Garantía de Competitividad");
+    expect(rentUpdateView(cap2023).body).toContain("marzo de 2023");
+    expect(rentUpdateView(cap2023).body).toContain("4,49 %");
+    expect(rentUpdateView(cap2023).body).not.toContain("el tope legal de la actualización fue el 2 %");
     expect(rentUpdateView(cap2023).body).toContain("no es gran tenedor");
     expect(rentUpdateView(cap2023).body).toContain("2 %");
     expect(rentUpdateView(cap2023).body).toContain("nuevo pacto");
     expect(rentUpdateView(cap2024).body).toContain("3 %");
     expect(rentUpdateView(cap2024).body).toContain("nuevo pacto");
+    expect(rentUpdateView(cap2024).body).not.toContain("Índice de Garantía de Competitividad");
+  });
+
+  it("caps 31 December 2023 at the October 2023 IGC of 0.58%", () => {
+    expect(igcApplicablePercent(-1.2)).toBe(0);
+    expect(igcApplicablePercent(0.58)).toBe(0.58);
+    expect(igcApplicablePercent(2)).toBe(2);
+    expect(igcApplicablePercent(4.49)).toBe(2);
+    expect(lookupIgc("2023-12-31", [])).toEqual({ status: "missing" });
+    expect(rentUpdateView({ status: "missing_igc", onAnniversary: false }).body).toContain(
+      "No se puede afirmar",
+    );
+
+    expect(
+      assessRentUpdate(input({ contractDate: "2022-12-19", updateDate: "2023-12-19" })),
+    ).toMatchObject({
+      status: "ready",
+      basis: "cap_2023",
+      igcMonth: "2023-09",
+      igcRate: 2.15,
+      percent: 2,
+    });
+
+    const result = assessRentUpdate(
+      input({ contractDate: "2022-12-31", updateDate: "2023-12-31", currentRentEur: 1000 }),
+    );
+    expect(result).toMatchObject({
+      status: "ready",
+      basis: "cap_2023",
+      percent: 0.58,
+      maxRentEur: 1005.8,
+      igcMonth: "2023-10",
+      igcRate: 0.58,
+    });
+    if (result.status !== "ready") return;
+    const body = rentUpdateView(result).body;
+    expect(body).toContain("Índice de Garantía de Competitividad");
+    expect(body).toContain("octubre de 2023");
+    expect(body).toContain("0,58 %");
+    expect(body).toContain("1.005,80 €");
+    expect(body).not.toContain("el tope fue el 2 %");
+    expect(body).not.toContain("el tope legal de la actualización fue el 2 %");
+    expect(body).toContain("no es gran tenedor");
+
+    const over = assessRentUpdate(
+      input({ contractDate: "2022-12-31", updateDate: "2023-12-31", askedRentEur: 1100 }),
+    );
+    expect(over).toMatchObject({ status: "ready", exceeds: true, maxRentEur: 1005.8 });
+    if (over.status !== "ready") return;
+    const reply = rentUpdateReply(over);
+    expect(reply).toContain("Índice de Garantía de Competitividad");
+    expect(reply).toContain("octubre de 2023");
+    expect(reply).toContain("0,58 %");
+    expect(reply).toContain("1.005,80 €");
+    expect(reply).not.toContain("el tope fue el 2 %");
+    expect(reply).toContain("no es gran tenedor");
+    expect(reply).toContain("nuevo pacto");
   });
 
   it("ignores the 2026 extraordinary limit when the reform flag is off", () => {
@@ -258,8 +324,10 @@ describe("assessRentUpdate", () => {
     );
     expect(over2023).toMatchObject({ status: "ready", exceeds: true, basis: "cap_2023" });
     if (over2023.status !== "ready") return;
+    expect(rentUpdateReply(over2023)).toContain("Índice de Garantía de Competitividad");
     expect(rentUpdateReply(over2023)).toContain("no es gran tenedor");
     expect(rentUpdateReply(over2023)).toContain("2 %");
+    expect(rentUpdateReply(over2023)).not.toContain("el tope legal de la actualización fue el 2 %");
     expect(rentUpdateReply(over2023)).toContain("nuevo pacto");
     const under = assessRentUpdate(
       input({ contractDate: "2023-05-01", updateDate: "2024-05-01", askedRentEur: 1030 }),

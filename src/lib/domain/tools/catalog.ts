@@ -230,7 +230,7 @@ export const TENANT_TOOLS: ToolDefinition[] = [
     articleLabel: "Artículo 18 de la LAU",
     articleUrl: BOE_ART.rent,
     articleNote:
-      `Sin pacto expreso no hay actualización durante el contrato. Con pacto, el tope fue el 2 % en 2023 y el 3 % en 2024, y desde 2025 el IRAV. ${whenReform("Del 8 de octubre de 2026 al 31 de diciembre de 2027, la disposición final sexta del RDL 29/2026 impide subir la renta si supera el índice de precios de referencia y, sin pacto nuevo, la limita al 2 %.")} Revisado el ${TOOL_TEXTS_REVIEWED_ON}.`.trim(),
+      `Sin pacto expreso no hay actualización durante el contrato. Con pacto, en 2023 el tope fue el Índice de Garantía de Competitividad publicado en la fecha de la actualización, en 2024 el 3 % y desde 2025 el IRAV. ${whenReform("Del 8 de octubre de 2026 al 31 de diciembre de 2027, la disposición final sexta del RDL 29/2026 impide subir la renta si supera el índice de precios de referencia y, sin pacto nuevo, la limita al 2 %.")} Revisado el ${TOOL_TEXTS_REVIEWED_ON}.`.trim(),
     extraLinks: [
       { href: BOE_LEY_12_2023, label: "Ley 12/2023" },
       ...reformStatuteLinks(REFORM_2026_ACTIVE),
@@ -244,7 +244,7 @@ export const TENANT_TOOLS: ToolDefinition[] = [
       {
         question: "¿Cuál es el tope si el contrato sí prevé la actualización?",
         answer:
-          `En las actualizaciones de 2023 el tope fue el 2 % y en las de 2024 el 3 %. Desde 2025 el límite es el IRAV que publica el INE, el del último mes disponible en la fecha de la actualización. ${whenReform("Entre el 8 de octubre de 2026 y el 31 de diciembre de 2027 hay un límite extra: si la renta supera el índice de precios de referencia no sube, y si no lo supera y no hay un pacto nuevo, no puede pasar del 2 %.")}`.trim(),
+          `En las actualizaciones de 2023 el tope fue el Índice de Garantía de Competitividad, el último publicado en esa fecha, y en las de 2024 el 3 %. Desde 2025 el límite es el IRAV que publica el INE, el del último mes disponible en la fecha de la actualización. ${whenReform("Entre el 8 de octubre de 2026 y el 31 de diciembre de 2027 hay un límite extra: si la renta supera el índice de precios de referencia no sube, y si no lo supera y no hay un pacto nuevo, no puede pasar del 2 %.")}`.trim(),
       },
       {
         question: "¿De dónde sale el IRAV?",
