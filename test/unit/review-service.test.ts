@@ -205,16 +205,37 @@ describe("ReviewService", () => {
     ).rejects.toThrow();
   });
 
-  it("rejects an experience older than 30 days", async () => {
+  it("accepts an experience older than 30 days and within 36 months", async () => {
+    const user = await verifiedUser();
+    const date = new Date();
+    date.setUTCDate(date.getUTCDate() - 400);
+    const iso = date.toISOString().slice(0, 10);
+    const review = await service.create(user, payload({ experienceDate: iso }));
+    expect(review.experienceDate.toISOString().slice(0, 10)).toBe(iso);
+  });
+
+  it("rejects an experience older than 36 months", async () => {
     const user = await verifiedUser();
     const oldDate = new Date();
-    oldDate.setUTCDate(oldDate.getUTCDate() - 31);
+    oldDate.setUTCDate(oldDate.getUTCDate() - 1200);
     await expect(
       service.create(
         user,
         payload({ experienceDate: oldDate.toISOString().slice(0, 10) }),
       ),
-    ).rejects.toThrow(/últimos 30 días/);
+    ).rejects.toThrow(/últimos 36 meses/);
+  });
+
+  it("rejects a future experience date", async () => {
+    const user = await verifiedUser();
+    const future = new Date();
+    future.setUTCDate(future.getUTCDate() + 1);
+    await expect(
+      service.create(
+        user,
+        payload({ experienceDate: future.toISOString().slice(0, 10) }),
+      ),
+    ).rejects.toThrow(/no puede ser futura/);
   });
 
   it("marks a published review as helpful once", async () => {

@@ -1,4 +1,5 @@
 import { LegalDoc } from "@/components/legal-doc";
+import { MAX_EXPERIENCE_AGE_MONTHS } from "@/lib/domain/review-authenticity";
 import { publicMailbox } from "@/lib/legal";
 import { pageMeta } from "@/lib/seo";
 
@@ -42,8 +43,9 @@ export default function NormasPage() {
       <h2>Autenticidad de las reseñas</h2>
       <ul>
         <li>
-          Deben basarse en una experiencia propia y reciente con la
-          inmobiliaria: alquiler, gestión, visita, negociación o incidencia.
+          Deben basarse en una experiencia propia de los últimos{" "}
+          {MAX_EXPERIENCE_AGE_MONTHS} meses con la inmobiliaria: alquiler,
+          gestión, visita, negociación o incidencia.
         </li>
         <li>
           El autor declara la fecha de su última interacción, que no actúa por

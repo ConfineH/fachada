@@ -21,6 +21,9 @@ import {
 } from "@/lib/review-evidence-file";
 import { publicApiUrl } from "@/lib/site-url";
 import {
+  earliestExperienceIso,
+  experienceDateError,
+  MAX_EXPERIENCE_AGE_MONTHS,
   REVIEW_TERMS_VERSION,
   WHOLE_NUMBER_RATING_ERROR,
 } from "@/lib/domain/review-authenticity";
@@ -169,6 +172,13 @@ export function ReviewForm({
     const trimmedCons = cons.trim();
     if (!experienceDate) {
       showError("date", "Indica la fecha de tu última interacción.");
+      return;
+    }
+    const dateError = experienceDateError(
+      new Date(`${experienceDate}T00:00:00.000Z`),
+    );
+    if (dateError) {
+      showError("date", dateError);
       return;
     }
     if (experienceCity.trim().length < 2) {
@@ -490,6 +500,7 @@ export function ReviewForm({
               <input
                 type="date"
                 required
+                min={earliestExperienceIso()}
                 max={new Date().toISOString().slice(0, 10)}
                 value={experienceDate}
                 aria-invalid={errorField === "date"}
@@ -548,8 +559,9 @@ export function ReviewForm({
             ) : null}
           </label>
           <p className="text-xs text-zinc-500">
-            La fecha debe ser de los últimos 30 días. Si sigues de alquiler o
-            de gestión, indica el último contacto que importe.
+            La fecha debe ser de los últimos {MAX_EXPERIENCE_AGE_MONTHS} meses.
+            Si sigues de alquiler o de gestión, indica el último contacto que
+            importe.
           </p>
           <label id="review-rating" className="block text-xs font-medium text-zinc-600">
             Nota (1–5)

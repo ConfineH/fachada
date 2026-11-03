@@ -53,8 +53,9 @@ lee el nombre visible del anunciante y consulta el API de Fachada.
 
 - Se solicita fecha y tipo de experiencia, declaración de primera mano, ausencia
   de incentivo y ausencia de conflicto.
-- Se aplica en servidor una ventana máxima de treinta días desde la última
-  interacción declarada.
+- Se aplica en servidor una ventana máxima de 36 meses naturales desde la
+  última interacción declarada (decisión del titular, 28 oct 2026; antes eran
+  treinta días). El dictamen del artículo 20.4 sigue pendiente.
 - «Email verificado» no significa «experiencia verificada».
 - Las acusaciones de delito, fraude o robo requieren evidencia y segunda
   revisión; sin ella no se publican.

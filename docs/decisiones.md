@@ -142,10 +142,15 @@ Inspirado en cómo documentamos decisiones en Meant To y Migajas para no re-deba
 honestas antes de crecer. El correo de contacto y el dictamen siguen pendientes;
 nombre/NIF/domicilio esperan a la SL.
 
-**Decisión:** Aplicar en código la lectura conservadora (30 días, declaraciones,
+**Decisión:** Aplicar en código la lectura conservadora (declaraciones,
 evidencia privada, denuncia/apelación, exportación). En público: experiencia
 declarada vs acreditada; nunca «reseña verificada» ni anonimato absoluto.
 SEO on-page (títulos, sitemap, JSON-LD) sí; campaña nacional no.
+
+**Actualización 2026-10-28:** la ventana de 30 días queda sustituida por 36
+meses naturales (`MAX_EXPERIENCE_AGE_MONTHS`). El titular amplió el margen
+porque casi nadie reseña dentro del primer mes. El dictamen sobre el
+artículo 20.4 TRLGDCU sigue pendiente.
 
 **Consecuencias:**
 - ✅ Producto alineado con el brief legal mientras llega el abogado
