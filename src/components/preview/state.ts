@@ -1,6 +1,6 @@
 export type PreviewScreen = "home" | "buscar" | "ficha" | "publicar" | "cuenta";
 export type PreviewArch = "actual" | "propuesta" | "ambas";
-export type FormMode = "conservador" | "alternativa";
+export type FormMode = "conservador" | "lados" | "narrativa";
 export type PublishResult = "inmediata" | "pendiente" | null;
 
 export type PreviewController = {

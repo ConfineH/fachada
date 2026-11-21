@@ -2,9 +2,16 @@
 
 import { useState } from "react";
 
-import { AUTHENTICITY_LABELS, mapOptionalSides, publicBodyFromSides } from "@/lib/preview/narrative";
+import { INCIDENT_TAG_LABELS, INCIDENT_TAGS, type IncidentTag } from "@/lib/domain/incidents";
+import {
+  AUTHENTICITY_LABELS,
+  draftReady,
+  mapNarrative,
+  mapOptionalSides,
+  publicBodyFromSides,
+} from "@/lib/preview/narrative";
 import { agencyById } from "@/lib/preview/fixtures";
-import { provisionalCandidates, searchProposed } from "@/lib/preview/search";
+import { provisionalAssessment } from "@/lib/preview/search";
 import type { PreviewController } from "@/components/preview/state";
 import { AgencyChoice } from "@/components/preview/search-views";
 import {
@@ -20,13 +27,11 @@ export function CurrentPublish({ state }: { state: PreviewController }) {
     <div>
       <CurrentNav go={state.go} />
       <main className="mx-auto max-w-xl px-4 py-10 sm:px-6">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">Dentro de la ficha</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">Reconstrucción</p>
         <h1 className="mt-3 text-3xl font-semibold tracking-tight">Escribir reseña</h1>
         <p className="mt-3 text-sm text-zinc-600">
-          Sobre {agency.name}. Hoy ventajas y desventajas son obligatorias a la vez. La nota es un campo numérico.
-          {state.formMode === "alternativa"
-            ? " El modo de un solo lado no existe aquí: sigue haciendo falta escribir los dos."
-            : ""}
+          Sobre {agency.name}. En el producto, ventajas y desventajas son obligatorias a la vez y antes hay que identificarse.
+          Esta columna no simula esa validación.
         </p>
         <div className="mt-6 rounded-xl border border-stone-200 bg-white p-5">
           {state.result ? (
@@ -38,15 +43,9 @@ export function CurrentPublish({ state }: { state: PreviewController }) {
               <Field label="Nota (1–5)" value="4" />
               <Field label="Desventajas, obligatorias" value="Qué falló" />
               <Field label="Ventajas, obligatorias" value="Qué funcionó" />
-              <p className="text-xs text-zinc-500">Cuatro declaraciones de autenticidad y un archivo opcional, al final del mismo bloque.</p>
-              <div className="flex flex-col gap-2 sm:flex-row">
-                <button type="button" className="btn-primary min-h-11" onClick={() => state.setResult("inmediata")}>
-                  Simular publicación inmediata
-                </button>
-                <button type="button" className="btn-secondary min-h-11" onClick={() => state.setResult("pendiente")}>
-                  Simular revisión
-                </button>
-              </div>
+              <p className="text-xs text-zinc-500">
+                El formulario real añade título, tipo de experiencia, ciudad, incidencias, cuatro declaraciones y un archivo opcional.
+              </p>
             </div>
           )}
         </div>
@@ -83,16 +82,33 @@ function CurrentEnding({
 }
 
 export function ProposedPublish({ state }: { state: PreviewController }) {
-  const [rejected, setRejected] = useState(false);
+  const [rejectedQuery, setRejectedQuery] = useState<string | null>(null);
+  const [provisionalFor, setProvisionalFor] = useState<string | null>(null);
   const [pros, setPros] = useState("");
   const [cons, setCons] = useState("");
-  const [rating, setRating] = useState<number | null>(4);
+  const [narrative, setNarrative] = useState("");
+  const [rating, setRating] = useState<number | null>(null);
   const [checks, setChecks] = useState([false, false, false, false]);
+  const [incidents, setIncidents] = useState<IncidentTag[]>([]);
   const agency = state.publishAgencyId ? agencyById(state.publishAgencyId) : null;
-  const mapped = mapOptionalSides({ pros, cons });
-  const declarationsReady = checks.every(Boolean);
-  const conservativeReady = pros.trim().length >= 10 && cons.trim().length >= 10 && declarationsReady && rating !== null;
-  const alternativeReady = mapped.publishable && declarationsReady && rating !== null;
+  const trimmedQuery = state.query.trim();
+  const provisionalName = provisionalFor === trimmedQuery ? provisionalFor : null;
+  const rejected = rejectedQuery === trimmedQuery;
+
+  const ready = draftReady({
+    mode: state.formMode,
+    pros,
+    cons,
+    narrative,
+    rating,
+    declarationsAccepted: checks.filter(Boolean).length,
+    incidentTags: incidents,
+  });
+
+  function finish(result: "inmediata" | "pendiente") {
+    if (!ready.ready) return;
+    state.setResult(result);
+  }
 
   return (
     <div>
@@ -104,24 +120,35 @@ export function ProposedPublish({ state }: { state: PreviewController }) {
           agency ? (
             <ProposedEnding state={state} agencyId={agency.id} agencyName={agency.name} />
           ) : (
-            <ProvisionalEnding state={state} />
+            <ProvisionalEnding state={state} name={provisionalName ?? state.query.trim()} />
           )
-        ) : agency ? (
+        ) : agency || provisionalName ? (
           <form
             className="mt-8 space-y-8"
             onSubmit={(event) => {
               event.preventDefault();
-              state.setResult("inmediata");
+              finish("inmediata");
             }}
           >
             <div className="flex flex-wrap items-center justify-between gap-3">
               <p className="text-sm text-zinc-700">
-                Vas a escribir sobre <span className="font-semibold">{agency.name}</span>.
+                {agency ? (
+                  <>
+                    Vas a escribir sobre <span className="font-semibold">{agency.name}</span>.
+                  </>
+                ) : (
+                  <>
+                    Ficha provisional «<span className="font-semibold">{provisionalName}</span>». No se une a otra empresa.
+                  </>
+                )}
               </p>
               <button
                 type="button"
                 className="text-sm font-medium text-brand"
-                onClick={() => state.openPublish(null)}
+                onClick={() => {
+                  setProvisionalFor(null);
+                  state.openPublish(null);
+                }}
               >
                 Cambiar de ficha
               </button>
@@ -138,12 +165,7 @@ export function ProposedPublish({ state }: { state: PreviewController }) {
                 </label>
                 <label className="text-xs font-medium text-zinc-600">
                   Ciudad del piso
-                  <input className="input-field mt-1" placeholder={agency.cities[0]} list="publish-cities" />
-                  <datalist id="publish-cities">
-                    {agency.cities.map((city) => (
-                      <option key={city} value={city} />
-                    ))}
-                  </datalist>
+                  <input className="input-field mt-1" placeholder={agency?.cities[0] ?? "Ciudad del piso"} />
                 </label>
               </div>
               <div>
@@ -161,18 +183,26 @@ export function ProposedPublish({ state }: { state: PreviewController }) {
                   ))}
                 </div>
               </div>
-              {state.formMode === "conservador" ? (
+              {state.formMode === "narrativa" ? (
                 <>
-                  <TextSide label="Desventajas, obligatorias" value={cons} onChange={setCons} />
-                  <TextSide label="Ventajas, obligatorias" value={pros} onChange={setPros} />
-                  <p className="text-sm text-zinc-600">Este es el contrato actual: sin los dos textos, no se publica.</p>
+                  <TextSide label="Cuéntanos tu experiencia" value={narrative} onChange={setNarrative} />
+                  <TextSide label="Qué funcionó, si quieres contarlo" value={pros} onChange={setPros} />
+                  <TextSide label="Qué falló, si quieres contarlo" value={cons} onChange={setCons} />
+                  <IncidentPicker selected={incidents} onChange={setIncidents} />
+                  <StoragePreview mode="narrativa" narrative={narrative} pros={pros} cons={cons} incidents={incidents} />
                 </>
-              ) : (
+              ) : state.formMode === "lados" ? (
                 <>
                   <TextSide label="Qué falló" value={cons} onChange={setCons} />
                   <TextSide label="Qué funcionó" value={pros} onChange={setPros} />
                   <p className="text-sm text-zinc-600">Basta con un lado. El otro puede quedar vacío. No se inventa el texto que falta.</p>
-                  <StoragePreview pros={pros} cons={cons} />
+                  <StoragePreview mode="lados" narrative="" pros={pros} cons={cons} incidents={[]} />
+                </>
+              ) : (
+                <>
+                  <TextSide label="Desventajas, obligatorias" value={cons} onChange={setCons} />
+                  <TextSide label="Ventajas, obligatorias" value={pros} onChange={setPros} />
+                  <p className="text-sm text-zinc-600">Este es el contrato actual: sin los dos textos, no se publica.</p>
                 </>
               )}
             </fieldset>
@@ -192,26 +222,28 @@ export function ProposedPublish({ state }: { state: PreviewController }) {
                 </label>
               ))}
             </fieldset>
-            <p className="text-sm text-zinc-600">
-              {state.formMode === "conservador"
-                ? conservativeReady
-                  ? "Con lo escrito y las declaraciones, este envío podría salir."
-                  : "Tal como está el modelo actual, aún faltaría un lado o una declaración."
-                : alternativeReady
-                  ? "Con un lado y las declaraciones, este envío podría salir."
-                  : "Aún falta un lado de al menos 10 caracteres o una declaración."}
-            </p>
+            <p className="text-sm text-zinc-600">{ready.reason}</p>
             <div className="flex flex-col gap-2 sm:flex-row">
-              <button type="submit" className="btn-primary min-h-12">
+              <button type="submit" className="btn-primary min-h-12 disabled:cursor-not-allowed disabled:opacity-50" disabled={!ready.ready}>
                 Simular publicación inmediata
               </button>
-              <button type="button" className="btn-secondary min-h-12" onClick={() => state.setResult("pendiente")}>
+              <button
+                type="button"
+                className="btn-secondary min-h-12 disabled:cursor-not-allowed disabled:opacity-50"
+                disabled={!ready.ready}
+                onClick={() => finish("pendiente")}
+              >
                 Simular revisión
               </button>
             </div>
           </form>
         ) : (
-          <AgencyPicker state={state} rejected={rejected} onReject={setRejected} />
+          <AgencyPicker
+            state={state}
+            rejected={rejected}
+            onReject={(value) => setRejectedQuery(value ? trimmedQuery : null)}
+            onContinue={(name) => setProvisionalFor(name)}
+          />
         )}
       </main>
       <ProposedFooter />
@@ -223,18 +255,20 @@ function AgencyPicker({
   state,
   rejected,
   onReject,
+  onContinue,
 }: {
   state: PreviewController;
   rejected: boolean;
   onReject: (value: boolean) => void;
+  onContinue: (name: string) => void;
 }) {
   const trimmed = state.query.trim();
-  const { hits, ambiguous } = trimmed ? searchProposed(trimmed) : { hits: [], ambiguous: false };
-  const candidates = provisionalCandidates(trimmed);
+  const gate = provisionalAssessment(trimmed);
+  const canContinue = trimmed.length >= 2 && !gate.cityNameOnly && (!gate.blocksNewFicha || rejected);
   return (
     <div className="mt-8 space-y-6">
       <p className="text-sm leading-relaxed text-zinc-600">
-        Primero localiza la inmobiliaria. Si el nombre del anuncio ya es un alias, escribes en esa ficha.
+        Primero localiza la inmobiliaria. Un alias exacto propone esa ficha. Un parecido del 0,45 solo avisa.
       </p>
       <label className="block text-sm font-medium" htmlFor="publish-q">
         Nombre, alias o ciudad
@@ -249,49 +283,106 @@ function AgencyPicker({
           placeholder="Por ejemplo, NorteLlaves o Patio Sur"
         />
       </label>
-      {ambiguous ? (
+      {gate.ambiguous ? (
         <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
-          Hay más de una ficha posible. No las hemos unido. Elige una.
+          Hay más de una ficha posible. No las hemos unido. Elige una o descártalas para continuar con otro nombre.
         </p>
       ) : null}
-      <ul className="grid gap-4">
-        {hits.map((hit) => (
-          <li key={hit.agency.id}>
-            <AgencyChoice hit={hit} state={state} />
-          </li>
-        ))}
-      </ul>
-      {trimmed.length >= 2 && candidates.length > 0 ? (
-        <div className="rounded-xl border border-stone-200 bg-white p-5">
-          <h2 className="font-semibold">¿Ninguna es la tuya?</h2>
-          <p className="mt-2 text-sm text-zinc-600">
-            Antes de una ficha provisional hay que descartar estas coincidencias. No se fusionan solas.
-          </p>
-          <label className="mt-3 flex items-start gap-2 text-sm">
-            <input type="checkbox" className="mt-1" checked={rejected} onChange={(event) => onReject(event.target.checked)} />
-            No es ninguna de estas fichas.
-          </label>
-          {rejected ? (
-            <div className="mt-4">
-              <p className="text-sm text-zinc-700">
-                La ficha de «{trimmed}» saldría como provisional, pendiente de verificar, y la experiencia iría en ella.
-              </p>
-              <button type="button" className="btn-primary mt-3 min-h-11" onClick={() => state.setResult("pendiente")}>
-                Simular alta provisional en revisión
-              </button>
-            </div>
-          ) : null}
+      {gate.identified.length > 0 ? (
+        <ul className="grid gap-4">
+          {gate.identified.map((hit) => (
+            <li key={hit.agency.id}>
+              <AgencyChoice hit={hit} state={state} />
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      {gate.cityHits.length > 0 ? (
+        <div className="space-y-3">
+          <p className="text-sm text-zinc-600">Fichas en esa ciudad. El nombre no queda identificado.</p>
+          <ul className="grid gap-4">
+            {gate.cityHits.map((hit) => (
+              <li key={hit.agency.id}>
+                <AgencyChoice hit={hit} state={state} />
+              </li>
+            ))}
+          </ul>
         </div>
       ) : null}
-      {trimmed.length >= 2 && candidates.length === 0 ? (
+      {gate.hints.length > 0 ? (
+        <div className="space-y-3">
+          <p className="text-sm text-zinc-600">Parecidos. No identifican la empresa y no impiden seguir.</p>
+          <ul className="grid gap-4">
+            {gate.hints.map((hit) => (
+              <li key={hit.agency.id}>
+                <AgencyChoice hit={hit} state={state} />
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+      {gate.cityNameOnly && gate.identified.length === 0 ? (
         <div className="rounded-xl border border-stone-200 bg-white p-5">
-          <h2 className="font-semibold">No hay una ficha ni un alias parecido</h2>
+          <h2 className="font-semibold">Escribe el nombre de la inmobiliaria</h2>
           <p className="mt-2 text-sm text-zinc-600">
-            «{trimmed}» puede crearse como ficha provisional. No hay otra entidad con la que confundirla.
+            «{trimmed}» es una ciudad del archivo de ejemplo. Con solo eso no se crea una ficha.
           </p>
+        </div>
+      ) : null}
+      {trimmed.length >= 2 && !gate.cityNameOnly ? (
+        <div className="rounded-xl border border-stone-200 bg-white p-5">
+          <h2 className="font-semibold">
+            {gate.blocksNewFicha ? "¿Ninguna es la tuya?" : "Ninguna ficha queda identificada"}
+          </h2>
+          <p className="mt-2 text-sm text-zinc-600">
+            {gate.blocksNewFicha
+              ? "Para una ficha nueva hay que descartar estas coincidencias. No se fusionan solas."
+              : `«${trimmed}» puede seguir como ficha provisional. El siguiente paso es contar la experiencia.`}
+          </p>
+          {gate.blocksNewFicha ? (
+            <label className="mt-3 flex items-start gap-2 text-sm">
+              <input type="checkbox" className="mt-1" checked={rejected} onChange={(event) => onReject(event.target.checked)} />
+              No es ninguna de estas fichas.
+            </label>
+          ) : null}
+          <button
+            type="button"
+            className="btn-primary mt-4 min-h-11 disabled:cursor-not-allowed disabled:opacity-50"
+            disabled={!canContinue}
+            onClick={() => onContinue(trimmed)}
+          >
+            Continuar con la ficha provisional
+          </button>
         </div>
       ) : null}
     </div>
+  );
+}
+
+function IncidentPicker({
+  selected,
+  onChange,
+}: {
+  selected: IncidentTag[];
+  onChange: (tags: IncidentTag[]) => void;
+}) {
+  return (
+    <fieldset className="space-y-2">
+      <legend className="text-xs font-medium text-zinc-600">Incidencias, si aplica</legend>
+      {INCIDENT_TAGS.map((tag) => (
+        <label key={tag} className="flex items-start gap-2 text-sm text-zinc-800">
+          <input
+            type="checkbox"
+            className="mt-1"
+            checked={selected.includes(tag)}
+            onChange={(event) =>
+              onChange(event.target.checked ? [...selected, tag] : selected.filter((item) => item !== tag))
+            }
+          />
+          {INCIDENT_TAG_LABELS[tag]}
+        </label>
+      ))}
+    </fieldset>
   );
 }
 
@@ -312,30 +403,62 @@ function TextSide({
   );
 }
 
-function StoragePreview({ pros, cons }: { pros: string; cons: string }) {
-  const mapped = mapOptionalSides({ pros, cons });
-  const body = publicBodyFromSides(mapped);
+function StoragePreview({
+  mode,
+  narrative,
+  pros,
+  cons,
+  incidents,
+}: {
+  mode: "lados" | "narrativa";
+  narrative: string;
+  pros: string;
+  cons: string;
+  incidents: IncidentTag[];
+}) {
+  if (mode === "lados") {
+    const mapped = mapOptionalSides({ pros, cons });
+    return (
+      <div className="rounded-xl border border-stone-200 bg-stone-50 p-4 text-sm">
+        <p className="font-medium text-zinc-900">Qué se guardaría, sin columna nueva</p>
+        <p className="mt-2 text-zinc-700">{mapped.reason}</p>
+        <p className="mt-3 whitespace-pre-wrap font-mono text-xs text-zinc-800">{publicBodyFromSides(mapped) || "Nada todavía."}</p>
+      </div>
+    );
+  }
+  const mapped = mapNarrative({ narrative, pros, cons, incidentTags: incidents });
   return (
     <div className="rounded-xl border border-stone-200 bg-stone-50 p-4 text-sm">
       <p className="font-medium text-zinc-900">Qué se guardaría, sin columna nueva</p>
       <p className="mt-2 text-zinc-700">{mapped.reason}</p>
-      <p className="mt-3 whitespace-pre-wrap font-mono text-xs text-zinc-800">
-        {body || "Nada todavía."}
+      <p className="mt-3 text-xs text-zinc-500">Título: {mapped.title || "—"}</p>
+      <p className="mt-2 whitespace-pre-wrap font-mono text-xs text-zinc-800">{mapped.body || "Nada todavía."}</p>
+      <p className="mt-2 text-xs text-zinc-500">
+        Incidencias: {mapped.incidentTags.length > 0 ? mapped.incidentTags.map((tag) => INCIDENT_TAG_LABELS[tag]).join(", ") : "ninguna"}
       </p>
     </div>
   );
 }
 
-function ProvisionalEnding({ state }: { state: PreviewController }) {
+function ProvisionalEnding({ state, name }: { state: PreviewController; name: string }) {
+  const published = state.result === "inmediata";
   return (
     <section className="mt-8 rounded-xl border border-stone-200 bg-white p-6">
-      <h2 className="text-2xl font-semibold tracking-tight">Ficha provisional, en revisión</h2>
+      <h2 className="text-2xl font-semibold tracking-tight">Ficha provisional «{name}»</h2>
       <p className="mt-3 text-sm leading-relaxed text-zinc-700">
-        «{state.query.trim()}» no se ha unido a otra empresa. La ficha saldría marcada como provisional y la experiencia no se leería hasta la revisión.
+        No se ha unido a otra empresa. La ficha queda pendiente de verificar.
+        {published
+          ? " La experiencia, con el texto y las declaraciones completos, seguiría el filtro habitual."
+          : " La experiencia queda en revisión y todavía no se lee."}
       </p>
-      <button type="button" className="btn-primary mt-6 min-h-11" onClick={() => state.go("cuenta")}>
-        Ver el estado en tu cuenta
-      </button>
+      <div className="mt-6 flex flex-col gap-2 sm:flex-row">
+        <button type="button" className="btn-primary min-h-11" onClick={() => state.go("cuenta")}>
+          Ver el estado en tu cuenta
+        </button>
+        <button type="button" className="btn-secondary min-h-11" onClick={() => state.setResult(null)}>
+          Volver al formulario
+        </button>
+      </div>
     </section>
   );
 }

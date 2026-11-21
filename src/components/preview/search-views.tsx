@@ -28,19 +28,25 @@ const CURRENT_SORTS: { id: PreviewSort; label: string }[] = [
 
 const PROPOSED_SORTS = CURRENT_SORTS.filter((option) => option.id !== "overall");
 
-function matchLine(hit: PreviewHit) {
-  if (hit.via === "alias") return `Coincide con el alias «${hit.matchedOn}».`;
-  if (hit.via === "ciudad") return `Está en ${hit.matchedOn}.`;
-  if (hit.matchedOn !== hit.agency.name) return `Coincide con «${hit.matchedOn}».`;
-  return hit.agency.cities.join(" · ");
+function matchLine(hit: PreviewHit, listing: boolean) {
+  if (listing) return hit.agency.cities.join(" · ");
+  if (hit.band === "ciudad") return `Está en ${hit.matchedOn}. No identifica el nombre.`;
+  if (hit.band === "exacta" && hit.via === "alias") {
+    return `El alias «${hit.matchedOn}» coincide. No se abre otra ficha ni se asigna sola.`;
+  }
+  if (hit.band === "exacta") return `El nombre coincide con «${hit.matchedOn}». Hay que elegirla.`;
+  if (hit.band === "probable") return `Se parece a «${hit.matchedOn}». No basta para darla por la misma.`;
+  return `Parecido con «${hit.matchedOn}». El 0,45 solo avisa, no identifica.`;
 }
 
 export function AgencyChoice({
   hit,
   state,
+  listing = false,
 }: {
   hit: PreviewHit;
   state: PreviewController;
+  listing?: boolean;
 }) {
   return (
     <article className="rounded-xl border border-stone-200 bg-white p-5">
@@ -48,7 +54,7 @@ export function AgencyChoice({
         <h3 className="text-lg font-semibold">{hit.agency.name}</h3>
         <FictionMark />
       </div>
-      <p className="mt-1 text-sm text-zinc-600">{matchLine(hit)}</p>
+      <p className="mt-1 text-sm text-zinc-600">{matchLine(hit, listing)}</p>
       <p className="mt-1 text-sm text-zinc-500">{hit.agency.legalName}</p>
       <div className="mt-4">
         <DualScores agencyId={hit.agency.id} />
@@ -108,7 +114,8 @@ export function CurrentSearch({ state }: { state: PreviewController }) {
               <li key={agency.id}>
                 <AgencyChoice
                   state={state}
-                  hit={{ agency, matchedOn: agency.name, via: "nombre", confidence: 1 }}
+                  hit={{ agency, matchedOn: agency.name, via: "nombre", confidence: 1, band: "exacta" }}
+                  listing
                 />
               </li>
             ))}
@@ -124,14 +131,13 @@ export function ProposedSearch({ state }: { state: PreviewController }) {
   const [sort, setSort] = useState<PreviewSort>("reviews");
   const trimmed = state.query.trim();
   const result = searchProposed(trimmed);
-  const hits = trimmed
-    ? result.hits
-    : sortAgencies(PREVIEW_AGENCIES, sort).map((agency) => ({
-        agency,
-        matchedOn: agency.name,
-        via: "nombre" as const,
-        confidence: 1,
-      }));
+  const directory = sortAgencies(PREVIEW_AGENCIES, sort).map((agency) => ({
+    agency,
+    matchedOn: agency.name,
+    via: "nombre" as const,
+    confidence: 1,
+    band: "exacta" as const,
+  }));
   return (
     <div>
       <ProposedNav go={state.go} />
@@ -140,7 +146,7 @@ export function ProposedSearch({ state }: { state: PreviewController }) {
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">Buscador</p>
           <h1 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">Buscar una inmobiliaria</h1>
           <p className="mt-3 max-w-2xl text-zinc-600">
-            Nombre, alias o ciudad. Si dos fichas se parecen, se muestran las dos.
+            Nombre, alias o ciudad. Una coincidencia exacta o probable se enseña para elegirla. El 0,45 solo avisa de un parecido.
           </p>
         </div>
       </header>
@@ -158,26 +164,64 @@ export function ProposedSearch({ state }: { state: PreviewController }) {
             </button>
           ))}
         </div>
-        {result.ambiguous ? (
+        {!trimmed ? (
+          <p className="text-sm text-zinc-500">{directory.length} fichas en el archivo de ejemplo</p>
+        ) : result.ambiguous ? (
           <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
-            Hay {hits.length} fichas posibles para «{trimmed}». No las hemos unido: pueden ser empresas distintas.
+            Hay {result.identified.length} fichas posibles para «{trimmed}». No las hemos unido ni elegido una.
           </p>
         ) : (
           <p className="text-sm text-zinc-500">
-            {hits.length} {hits.length === 1 ? "ficha" : "fichas"}
-            {trimmed ? ` para «${trimmed}»` : " en el archivo de ejemplo"}
+            {result.identified.length} {result.identified.length === 1 ? "identificación posible" : "identificaciones posibles"} para «{trimmed}»
           </p>
         )}
-        {hits.length === 0 ? (
-          <EmptyProposed query={trimmed} onWrite={() => state.openPublish(null)} />
-        ) : (
+        {!trimmed ? (
           <ul className="grid gap-4">
-            {hits.map((hit) => (
+            {directory.map((hit) => (
               <li key={hit.agency.id}>
-                <AgencyChoice hit={hit} state={state} />
+                <AgencyChoice hit={hit} state={state} listing />
               </li>
             ))}
           </ul>
+        ) : (
+          <>
+            {result.identified.length > 0 ? (
+              <ul className="grid gap-4">
+                {result.identified.map((hit) => (
+                  <li key={hit.agency.id}>
+                    <AgencyChoice hit={hit} state={state} />
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+            {result.cityHits.length > 0 ? (
+              <div className="space-y-4">
+                <p className="text-sm text-zinc-600">Estas fichas están en esa ciudad. El nombre no ha quedado identificado.</p>
+                <ul className="grid gap-4">
+                  {result.cityHits.map((hit) => (
+                    <li key={hit.agency.id}>
+                      <AgencyChoice hit={hit} state={state} />
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+            {result.hints.length > 0 ? (
+              <div className="space-y-4">
+                <p className="text-sm text-zinc-600">Parecidos por debajo de una identificación. No bloquean otra ficha.</p>
+                <ul className="grid gap-4">
+                  {result.hints.map((hit) => (
+                    <li key={hit.agency.id}>
+                      <AgencyChoice hit={hit} state={state} />
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+            {result.identified.length === 0 && result.cityHits.length === 0 && result.hints.length === 0 ? (
+              <EmptyProposed query={trimmed} onWrite={() => state.openPublish(null)} />
+            ) : null}
+          </>
         )}
       </main>
       <ProposedFooter />

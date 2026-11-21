@@ -1,37 +1,49 @@
 import { describe, expect, it } from "vitest";
 
-import { mapOptionalSides, publicBodyFromSides } from "@/lib/preview/narrative";
+import { draftReady, mapNarrative, mapOptionalSides, publicBodyFromSides } from "@/lib/preview/narrative";
 import { reviewsForCityFilter } from "@/lib/preview/reviews";
-import {
-  provisionalCandidates,
-  searchCurrent,
-  searchProposed,
-} from "@/lib/preview/search";
+import { provisionalAssessment, searchCurrent, searchProposed } from "@/lib/preview/search";
 import { PREVIEW_REVIEWS } from "@/lib/preview/fixtures";
 
 describe("preview alias search", () => {
-  it("finds a commercial alias without opening a second ficha", () => {
+  it("finds an exact alias and still requires a choice", () => {
     const current = searchCurrent("NorteLlaves");
     const proposed = searchProposed("NorteLlaves");
+    const gate = provisionalAssessment("NorteLlaves");
 
     expect(current).toHaveLength(0);
     expect(proposed.ambiguous).toBe(false);
-    expect(proposed.hits.map((hit) => hit.agency.id)).toEqual(["norte"]);
-    expect(proposed.hits[0]?.via).toBe("alias");
-    expect(proposed.hits[0]?.matchedOn).toBe("NorteLlaves");
+    expect(proposed.identified.map((hit) => hit.agency.id)).toEqual(["norte"]);
+    expect(proposed.identified[0]?.band).toBe("exacta");
+    expect(proposed.hints).toHaveLength(0);
+    expect(gate.blocksNewFicha).toBe(true);
   });
 
   it("keeps similar names apart instead of merging them", () => {
     const proposed = searchProposed("Patio Sur");
+    const gate = provisionalAssessment("Patio Sur");
 
     expect(proposed.ambiguous).toBe(true);
-    expect(proposed.hits.map((hit) => hit.agency.id).sort()).toEqual(["patio", "sur"]);
+    expect(proposed.identified.map((hit) => hit.agency.id).sort()).toEqual(["patio", "sur"]);
+    expect(proposed.identified.every((hit) => hit.band === "exacta" || hit.band === "probable")).toBe(true);
+    expect(gate.blocksNewFicha).toBe(true);
   });
 
-  it("asks to reject every candidate before a provisional ficha", () => {
-    expect(provisionalCandidates("Alba Pisos").map((hit) => hit.agency.id)).toEqual(["alba"]);
-    expect(provisionalCandidates("Zzz Inmobiliaria")).toHaveLength(0);
-    expect(provisionalCandidates("Patio Sur").length).toBeGreaterThan(1);
+  it("treats 0.45 as a hint and leaves an unknown name free to continue", () => {
+    const hinted = provisionalAssessment("Gestión Ejemplo");
+    const unknown = provisionalAssessment("Zzz Inmobiliaria");
+    const city = provisionalAssessment("Madrid");
+
+    expect(hinted.identified).toHaveLength(0);
+    expect(hinted.hints.map((hit) => hit.agency.id)).toEqual(["alba"]);
+    expect(hinted.hints[0]?.band).toBe("exploratoria");
+    expect(hinted.blocksNewFicha).toBe(false);
+    expect(unknown.identified).toHaveLength(0);
+    expect(unknown.hints).toHaveLength(0);
+    expect(unknown.blocksNewFicha).toBe(false);
+    expect(city.cityNameOnly).toBe(true);
+    expect(city.cityHits.length).toBeGreaterThan(0);
+    expect(city.blocksNewFicha).toBe(false);
   });
 });
 
@@ -66,9 +78,69 @@ describe("preview narrative mapping", () => {
     expect(publicBodyFromSides(mapped)).not.toContain("Ventajas:");
   });
 
-  it("does not publish a half-written side", () => {
-    const mapped = mapOptionalSides({ pros: "Bien", cons: "" });
+  it("keeps the narrative in the body and optional sides in their fields", () => {
+    const mapped = mapNarrative({
+      narrative: "La fianza tardó más de un mes en volver a la cuenta.",
+      pros: "",
+      cons: "",
+      incidentTags: ["fianza"],
+    });
+
+    expect(mapped.publishable).toBe(true);
+    expect(mapped.inventedText).toBe(false);
+    expect(mapped.pros).toBe("");
+    expect(mapped.cons).toBe("");
+    expect(mapped.body).toBe("La fianza tardó más de un mes en volver a la cuenta.");
+    expect(mapped.body).not.toContain("Ventajas:");
+    expect(mapped.incidentTags).toEqual(["fianza"]);
+    expect(mapped.title.length).toBeGreaterThan(0);
+    expect(mapped.title.length).toBeLessThanOrEqual(100);
+  });
+
+  it("does not publish a half-written optional side", () => {
+    const mapped = mapNarrative({
+      narrative: "La fianza tardó más de un mes en volver a la cuenta.",
+      pros: "Bien",
+      cons: "",
+    });
     expect(mapped.publishable).toBe(false);
     expect(mapped.pros).toBe("Bien");
+  });
+});
+
+describe("preview publish gate", () => {
+  const narrative = "La fianza tardó más de un mes en volver a la cuenta.";
+
+  it("blocks the ending until the calculated conditions are met", () => {
+    expect(
+      draftReady({
+        mode: "narrativa",
+        narrative,
+        pros: "",
+        cons: "",
+        rating: null,
+        declarationsAccepted: 0,
+      }).ready,
+    ).toBe(false);
+    expect(
+      draftReady({
+        mode: "narrativa",
+        narrative,
+        pros: "",
+        cons: "",
+        rating: 4,
+        declarationsAccepted: 4,
+      }).ready,
+    ).toBe(true);
+    expect(
+      draftReady({
+        mode: "conservador",
+        narrative: "",
+        pros: narrative,
+        cons: "",
+        rating: 4,
+        declarationsAccepted: 4,
+      }).ready,
+    ).toBe(false);
   });
 });

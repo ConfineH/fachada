@@ -1,4 +1,4 @@
-import { matchScore } from "@/lib/domain/match";
+import { matchScore, normalizeAgencyName } from "@/lib/domain/match";
 
 import {
   PREVIEW_AGENCIES,
@@ -7,16 +7,27 @@ import {
   type PreviewReview,
 } from "@/lib/preview/fixtures";
 
-/** Same floor as matchByName. Two agencies at or above it stay apart. */
+/** Hint floor only. A score here is not an identification. */
 export const PREVIEW_MATCH_THRESHOLD = 0.45;
+/** Containment band from matchScore. Still requires a person to choose. */
+export const PREVIEW_PROBABLE_THRESHOLD = 0.85;
 
 export type PreviewSort = "reviews" | "inquilino" | "propietario" | "overall" | "name";
+export type MatchBand = "exacta" | "probable" | "exploratoria" | "ciudad";
 
 export type PreviewHit = {
   agency: PreviewAgency;
   matchedOn: string;
   via: "nombre" | "alias" | "ciudad";
   confidence: number;
+  band: MatchBand;
+};
+
+export type ProposedSearchResult = {
+  identified: PreviewHit[];
+  hints: PreviewHit[];
+  cityHits: PreviewHit[];
+  ambiguous: boolean;
 };
 
 export function reviewsOf(agencyId: string, reviews = PREVIEW_REVIEWS) {
@@ -27,20 +38,33 @@ export function countByRole(reviews: PreviewReview[], role: PreviewReview["role"
   return reviews.filter((review) => review.role === role).length;
 }
 
+export function matchBand(query: string, candidate: string, confidence: number): MatchBand | null {
+  if (confidence <= 0) return null;
+  if (normalizeAgencyName(query) === normalizeAgencyName(candidate)) return "exacta";
+  if (confidence >= PREVIEW_PROBABLE_THRESHOLD) return "probable";
+  if (confidence >= PREVIEW_MATCH_THRESHOLD) return "exploratoria";
+  return null;
+}
+
 function bestIdentity(agency: PreviewAgency, query: string): PreviewHit | null {
-  const candidates: PreviewHit[] = [
-    { agency, matchedOn: agency.name, via: "nombre", confidence: matchScore(query, agency.name) },
-    ...agency.aliases.map((alias) => ({
-      agency,
-      matchedOn: alias,
-      via: "alias" as const,
-      confidence: matchScore(query, alias),
-    })),
+  const candidates = [
+    { matchedOn: agency.name, via: "nombre" as const },
+    ...agency.aliases.map((alias) => ({ matchedOn: alias, via: "alias" as const })),
   ];
-  return candidates.reduce<PreviewHit | null>(
-    (best, hit) => (!best || hit.confidence > best.confidence ? hit : best),
-    null,
-  );
+  let best: PreviewHit | null = null;
+  for (const candidate of candidates) {
+    const confidence = matchScore(query, candidate.matchedOn);
+    const band = matchBand(query, candidate.matchedOn, confidence);
+    if (!band || band === "ciudad") continue;
+    const hit: PreviewHit = { agency, ...candidate, confidence, band };
+    if (!best || rank(hit) > rank(best)) best = hit;
+  }
+  return best;
+}
+
+function rank(hit: PreviewHit) {
+  const bandRank = hit.band === "exacta" ? 3 : hit.band === "probable" ? 2 : 1;
+  return bandRank * 10 + hit.confidence;
 }
 
 function servesCity(agency: PreviewAgency, query: string) {
@@ -52,39 +76,35 @@ function servesCity(agency: PreviewAgency, query: string) {
 export function searchProposed(
   query: string,
   agencies = PREVIEW_AGENCIES,
-): { hits: PreviewHit[]; ambiguous: boolean } {
+): ProposedSearchResult {
   const trimmed = query.trim();
   if (!trimmed) {
-    return {
-      hits: agencies.map((agency) => ({
-        agency,
-        matchedOn: agency.name,
-        via: "nombre" as const,
-        confidence: 1,
-      })),
-      ambiguous: false,
-    };
+    return { identified: [], hints: [], cityHits: [], ambiguous: false };
   }
 
-  const identity = agencies
+  const ranked = agencies
     .map((agency) => bestIdentity(agency, trimmed))
-    .filter((hit): hit is PreviewHit => hit !== null && hit.confidence >= PREVIEW_MATCH_THRESHOLD)
-    .sort((a, b) => b.confidence - a.confidence || a.agency.name.localeCompare(b.agency.name, "es"));
+    .filter((hit): hit is PreviewHit => hit !== null)
+    .sort((a, b) => rank(b) - rank(a) || a.agency.name.localeCompare(b.agency.name, "es"));
+  const identified = ranked.filter((hit) => hit.band === "exacta" || hit.band === "probable");
+  const hints = ranked.filter((hit) => hit.band === "exploratoria");
+  if (identified.length > 0) {
+    return { identified, hints: [], cityHits: [], ambiguous: identified.length > 1 };
+  }
 
-  if (identity.length > 1) return { hits: identity, ambiguous: true };
-  if (identity.length === 1) return { hits: identity, ambiguous: false };
-
-  const byCity = agencies
+  const cityHits = agencies
     .filter((agency) => servesCity(agency, trimmed))
     .map((agency) => ({
       agency,
-      matchedOn: agency.cities.find((city) =>
-        city.toLocaleLowerCase("es").includes(trimmed.toLocaleLowerCase("es")),
-      ) ?? agency.cities[0]!,
+      matchedOn:
+        agency.cities.find((city) =>
+          city.toLocaleLowerCase("es").includes(trimmed.toLocaleLowerCase("es")),
+        ) ?? agency.cities[0]!,
       via: "ciudad" as const,
       confidence: 1,
+      band: "ciudad" as const,
     }));
-  return { hits: byCity, ambiguous: false };
+  return { identified, hints, cityHits, ambiguous: false };
 }
 
 /** What the public directory does today: name and city only, aliases ignored. */
@@ -98,10 +118,27 @@ export function searchCurrent(query: string, agencies = PREVIEW_AGENCIES): Previ
   );
 }
 
-export function provisionalCandidates(query: string, agencies = PREVIEW_AGENCIES) {
+export function provisionalAssessment(query: string, agencies = PREVIEW_AGENCIES) {
   const trimmed = query.trim();
-  if (trimmed.length < 2) return [];
-  return searchProposed(trimmed, agencies).hits;
+  const cityNameOnly = agencies.some((agency) =>
+    agency.cities.some((city) => city.toLocaleLowerCase("es") === trimmed.toLocaleLowerCase("es")),
+  );
+  if (trimmed.length < 2) {
+    return {
+      identified: [] as PreviewHit[],
+      hints: [] as PreviewHit[],
+      cityHits: [] as PreviewHit[],
+      ambiguous: false,
+      blocksNewFicha: false,
+      cityNameOnly,
+    };
+  }
+  const result = searchProposed(trimmed, agencies);
+  return {
+    ...result,
+    blocksNewFicha: result.identified.length > 0,
+    cityNameOnly,
+  };
 }
 
 export function sortAgencies(
