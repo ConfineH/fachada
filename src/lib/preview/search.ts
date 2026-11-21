@@ -27,17 +27,20 @@ export function countByRole(reviews: PreviewReview[], role: PreviewReview["role"
   return reviews.filter((review) => review.role === role).length;
 }
 
-function bestIdentity(agency: PreviewAgency, query: string) {
-  let best: PreviewHit | null = null;
-  const consider = (candidate: string, via: "nombre" | "alias") => {
-    const confidence = matchScore(query, candidate);
-    if (!best || confidence > best.confidence) {
-      best = { agency, matchedOn: candidate, via, confidence };
-    }
-  };
-  consider(agency.name, "nombre");
-  for (const alias of agency.aliases) consider(alias, "alias");
-  return best;
+function bestIdentity(agency: PreviewAgency, query: string): PreviewHit | null {
+  const candidates: PreviewHit[] = [
+    { agency, matchedOn: agency.name, via: "nombre", confidence: matchScore(query, agency.name) },
+    ...agency.aliases.map((alias) => ({
+      agency,
+      matchedOn: alias,
+      via: "alias" as const,
+      confidence: matchScore(query, alias),
+    })),
+  ];
+  return candidates.reduce<PreviewHit | null>(
+    (best, hit) => (!best || hit.confidence > best.confidence ? hit : best),
+    null,
+  );
 }
 
 function servesCity(agency: PreviewAgency, query: string) {
