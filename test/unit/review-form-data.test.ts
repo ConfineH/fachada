@@ -13,6 +13,10 @@ function reviewForm(extra?: (form: FormData) => void) {
   form.set("role", "inquilino");
   form.set("rating", "4");
   form.set("title", "Devolución de la fianza");
+  form.set(
+    "narrative",
+    "Tardaron tres semanas en devolver la fianza del piso.",
+  );
   form.set("pros", "Devolvieron la fianza en el plazo.");
   form.set("cons", "Tardaron en contestar los correos.");
   form.set("anonymous", "true");

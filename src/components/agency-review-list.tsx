@@ -9,7 +9,7 @@ import { authHeaders, readSessionToken } from "@/lib/auth/session-client";
 import { INCIDENT_TAG_LABELS, type IncidentSentiments, type IncidentTag } from "@/lib/domain/incidents";
 import {
   experiencePublicLabel,
-  reviewProsCons,
+  reviewPublicCopy,
   reviewPublicByline,
 } from "@/lib/domain/review-copy";
 import type {
@@ -110,7 +110,7 @@ export function AgencyReviewList({
           </li>
         )}
         {filtered.map((review) => {
-          const split = reviewProsCons(review);
+          const copy = reviewPublicCopy(review);
           return (
             <li
               key={review.id}
@@ -131,7 +131,9 @@ export function AgencyReviewList({
                 {new Date(review.experienceDate).toLocaleDateString("es-ES")}
                 {review.experienceCity ? ` · ${review.experienceCity}` : ""}
               </p>
-              <h3 className="mt-2 text-lg font-semibold">{review.title}</h3>
+              {copy.title ? (
+                <h3 className="mt-2 text-lg font-semibold">{copy.title}</h3>
+              ) : null}
               {review.wouldRecommend !== undefined && (
                 <p className="mt-2 text-sm text-zinc-700">
                   {review.wouldRecommend
@@ -139,24 +141,32 @@ export function AgencyReviewList({
                     : "No recomendaría esta inmobiliaria"}
                 </p>
               )}
-              {split.pros && split.cons ? (
+              {copy.narrative ? (
+                <p className="mt-2 whitespace-pre-wrap text-stone-700">{copy.narrative}</p>
+              ) : null}
+              {copy.prose ? (
+                <p className="mt-2 whitespace-pre-wrap text-stone-700">{copy.prose}</p>
+              ) : null}
+              {copy.pros || copy.cons ? (
                 <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-lg border border-emerald-100 bg-emerald-50 p-3">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-emerald-800">
-                      Ventajas
-                    </p>
-                    <p className="mt-1 text-sm text-emerald-950">{split.pros}</p>
-                  </div>
-                  <div className="rounded-lg border border-rose-100 bg-rose-50 p-3">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-rose-800">
-                      Desventajas
-                    </p>
-                    <p className="mt-1 text-sm text-rose-950">{split.cons}</p>
-                  </div>
+                  {copy.pros ? (
+                    <div className="rounded-lg border border-emerald-100 bg-emerald-50 p-3">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-emerald-800">
+                        Ventajas
+                      </p>
+                      <p className="mt-1 text-sm text-emerald-950">{copy.pros}</p>
+                    </div>
+                  ) : null}
+                  {copy.cons ? (
+                    <div className="rounded-lg border border-rose-100 bg-rose-50 p-3">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-rose-800">
+                        Desventajas
+                      </p>
+                      <p className="mt-1 text-sm text-rose-950">{copy.cons}</p>
+                    </div>
+                  ) : null}
                 </div>
-              ) : (
-                <p className="mt-2 text-stone-700">{split.body}</p>
-              )}
+              ) : null}
               {review.incidentTags.length > 0 && (
                 <ul className="mt-3 flex flex-wrap gap-2">
                   {review.incidentTags.map((tag) => (

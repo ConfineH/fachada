@@ -19,6 +19,7 @@ type Dashboard = {
   reviews: {
     id: string;
     title: string;
+    body: string;
     rating: number;
     pros?: string;
     cons?: string;
@@ -69,15 +70,28 @@ export function AccountHome({ privacyEmail }: { privacyEmail: string }) {
   useEffect(() => {
     const stored = readSessionToken();
     if (!stored) return;
+    /* sessionStorage does not exist while the server renders the account. */
+    /* eslint-disable react-hooks/set-state-in-effect */
     setToken(stored);
-    void load(stored);
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, []);
+
+  useEffect(() => {
+    if (!token) return;
+    let cancelled = false;
+    void (async () => {
+      await load(token);
+      if (cancelled) return;
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [token]);
 
   function onVerified(sessionToken: string) {
     writeSessionToken(sessionToken);
     setToken(sessionToken);
     setError("");
-    void load(sessionToken);
   }
 
   async function unsave(agencyId: string) {

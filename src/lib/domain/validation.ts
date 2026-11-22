@@ -9,6 +9,13 @@ import {
   REVIEW_TERMS_VERSION,
   WHOLE_NUMBER_RATING_ERROR,
 } from "@/lib/domain/review-authenticity";
+import {
+  NARRATIVE_MAX_LENGTH,
+  narrativeLengthError,
+  optionalSideError,
+  REVIEW_BODY_MAX_LENGTH,
+  SIDE_MAX_LENGTH,
+} from "@/lib/domain/review-copy";
 import { REVIEW_ORIGINS } from "@/lib/domain/review-origin";
 import type {
   ClaimEvidenceType,
@@ -47,6 +54,17 @@ const ratingSchema = z.coerce
   .int({ error: WHOLE_NUMBER_RATING_ERROR })
   .min(1, { error: WHOLE_NUMBER_RATING_ERROR })
   .max(5, { error: WHOLE_NUMBER_RATING_ERROR });
+
+function blankToUndefined(value: unknown) {
+  if (typeof value !== "string") return value;
+  const trimmed = value.trim();
+  return trimmed.length === 0 ? undefined : trimmed;
+}
+
+const optionalSideSchema = z.preprocess(
+  blankToUndefined,
+  z.string().max(SIDE_MAX_LENGTH).optional(),
+);
 
 const contentNoticeCategories = [
   "honor",
@@ -93,21 +111,9 @@ export const reviewInputSchema = z
     agencySlug: z.string().trim().min(1).max(120).optional(),
     role: z.enum(["inquilino", "propietario"]),
     rating: ratingSchema,
-    title: z
-      .string()
-      .trim()
-      .min(1, "El título es obligatorio")
-      .max(100),
-    pros: z
-      .string()
-      .trim()
-      .min(10, "Las ventajas deben tener al menos 10 caracteres")
-      .max(450),
-    cons: z
-      .string()
-      .trim()
-      .min(10, "Las desventajas deben tener al menos 10 caracteres")
-      .max(450),
+    narrative: z.string().trim().max(NARRATIVE_MAX_LENGTH),
+    pros: optionalSideSchema,
+    cons: optionalSideSchema,
     anonymous: z.boolean().optional().default(true),
     publicName: z.string().trim().max(40).optional(),
     wouldRecommend: z.boolean().optional(),
@@ -142,6 +148,22 @@ export const reviewInputSchema = z
     ),
   })
   .superRefine((data, ctx) => {
+    const narrativeError = narrativeLengthError(data.narrative);
+    if (narrativeError) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["narrative"],
+        message: narrativeError,
+      });
+    }
+    const prosError = optionalSideError(data.pros, false, "ventajas");
+    if (prosError) {
+      ctx.addIssue({ code: "custom", path: ["pros"], message: prosError });
+    }
+    const consError = optionalSideError(data.cons, false, "desventajas");
+    if (consError) {
+      ctx.addIssue({ code: "custom", path: ["cons"], message: consError });
+    }
     if (!data.agencyId && !data.agencySlug) {
       ctx.addIssue({
         code: "custom",
@@ -169,21 +191,11 @@ export const reviewInputSchema = z
 export const reviewEditSchema = z
   .object({
     rating: ratingSchema,
-    title: z
-      .string()
-      .trim()
-      .min(1, "El título es obligatorio")
-      .max(100),
-    pros: z
-      .string()
-      .trim()
-      .min(10, "Las ventajas deben tener al menos 10 caracteres")
-      .max(450),
-    cons: z
-      .string()
-      .trim()
-      .min(10, "Las desventajas deben tener al menos 10 caracteres")
-      .max(450),
+    narrative: z.string().trim().max(NARRATIVE_MAX_LENGTH).optional(),
+    title: z.string().trim().max(100).optional(),
+    body: z.string().trim().max(REVIEW_BODY_MAX_LENGTH).optional(),
+    pros: optionalSideSchema,
+    cons: optionalSideSchema,
     anonymous: z.boolean().optional().default(true),
     publicName: z.string().trim().max(40).optional(),
     wouldRecommend: z.boolean().nullish(),

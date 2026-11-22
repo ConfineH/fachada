@@ -26,6 +26,7 @@ const listingSchema = z.object({
 
 const textSchema = z.object({
   title: z.string().optional(),
+  narrative: z.string().optional(),
   pros: z.string().optional(),
   cons: z.string().optional(),
   publicName: z.string().optional(),
@@ -49,6 +50,7 @@ export class ProvisionalAgencyService {
     const existing = await this.findMatch(listing.name, listing.city);
     const screen = screenReviewText({
       title: text.title,
+      body: text.narrative,
       pros: text.pros,
       cons: text.cons,
       publicName: text.anonymous === false ? text.publicName : undefined,

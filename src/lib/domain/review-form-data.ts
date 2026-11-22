@@ -15,6 +15,7 @@ export function reviewMultipartFields(form: FormData) {
     agencySlug: text("agencySlug"),
     role: text("role"),
     rating: text("rating"),
+    narrative: text("narrative"),
     title: text("title"),
     pros: text("pros"),
     cons: text("cons"),

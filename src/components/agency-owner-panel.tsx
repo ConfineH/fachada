@@ -8,8 +8,8 @@ import { ReviewReportForm } from "@/components/review-report-form";
 
 type ReviewItem = {
   id: string;
-  title: string;
-  body: string;
+  title?: string;
+  text: string;
   response?: { body: string; createdAt: string };
 };
 
@@ -171,7 +171,7 @@ export function AgencyOwnerPanel({
                 key={`notice-${review.id}`}
                 className="rounded-lg border border-emerald-200 bg-white p-4"
               >
-                <p className="text-sm font-medium">{review.title}</p>
+                <p className="text-sm font-medium">{review.title ?? review.text}</p>
                 <ReviewReportForm
                   reviewId={review.id}
                   label="Solicitar revisión"
@@ -195,8 +195,8 @@ export function AgencyOwnerPanel({
               key={review.id}
               className="rounded-lg border border-emerald-200 bg-white p-4"
             >
-              <p className="font-medium">{review.title}</p>
-              <p className="mt-1 text-sm text-stone-600">{review.body}</p>
+              {review.title ? <p className="font-medium">{review.title}</p> : null}
+              <p className="mt-1 whitespace-pre-wrap text-sm text-stone-600">{review.text}</p>
               <form
                 onSubmit={(event) => submitResponse(event, review.id)}
                 className="mt-3 space-y-2"

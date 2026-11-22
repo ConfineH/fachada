@@ -44,6 +44,7 @@ describe("provisional agency from a review", () => {
       role: "inquilino",
       rating: 3,
       title: "Tardaron con la fianza",
+      narrative: "Tardaron tres semanas en devolver la fianza del piso.",
       pros: PROS,
       cons: CONS,
       experienceDate: new Date().toISOString().slice(0, 10),

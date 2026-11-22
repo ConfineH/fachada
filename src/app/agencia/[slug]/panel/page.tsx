@@ -7,6 +7,7 @@ import { DevBanner } from "@/components/dev-banner";
 import { RoleRatingSummary } from "@/components/role-rating-summary";
 import { SiteNav } from "@/components/site-nav";
 import { agencyService, usingSupabase } from "@/lib/container";
+import { reviewPublicCopy } from "@/lib/domain/review-copy";
 import { agencyLogoUrl } from "@/lib/ops/agency-logos";
 
 export const metadata = {
@@ -23,17 +24,22 @@ export default async function AgencyPanelPage({
   const agency = await agencyService.getBySlug(slug, { publicOnly: false });
   if (!agency) notFound();
 
-  const reviewsForOwner = agency.reviews.map((review) => ({
+  const reviewsForOwner = agency.reviews.map((review) => {
+    const copy = reviewPublicCopy(review);
+    return {
     id: review.id,
-    title: review.title,
-    body: review.body,
+    title: copy.title,
+    text: [copy.narrative, copy.prose, copy.pros, copy.cons]
+      .filter(Boolean)
+      .join("\n\n"),
     response: review.response
       ? {
           body: review.response.body,
           createdAt: review.response.createdAt.toISOString(),
         }
       : undefined,
-  }));
+  };
+  });
 
   return (
     <div className="min-h-screen bg-stone-50 text-stone-900">

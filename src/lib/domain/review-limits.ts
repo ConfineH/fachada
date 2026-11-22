@@ -8,6 +8,12 @@ type LimitedReview = {
   deletedAt?: Date;
 };
 
+export function activeReviewForAgency<
+  T extends { agency: { slug: string } | null },
+>(reviews: T[], agencySlug: string): T | undefined {
+  return reviews.find((review) => review.agency?.slug === agencySlug);
+}
+
 export function reviewRateLimitMessage(
   reviews: LimitedReview[],
   agencyId: string,

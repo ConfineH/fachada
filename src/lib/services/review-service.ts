@@ -2,7 +2,14 @@ import { randomUUID } from "node:crypto";
 
 import { tagsFromSentiments } from "@/lib/domain/incidents";
 import { isAccountVerified } from "@/lib/domain/identity";
-import { composeReviewBody } from "@/lib/domain/review-copy";
+import {
+  classifyReview,
+  composeRelatoBody,
+  composeReviewBody,
+  reviewEditError,
+  storedReviewTitle,
+  type ReviewFormat,
+} from "@/lib/domain/review-copy";
 import { reviewRateLimitMessage } from "@/lib/domain/review-limits";
 import {
   reviewAllowedNames,
@@ -62,10 +69,13 @@ export class ReviewService {
     if (limit) throw new ReviewError(limit);
 
     const anonymous = data.anonymous ?? true;
+    const narrative = data.narrative.trim();
+    const title = storedReviewTitle(narrative);
     const screen = await this.screenForAgency(agency, {
-      title: data.title,
+      title,
       pros: data.pros,
       cons: data.cons,
+      body: narrative,
       publicName: anonymous ? undefined : data.publicName,
       cities: [data.experienceCity, agency.city],
     });
@@ -80,10 +90,10 @@ export class ReviewService {
       agencyId,
       role: data.role,
       rating: data.rating,
-      title: data.title,
+      title,
       pros: data.pros,
       cons: data.cons,
-      body: composeReviewBody(data.pros, data.cons),
+      body: composeRelatoBody(narrative),
       anonymous,
       publicName: anonymous ? undefined : data.publicName?.trim(),
       wouldRecommend: data.wouldRecommend,
@@ -130,12 +140,17 @@ export class ReviewService {
     }
     const review = await this.ownedReview(user.id, reviewId);
     const data = reviewEditSchema.parse(input);
+    const format = classifyReview(review);
+    const editError = reviewEditError(format, data);
+    if (editError) throw new ReviewError(editError);
     const anonymous = data.anonymous ?? true;
     const agency = await this.repo.findAgencyById(review.agencyId);
+    const written = writtenReviewText(format, data);
     const screen = await this.screenForAgency(agency, {
-      title: data.title,
-      pros: data.pros,
-      cons: data.cons,
+      title: written.title,
+      pros: written.pros,
+      cons: written.cons,
+      body: written.screenBody,
       publicName: anonymous ? undefined : data.publicName,
       cities: [review.experienceCity, agency?.city],
     });
@@ -146,10 +161,10 @@ export class ReviewService {
     const next: Review = {
       ...review,
       rating: data.rating,
-      title: data.title,
-      pros: data.pros,
-      cons: data.cons,
-      body: composeReviewBody(data.pros, data.cons),
+      title: written.title,
+      pros: written.pros,
+      cons: written.cons,
+      body: written.body,
       anonymous,
       publicName: anonymous ? undefined : data.publicName?.trim(),
       wouldRecommend: data.wouldRecommend ?? undefined,
@@ -234,6 +249,7 @@ export class ReviewService {
       title?: string;
       pros?: string;
       cons?: string;
+      body?: string;
       publicName?: string;
       cities?: Array<string | undefined>;
     },
@@ -245,6 +261,7 @@ export class ReviewService {
       title: input.title,
       pros: input.pros,
       cons: input.cons,
+      body: input.body,
       publicName: input.publicName,
       allowedNames: reviewAllowedNames({
         name: agency?.name,
@@ -303,6 +320,47 @@ export class ReviewService {
     }
     return review;
   }
+}
+
+function writtenReviewText(
+  format: ReviewFormat,
+  data: {
+    narrative?: string;
+    title?: string;
+    pros?: string;
+    cons?: string;
+    body?: string;
+  },
+) {
+  if (format === "relato") {
+    const narrative = data.narrative?.trim() ?? "";
+    return {
+      title: storedReviewTitle(narrative),
+      pros: data.pros,
+      cons: data.cons,
+      body: composeRelatoBody(narrative),
+      screenBody: narrative,
+    };
+  }
+  if (format === "structured") {
+    const pros = data.pros?.trim() ?? "";
+    const cons = data.cons?.trim() ?? "";
+    return {
+      title: data.title?.trim() ?? "",
+      pros,
+      cons,
+      body: composeReviewBody(pros, cons),
+      screenBody: composeReviewBody(pros, cons),
+    };
+  }
+  const prose = data.body?.trim() ?? "";
+  return {
+    title: data.title?.trim() ?? "",
+    pros: data.pros,
+    cons: data.cons,
+    body: prose,
+    screenBody: prose,
+  };
 }
 
 function markedExperience(data: {

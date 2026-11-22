@@ -16,10 +16,18 @@ import {
 import { publicApiUrl } from "@/lib/site-url";
 import { authHeaders } from "@/lib/auth/session-client";
 import { WHOLE_NUMBER_RATING_ERROR } from "@/lib/domain/review-authenticity";
+import {
+  NARRATIVE_MAX_LENGTH,
+  NARRATIVE_MIN_LENGTH,
+  classifyReview,
+  narrativeLengthError,
+  reviewPublicCopy,
+} from "@/lib/domain/review-copy";
 
 export type AccountReviewItem = {
   id: string;
   title: string;
+  body: string;
   rating: number;
   pros?: string;
   cons?: string;
@@ -101,7 +109,7 @@ export function AccountReviews({
             key={review.id}
             className="border-t border-stone-100 pt-3 first:border-0 first:pt-0"
           >
-            <p className="font-medium">{review.title}</p>
+            <AccountReviewHeading review={review} />
             <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-zinc-600">
               {review.agency ? (
                 <>
@@ -219,6 +227,13 @@ export function AccountReviews({
   );
 }
 
+function AccountReviewHeading({ review }: { review: AccountReviewItem }) {
+  const copy = reviewPublicCopy(review);
+  return (
+    <p className="font-medium">{copy.narrative ?? copy.title ?? "Experiencia"}</p>
+  );
+}
+
 function reviewStatus(review: AccountReviewItem) {
   if (review.flagged) return "retirada";
   if (review.moderated) return "publicada";
@@ -242,10 +257,14 @@ function AccountReviewEditor({
   onSaved: () => void;
   onError: (message: string) => void;
 }) {
+  const format = classifyReview(review);
+  const copy = reviewPublicCopy(review);
   const [rating, setRating] = useState(review.rating);
-  const [title, setTitle] = useState(review.title);
-  const [pros, setPros] = useState(review.pros ?? "");
-  const [cons, setCons] = useState(review.cons ?? "");
+  const [title, setTitle] = useState(copy.title ?? "");
+  const [narrative, setNarrative] = useState(copy.narrative ?? "");
+  const [prose, setProse] = useState(copy.prose ?? "");
+  const [pros, setPros] = useState(copy.pros ?? "");
+  const [cons, setCons] = useState(copy.cons ?? "");
   const [anonymous, setAnonymous] = useState(review.anonymous);
   const [publicName, setPublicName] = useState(review.publicName ?? "");
   const [wouldRecommend, setWouldRecommend] = useState<"yes" | "no" | "skip">(
@@ -269,6 +288,13 @@ function AccountReviewEditor({
       onError(WHOLE_NUMBER_RATING_ERROR);
       return;
     }
+    if (format === "relato") {
+      const narrativeError = narrativeLengthError(narrative);
+      if (narrativeError) {
+        onError(narrativeError);
+        return;
+      }
+    }
     const unsetTheme = unsetMarkMessage(marks);
     if (unsetTheme) {
       onError(unsetTheme);
@@ -284,7 +310,9 @@ function AccountReviewEditor({
       },
       body: JSON.stringify({
         rating,
-        title,
+        narrative: format === "relato" ? narrative : undefined,
+        title: format === "relato" ? undefined : title,
+        body: format === "prose" ? prose : undefined,
         pros,
         cons,
         anonymous,
@@ -323,37 +351,97 @@ function AccountReviewEditor({
           className="input-field mt-1"
         />
       </label>
-      <input
-        value={title}
-        onChange={(event) => setTitle(event.target.value)}
-        required
-        maxLength={100}
-        className="input-field"
-      />
-      <label className="block text-xs font-medium text-zinc-600">
-        Ventajas
-        <textarea
-          value={pros}
-          onChange={(event) => setPros(event.target.value)}
-          required
-          minLength={10}
-          maxLength={450}
-          rows={3}
-          className="input-field mt-1"
-        />
-      </label>
-      <label className="block text-xs font-medium text-zinc-600">
-        Desventajas
-        <textarea
-          value={cons}
-          onChange={(event) => setCons(event.target.value)}
-          required
-          minLength={10}
-          maxLength={450}
-          rows={3}
-          className="input-field mt-1"
-        />
-      </label>
+      {format === "relato" ? (
+        <label className="block text-xs font-medium text-zinc-600">
+          Tu experiencia
+          <textarea
+            value={narrative}
+            onChange={(event) => setNarrative(event.target.value)}
+            required
+            minLength={NARRATIVE_MIN_LENGTH}
+            maxLength={NARRATIVE_MAX_LENGTH}
+            rows={5}
+            className="input-field mt-1"
+          />
+        </label>
+      ) : (
+        <>
+          <input
+            value={title}
+            onChange={(event) => setTitle(event.target.value)}
+            required
+            maxLength={100}
+            aria-label="Título"
+            className="input-field"
+          />
+          {format === "prose" ? (
+            <textarea
+              value={prose}
+              onChange={(event) => setProse(event.target.value)}
+              required
+              rows={5}
+              aria-label="Texto"
+              className="input-field"
+            />
+          ) : null}
+        </>
+      )}
+      {format === "structured" ? (
+        <>
+          <label className="block text-xs font-medium text-zinc-600">
+            Ventajas
+            <textarea
+              value={pros}
+              onChange={(event) => setPros(event.target.value)}
+              required
+              minLength={10}
+              maxLength={450}
+              rows={3}
+              className="input-field mt-1"
+            />
+          </label>
+          <label className="block text-xs font-medium text-zinc-600">
+            Desventajas
+            <textarea
+              value={cons}
+              onChange={(event) => setCons(event.target.value)}
+              required
+              minLength={10}
+              maxLength={450}
+              rows={3}
+              className="input-field mt-1"
+            />
+          </label>
+        </>
+      ) : (
+        <details className="rounded-lg border border-stone-200 bg-white p-3">
+          <summary className="cursor-pointer text-sm font-medium text-zinc-800">
+            Añadir un matiz
+          </summary>
+          <div className="mt-3 space-y-3">
+            <label className="block text-xs font-medium text-zinc-600">
+              Ventajas, si quieres precisarlas
+              <textarea
+                value={pros}
+                onChange={(event) => setPros(event.target.value)}
+                maxLength={450}
+                rows={2}
+                className="input-field mt-1"
+              />
+            </label>
+            <label className="block text-xs font-medium text-zinc-600">
+              Desventajas, si quieres precisarlas
+              <textarea
+                value={cons}
+                onChange={(event) => setCons(event.target.value)}
+                maxLength={450}
+                rows={2}
+                className="input-field mt-1"
+              />
+            </label>
+          </div>
+        </details>
+      )}
       <fieldset>
         <legend className="text-xs font-medium text-zinc-600">
           ¿Recomendarías esta inmobiliaria?

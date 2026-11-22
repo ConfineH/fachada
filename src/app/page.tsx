@@ -10,6 +10,7 @@ import { SearchForm } from "@/components/search-form";
 import { JsonLd } from "@/components/json-ld";
 import { TENANT_TOOLS } from "@/lib/domain/tools/catalog";
 import { homeDocumentedAgencies } from "@/lib/domain/agency-browse";
+import { reviewPublicExcerpt } from "@/lib/domain/review-copy";
 import { agencyService, usingSupabase } from "@/lib/container";
 import {
   DEFAULT_DESCRIPTION,
@@ -63,7 +64,7 @@ export default async function Home({
         name: agency!.name,
         role: review.role,
         rating: review.rating,
-        body: review.body,
+        body: reviewPublicExcerpt(review),
       })),
     )
     .slice(0, 3);

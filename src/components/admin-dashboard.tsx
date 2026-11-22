@@ -12,6 +12,7 @@ import type {
 } from "@/lib/services/admin-service";
 import { AGENCY_TIP_KIND_LABELS } from "@/lib/domain/agency-tips";
 import { noticeReasonLabel } from "@/lib/domain/content-notice-reasons";
+import { reviewPublicCopy } from "@/lib/domain/review-copy";
 import { moderationSla } from "@/lib/domain/review-visibility";
 import type { ContentNotice, PublicationMode } from "@/lib/domain/types";
 
@@ -758,7 +759,9 @@ export function AdminDashboard({
               No hay reseñas pendientes de moderación.
             </li>
           )}
-          {reviews.map((review) => (
+          {reviews.map((review) => {
+            const copy = reviewPublicCopy(review);
+            return (
             <li
               key={review.id}
               className="rounded-xl border border-stone-200 bg-white p-5"
@@ -766,8 +769,17 @@ export function AdminDashboard({
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
                   <p className="text-sm text-stone-500">{review.agencyName}</p>
-                  <h3 className="font-semibold">{review.title}</h3>
-                  <p className="mt-2 text-stone-700">{review.body}</p>
+                  {copy.title ? (
+                    <h3 className="font-semibold">{copy.title}</h3>
+                  ) : null}
+                  <p className="mt-2 whitespace-pre-wrap text-stone-700">
+                    {copy.narrative ?? copy.prose}
+                  </p>
+                  {copy.pros || copy.cons ? (
+                    <p className="mt-2 text-sm text-stone-600">
+                      {[copy.pros, copy.cons].filter(Boolean).join(" · ")}
+                    </p>
+                  ) : null}
                   <p className="mt-2 text-sm text-stone-500">
                     {review.role} · {review.rating}/5 ·{" "}
                     {review.flagged ? "Oculta o reportada" : "En revisión"}
@@ -846,7 +858,8 @@ export function AdminDashboard({
                 </div>
               </div>
             </li>
-          ))}
+            );
+          })}
         </ul>
       </section>
     </div>
