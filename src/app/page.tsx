@@ -69,7 +69,7 @@ export default async function Home({
       <JsonLd data={websiteJsonLd()} />
       <JsonLd data={faqJsonLd([...HOME_FAQS])} />
       <section className="border-b border-stone-200 bg-white">
-        <div className="mx-auto max-w-6xl px-6 py-14 lg:py-20">
+        <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
           <div className="grid gap-10 lg:grid-cols-2 lg:items-end">
             <div className="motion-fade-rise">
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">
@@ -101,7 +101,7 @@ export default async function Home({
         </div>
       </section>
 
-      <main className="mx-auto max-w-6xl space-y-14 px-6 py-14">
+      <main className="mx-auto max-w-6xl space-y-12 px-4 py-12 sm:px-6">
         {documented.preview.length > 0 && (
           <section>
             <div className="mb-4 flex flex-wrap items-end justify-between gap-2">

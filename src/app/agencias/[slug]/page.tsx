@@ -158,7 +158,7 @@ export default async function AgencyPage({
         })}
       />
       <header className="border-b border-stone-200 bg-white">
-        <div className="mx-auto max-w-6xl px-6 py-10">
+        <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-12">
             <Breadcrumbs
               items={
                 cities.length > 1
@@ -241,7 +241,7 @@ export default async function AgencyPage({
         </div>
       </header>
 
-      <main className="mx-auto grid max-w-6xl gap-10 px-6 py-10 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+      <main className="mx-auto grid max-w-6xl gap-10 px-4 py-8 sm:px-6 sm:py-10 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         <section>
           <h2 className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
             Notas de inquilinos y propietarios
@@ -254,6 +254,23 @@ export default async function AgencyPage({
               writeHref="#dejar-resena"
             />
           </div>
+          {totalReviews === 0 ? (
+            <div id="experiencias" className="card-raised mt-8 p-6">
+              <h2 className="text-xl font-semibold tracking-tight text-zinc-900">
+                Nadie ha contado todavía esta gestión
+              </h2>
+              <p className="mt-2 max-w-xl text-sm leading-relaxed text-zinc-600">
+                Si alquilaste o encargaste la gestión con {agency.name}, la tuya
+                sería la primera experiencia.
+              </p>
+              <a
+                href="#dejar-resena"
+                className="btn-primary mt-5 inline-flex min-h-12 w-full items-center justify-center sm:w-auto"
+              >
+                Contar la primera experiencia
+              </a>
+            </div>
+          ) : null}
           <p className="mt-6 text-sm text-zinc-600">
             Las dos notas son de toda la empresa, en todas sus ciudades. Elige un
             lado si quieres leer solo esas experiencias. La ciudad solo cambia
@@ -303,26 +320,11 @@ export default async function AgencyPage({
           />
 
           <IncidentSentimentSummary reviews={agency.reviews} />
+          {totalReviews > 0 ? (
+          <>
           <h2 id="experiencias" className="mt-12 text-xl font-semibold tracking-tight">
             Registro de experiencias
           </h2>
-          {totalReviews === 0 ? (
-            <div className="mt-3 rounded-xl border border-stone-200 bg-white p-6">
-              <p className="text-xl font-semibold tracking-tight text-zinc-900">
-                Nadie ha contado todavía esta gestión
-              </p>
-              <p className="mt-2 text-sm leading-relaxed text-zinc-600">
-                Si alquilaste o encargaste la gestión con {agency.name}, la tuya
-                sería la primera experiencia.
-              </p>
-              <a
-                href="#dejar-resena"
-                className="btn-primary mt-5 inline-flex min-h-12 w-full items-center justify-center sm:w-auto"
-              >
-                Contar la primera experiencia
-              </a>
-            </div>
-          ) : (
           <p className="mt-1 text-sm text-zinc-600">
             {totalReviews}{" "}
             {totalReviews === 1
@@ -332,8 +334,9 @@ export default async function AgencyPage({
               ? ` La nota de arriba es de toda la empresa. Abajo, lo contado en ${cityFilter}.`
               : ""}
           </p>
-          )}
-          {cities.length > 1 ? (
+          </>
+          ) : null}
+          {totalReviews > 0 && cities.length > 1 ? (
             <div className="mt-3 flex flex-wrap gap-2 text-sm">
               <Link
                 href={fichaQuery(agency.slug, perspective, null, desde)}
@@ -359,12 +362,14 @@ export default async function AgencyPage({
                 : `${listedReviews.omittedWithoutCity} experiencias de esta ficha no tienen ciudad. No entran en ${cityFilter} y no las hemos asignado a esa ciudad.`}
             </p>
           ) : null}
+          {totalReviews > 0 ? (
           <div className="mt-6">
             <AgencyReviewList
               reviews={listedReviews.visible}
               initialFilter={perspective ?? undefined}
             />
           </div>
+          ) : null}
           <div className="mt-10">
             <SuggestFichaTipForm
               agencySlug={agency.slug}

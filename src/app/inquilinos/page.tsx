@@ -40,11 +40,11 @@ export default async function InquilinosPage({
       {!query && (utm.source || utm.campaign) ? (
         <PromoVisitBeacon source={utm.source} campaign={utm.campaign} />
       ) : null}
-      <main className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-12">
+      <main className="mx-auto max-w-3xl px-4 py-10 sm:px-6 sm:py-14">
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">
           Archivo público
         </p>
-        <h1 className="mt-3 text-3xl font-semibold tracking-tight text-zinc-900">
+        <h1 className="mt-4 text-3xl font-semibold tracking-tight text-zinc-900 sm:text-4xl">
           Buscar una inmobiliaria
         </h1>
         <p className="mt-3 text-base leading-relaxed text-zinc-600">

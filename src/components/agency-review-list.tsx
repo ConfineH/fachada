@@ -106,7 +106,7 @@ export function AgencyReviewList({
       )}
       <ul key={filter} className="motion-stagger space-y-4">
         {filtered.length === 0 && (
-          <li className="rounded-xl border border-dashed border-stone-300 bg-white p-6 text-stone-600">
+          <li className="card-raised p-6 text-sm text-zinc-600">
             No hay reseñas publicadas para este filtro.
           </li>
         )}
