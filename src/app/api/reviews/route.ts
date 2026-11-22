@@ -4,6 +4,7 @@ import { ZodError } from "zod";
 import { sessionTokenFromRequest } from "@/lib/auth/bearer";
 import { reviewErrorMessage } from "@/lib/auth/review-errors";
 import { authService, reviewService } from "@/lib/container";
+import { reviewMultipartFields } from "@/lib/domain/review-form-data";
 import { storeReviewEvidence } from "@/lib/ops/review-evidence";
 import { createServiceClient, isSupabaseConfigured } from "@/lib/supabase/server";
 
@@ -48,10 +49,6 @@ export async function POST(request: Request) {
     if (contentType.includes("multipart/form-data")) {
       if (!user) throw new Error("Account verification required");
       const form = await request.formData();
-      const text = (key: string) => {
-        const value = form.get(key);
-        return typeof value === "string" ? value : undefined;
-      };
       const evidence = form.get("evidence");
       if (evidence instanceof File && evidence.size > 0) {
         if (!isSupabaseConfigured()) {
@@ -64,30 +61,7 @@ export async function POST(request: Request) {
           evidence.type,
         );
       }
-      body = {
-        agencySlug: text("agencySlug"),
-        role: text("role"),
-        rating: text("rating"),
-        title: text("title"),
-        pros: text("pros"),
-        cons: text("cons"),
-        anonymous: text("anonymous") === "true",
-        publicName: text("publicName"),
-        wouldRecommend:
-          text("wouldRecommend") === "undefined"
-            ? undefined
-            : text("wouldRecommend") === "true",
-        incidentTags: JSON.parse(text("incidentTags") ?? "[]"),
-        incidentSentiments: JSON.parse(text("incidentSentiments") ?? "{}"),
-        experienceDate: text("experienceDate"),
-        experienceType: text("experienceType"),
-        firstHandAttested: text("firstHandAttested") === "true",
-        noIncentiveAttested: text("noIncentiveAttested") === "true",
-        noConflictAttested: text("noConflictAttested") === "true",
-        termsAccepted: text("termsAccepted") === "true",
-        termsVersion: text("termsVersion"),
-        origen: text("origen"),
-      };
+      body = reviewMultipartFields(form);
     } else {
       body = await request.json();
     }
