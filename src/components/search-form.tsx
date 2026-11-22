@@ -6,9 +6,11 @@ import { FormEvent, useState } from "react";
 export function SearchForm({
   initialQuery = "",
   variant = "default",
+  destination,
 }: {
   initialQuery?: string;
   variant?: "default" | "hero" | "explore";
+  destination?: string;
 }) {
   const router = useRouter();
   const [query, setQuery] = useState(initialQuery);
@@ -17,7 +19,8 @@ export function SearchForm({
     event.preventDefault();
     const params = new URLSearchParams();
     if (query.trim()) params.set("q", query.trim());
-    const base = variant === "explore" ? "/explorar" : "/agencias";
+    const base =
+      destination ?? (variant === "explore" ? "/explorar" : "/agencias");
     router.push(`${base}?${params.toString()}`);
   }
 
@@ -25,20 +28,20 @@ export function SearchForm({
     return (
       <form
         onSubmit={onSubmit}
-        className="flex flex-col gap-2 rounded-2xl border border-zinc-200 bg-white p-2 shadow-sm transition-[box-shadow,border-color] focus-within:border-zinc-300 focus-within:shadow-md sm:flex-row sm:items-center"
+        className="flex flex-col gap-3 sm:flex-row sm:items-center"
       >
         <label className="sr-only" htmlFor="hero-search">
-          Nombre de la agencia o ciudad
+          Nombre, alias o ciudad
         </label>
         <input
           id="hero-search"
           type="search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Nombre de la agencia o ciudad…"
-          className="min-h-11 flex-1 rounded-xl border-0 bg-transparent px-4 text-base outline-none placeholder:text-zinc-400"
+          placeholder="Nombre, alias o ciudad"
+          className="input-field min-h-12 flex-1"
         />
-        <button type="submit" className="btn-primary min-h-11 shrink-0 rounded-xl px-6">
+        <button type="submit" className="btn-primary min-h-12 shrink-0">
           Buscar
         </button>
       </form>

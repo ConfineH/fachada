@@ -76,6 +76,7 @@ describe("ClaimService and AdminService", () => {
       role: "inquilino",
       rating: 4,
       title: "Buena experiencia",
+      narrative: "Tardaron tres semanas en devolver la fianza del piso.",
       pros: "La gestión fue rápida y clara en todo momento.",
       cons: "Mejoraría la velocidad al contestar emails.",
       experienceDate: new Date().toISOString().slice(0, 10),

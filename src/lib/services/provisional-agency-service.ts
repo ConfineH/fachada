@@ -5,7 +5,11 @@ import { z } from "zod";
 import { agencyPlaceKey } from "@/lib/domain/agency-identity";
 import { buildAgencySlug, ensureUniqueSlug } from "@/lib/domain/agency-slug";
 import { brandSlugFromName } from "@/lib/domain/company-presence";
-import { normalizeAgencyName } from "@/lib/domain/match";
+import {
+  collectAgencyMatches,
+  nameIsCityLabel,
+  normalizeAgencyName,
+} from "@/lib/domain/match";
 import {
   reviewAllowedNames,
   screenReviewText,
@@ -26,6 +30,7 @@ const listingSchema = z.object({
 
 const textSchema = z.object({
   title: z.string().optional(),
+  narrative: z.string().optional(),
   pros: z.string().optional(),
   cons: z.string().optional(),
   publicName: z.string().optional(),
@@ -46,9 +51,31 @@ export class ProvisionalAgencyService {
   ) {
     const listing = listingSchema.parse(input);
     const text = textSchema.parse(input);
+    const confirmNew =
+      typeof input === "object" &&
+      input !== null &&
+      "confirmNew" in input &&
+      (input as { confirmNew?: unknown }).confirmNew === true;
+    if (
+      nameIsCityLabel(listing.name, listing.city) ||
+      (await this.nameIsKnownCity(listing.name))
+    ) {
+      throw new ReviewError(
+        "Indica el nombre comercial. Una ciudad no crea una ficha.",
+      );
+    }
     const existing = await this.findMatch(listing.name, listing.city);
+    if (!existing && !confirmNew) {
+      const clash = await this.identifiedNames(listing.name);
+      if (clash.length > 0) {
+        throw new ReviewError(
+          `Hay fichas que pueden ser esta inmobiliaria: ${clash.join(", ")}. Ábrelas o confirma que no es ninguna antes de crear otra.`,
+        );
+      }
+    }
     const screen = screenReviewText({
       title: text.title,
+      body: text.narrative,
       pros: text.pros,
       cons: text.cons,
       publicName: text.anonymous === false ? text.publicName : undefined,
@@ -84,6 +111,25 @@ export class ProvisionalAgencyService {
       if (createdId) await this.repo.deleteAgency(createdId);
       throw error;
     }
+  }
+
+  private async nameIsKnownCity(name: string) {
+    const label = normalizeAgencyName(name);
+    if (!label) return false;
+    const agencies = await this.repo.listAgencies();
+    if (agencies.some((agency) => normalizeAgencyName(agency.city) === label)) {
+      return true;
+    }
+    const locations = await this.repo.listPublishedLocations();
+    return locations.some((location) => normalizeAgencyName(location.city) === label);
+  }
+
+  private async identifiedNames(name: string) {
+    const agencies = await this.repo.listAgencies();
+    const aliases = await this.repo.listAllAliases();
+    return collectAgencyMatches(name, agencies, aliases).identified.map(
+      (hit) => hit.name,
+    );
   }
 
   private async findMatch(name: string, city: string) {

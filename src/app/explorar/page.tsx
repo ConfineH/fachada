@@ -20,9 +20,10 @@ export default async function ExplorarPage({
   searchParams: Promise<{ q?: string }>;
 }) {
   const { q } = await searchParams;
-  const cities = await agencyService.exploreCities({ publicOnly: true });
-  const totalAgencies = cities.reduce((sum, c) => sum + c.agencyCount, 0);
-  const municipalityCount = cities.length;
+  const [cities, totals] = await Promise.all([
+    agencyService.exploreCities({ publicOnly: true }),
+    agencyService.archiveTotals({ publicOnly: true }),
+  ]);
 
   const filtered = q
     ? cities.filter((c) =>
@@ -65,18 +66,26 @@ export default async function ExplorarPage({
           <div className="flex flex-wrap gap-10">
             <div>
               <p className="text-3xl font-semibold tabular-nums tracking-tight">
-                {totalAgencies.toLocaleString("es-ES")}
+                {totals.agencies.toLocaleString("es-ES")}
               </p>
               <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
-                Fichas en el archivo
+                Inmobiliarias
               </p>
             </div>
             <div>
               <p className="text-3xl font-semibold tabular-nums tracking-tight">
-                {municipalityCount.toLocaleString("es-ES")}
+                {totals.municipalities.toLocaleString("es-ES")}
               </p>
               <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
                 Municipios cubiertos
+              </p>
+            </div>
+            <div>
+              <p className="text-3xl font-semibold tabular-nums tracking-tight">
+                {totals.experiences.toLocaleString("es-ES")}
+              </p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
+                Experiencias publicadas
               </p>
             </div>
           </div>

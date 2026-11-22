@@ -30,6 +30,7 @@ export class AccountService {
           return {
             id: review.id,
             title: review.title,
+            body: review.body,
             rating: review.rating,
             pros: review.pros,
             cons: review.cons,

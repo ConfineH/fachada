@@ -94,7 +94,7 @@ describe("AgencyService.exploreCities", () => {
     expect(madrid?.agencyCount).toBe(2);
   });
 
-  it("counts visible reviews in one read and repeats them on each city", async () => {
+  it("counts visible reviews in one read and only in the city they name", async () => {
     const store = new MemoryStore();
     let perAgency = 0;
     let visibilityReads = 0;
@@ -164,7 +164,63 @@ describe("AgencyService.exploreCities", () => {
     expect(visibilityReads).toBe(1);
     expect(madrid.reviewCount).toBe(madridBefore.reviewCount);
     expect(sevilla.agencyCount).toBe(1);
-    expect(sevilla.reviewCount).toBe(publicSolReviews.length);
+    expect(sevilla.reviewCount).toBe(0);
+    expect(publicSolReviews.every((review) => !review.experienceCity?.trim())).toBe(
+      true,
+    );
+  });
+
+  it("counts one agency in several municipalities without copying its experiences", async () => {
+    const store = new MemoryStore();
+    const service = new AgencyService(store);
+    const sol = (await store.listAgencies()).find(
+      (agency) => agency.slug === "inmobiliaria-sol-madrid",
+    )!;
+    const [sample] = await store.listAllReviews();
+    await store.createLocation({
+      id: crypto.randomUUID(),
+      agencyId: sol.id,
+      kind: "branch",
+      status: "publicado",
+      address: "Oficina en Sevilla",
+      city: "Sevilla",
+      postalCode: "41001",
+      createdAt: new Date(),
+    });
+    await store.createReview({
+      ...sample!,
+      id: crypto.randomUUID(),
+      agencyId: sol.id,
+      moderated: true,
+      flagged: false,
+      deletedAt: undefined,
+      experienceCity: "Madrid",
+    });
+    await store.createReview({
+      ...sample!,
+      id: crypto.randomUUID(),
+      agencyId: sol.id,
+      moderated: true,
+      flagged: false,
+      deletedAt: undefined,
+      experienceCity: undefined,
+    });
+
+    const totals = await service.archiveTotals({ publicOnly: true });
+    const cities = await service.exploreCities({ publicOnly: true });
+    const madrid = cities.find((city) => city.slug === "madrid")!;
+    const sevilla = cities.find((city) => city.slug === "sevilla")!;
+    const presenceSum = cities.reduce((sum, city) => sum + city.agencyCount, 0);
+    const namedSum = cities.reduce((sum, city) => sum + city.reviewCount, 0);
+
+    expect(totals.agencies).toBe((await store.listAgencies()).length);
+    expect(totals.municipalities).toBe(cities.length);
+    expect(presenceSum).toBeGreaterThan(totals.agencies);
+    expect(sevilla.agencyCount).toBe(1);
+    expect(sevilla.reviewCount).toBe(0);
+    expect(madrid.reviewCount).toBe(1);
+    expect(namedSum).toBe(1);
+    expect(totals.experiences).toBeGreaterThan(namedSum);
   });
 });
 
@@ -175,18 +231,81 @@ describe("AgencyService.matchByName", () => {
     const match = await service.matchByName("Inmobiliaria Sol", "Madrid", {
       publicOnly: true,
     });
-    expect(match?.slug).toBe("inmobiliaria-sol-madrid");
-    expect(match!.confidence).toBeGreaterThan(0.8);
+    expect(match.identified.map((hit) => hit.slug)).toEqual([
+      "inmobiliaria-sol-madrid",
+    ]);
+    expect(match.identified[0]?.band).toBe("exact");
+    expect(match.hints).toEqual([]);
   });
 
-  it("matches alias names", async () => {
+  it("matches alias names without dropping the other candidates", async () => {
     const store = new MemoryStore();
     const service = new AgencyService(store);
     const match = await service.matchByName("Sol Inmobiliaria Madrid", undefined, {
       publicOnly: true,
     });
-    expect(match?.agency.name).toBe("Inmobiliaria Sol");
-    expect(match?.matchedOn).toBe("Sol Inmobiliaria Madrid");
+    expect(match.identified).toHaveLength(1);
+    expect(match.identified[0]?.agency.name).toBe("Inmobiliaria Sol");
+    expect(match.identified[0]?.matchedOn).toBe("Sol Inmobiliaria Madrid");
+    expect(match.hints).toEqual([]);
+  });
+
+  it("recognizes a city label and not a commercial name", async () => {
+    const store = new MemoryStore();
+    const service = new AgencyService(store);
+    await expect(service.namesACity("Madrid")).resolves.toBe(true);
+    await expect(service.namesACity("Inmobiliaria Sol")).resolves.toBe(false);
+    const cityQuery = await service.matchByName("Madrid");
+    expect(cityQuery.identified).toEqual([]);
+    expect(cityQuery.hints).toEqual([]);
+  });
+
+  it("finds an agency by a commercial alias", async () => {
+    const store = new MemoryStore();
+    const service = new AgencyService(store);
+    const results = await service.search("Sol Gestión");
+    expect(results.map((agency) => agency.slug)).toContain("inmobiliaria-sol-madrid");
+  });
+
+  it("keeps two similar names side by side", async () => {
+    const store = new MemoryStore();
+    const service = new AgencyService(store);
+    const created = new Date();
+    await store.createAgency({
+      id: crypto.randomUUID(),
+      slug: "patio-sur",
+      name: "Patio Sur",
+      address: "Calle 1",
+      city: "Madrid",
+      postalCode: "28001",
+      phone: "",
+      phonePublished: false,
+      email: "",
+      claimed: false,
+      verified: false,
+      premium: false,
+      createdAt: created,
+    });
+    await store.createAgency({
+      id: crypto.randomUUID(),
+      slug: "patio-sur-gestion",
+      name: "Patio Sur Gestión",
+      address: "Calle 2",
+      city: "Barcelona",
+      postalCode: "08001",
+      phone: "",
+      phonePublished: false,
+      email: "",
+      claimed: false,
+      verified: false,
+      premium: false,
+      createdAt: created,
+    });
+    const match = await service.matchByName("Patio Sur");
+    expect(match.identified.map((hit) => hit.slug).sort()).toEqual([
+      "patio-sur",
+      "patio-sur-gestion",
+    ]);
   });
 });
 

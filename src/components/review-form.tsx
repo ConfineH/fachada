@@ -5,6 +5,7 @@ import { FormEvent, useEffect, useRef, useState } from "react";
 import { AccountVerification } from "@/components/account-verification";
 import { IncidentMarkFields } from "@/components/incident-mark-fields";
 import {
+  authHeaders,
   clearSessionToken,
   readSessionToken,
   writeSessionToken,
@@ -27,6 +28,14 @@ import {
   REVIEW_TERMS_VERSION,
   WHOLE_NUMBER_RATING_ERROR,
 } from "@/lib/domain/review-authenticity";
+import { activeReviewForAgency } from "@/lib/domain/review-limits";
+import { nameIsCityLabel, normalizeAgencyName } from "@/lib/domain/match";
+import {
+  NARRATIVE_MAX_LENGTH,
+  NARRATIVE_MIN_LENGTH,
+  narrativeLengthError,
+  optionalSideError,
+} from "@/lib/domain/review-copy";
 import {
   REFORMULATION_HINT,
   reviewAllowedNames,
@@ -35,6 +44,28 @@ import {
 import type { ReviewExperienceType } from "@/lib/domain/types";
 
 type Step = "verify" | "review" | "done";
+
+type AgencyNameHit = {
+  name: string;
+  slug: string;
+  city: string;
+  band: string;
+};
+
+async function lookupAgencyNames(name: string) {
+  const params = new URLSearchParams({ name });
+  const res = await fetch(publicApiUrl(`/api/agencies/match?${params}`));
+  const data = (await res.json()) as {
+    cityOnly?: boolean;
+    identified?: AgencyNameHit[];
+    hints?: AgencyNameHit[];
+  };
+  return {
+    cityOnly: Boolean(data.cityOnly),
+    identified: data.identified ?? [],
+    hints: data.hints ?? [],
+  };
+}
 
 export function ReviewForm({
   agencySlug,
@@ -63,7 +94,7 @@ export function ReviewForm({
   const [token, setToken] = useState("");
   const [role, setRole] = useState<"inquilino" | "propietario">("inquilino");
   const [rating, setRating] = useState<number | null>(null);
-  const [title, setTitle] = useState("");
+  const [narrative, setNarrative] = useState("");
   const [pros, setPros] = useState("");
   const [cons, setCons] = useState("");
   const [anonymous, setAnonymous] = useState(true);
@@ -87,7 +118,7 @@ export function ReviewForm({
     | "date"
     | "city"
     | "rating"
-    | "title"
+    | "narrative"
     | "pros"
     | "cons"
     | "name"
@@ -97,34 +128,81 @@ export function ReviewForm({
     | ""
   >("");
   const [loading, setLoading] = useState(false);
-  const [holdReady, setHoldReady] = useState(false);
+  const [holdSnapshot, setHoldSnapshot] = useState("");
   const [holdNote, setHoldNote] = useState("");
+  const holdText = [narrative, pros, cons, publicName].join("\n");
+  const holdReady = holdSnapshot !== "" && holdSnapshot === holdText;
   const [publishedNow, setPublishedNow] = useState(false);
+  const [existingReview, setExistingReview] = useState<{
+    moderated: boolean;
+    flagged: boolean;
+  } | null>(null);
+  const [checkedReviewKey, setCheckedReviewKey] = useState("");
   const [createdSlug, setCreatedSlug] = useState(agencySlug);
   const [newName, setNewName] = useState(unlisted?.name ?? "");
   const [newCity, setNewCity] = useState(unlisted?.city ?? "");
   const [newAddress, setNewAddress] = useState(unlisted?.address ?? "");
+  const [nameHits, setNameHits] = useState<
+    Array<{ name: string; slug: string; city: string; band: string }>
+  >([]);
+  const [nameHints, setNameHints] = useState<
+    Array<{ name: string; slug: string; city: string }>
+  >([]);
+  const [dismissedNames, setDismissedNames] = useState(false);
   const feedbackRef = useRef<HTMLDivElement>(null);
+
+  const reviewCheckKey =
+    step === "review" && token && !unlisted ? `${token}:${agencySlug}` : "";
+  const checkingReview = reviewCheckKey !== "" && checkedReviewKey !== reviewCheckKey;
 
   useEffect(() => {
     const stored = readSessionToken();
-    if (stored) {
-      setToken(stored);
-      setStep("review");
-    }
+    if (!stored) return;
+    /* sessionStorage does not exist while the server renders the form. */
+    /* eslint-disable react-hooks/set-state-in-effect */
+    setToken(stored);
+    setStep("review");
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, []);
 
   useEffect(() => {
-    setHoldReady(false);
-    setHoldNote("");
-  }, [title, pros, cons, publicName]);
+    if (!reviewCheckKey) return;
+    let cancelled = false;
+    fetch(publicApiUrl("/api/me"), { headers: authHeaders(token) })
+      .then(async (res) => {
+        if (!res.ok) return null;
+        return (await res.json()) as {
+          reviews?: Array<{
+            moderated: boolean;
+            flagged: boolean;
+            agency: { slug: string } | null;
+          }>;
+        };
+      })
+      .then((data) => {
+        if (cancelled) return;
+        const found = data
+          ? activeReviewForAgency(data.reviews ?? [], agencySlug)
+          : undefined;
+        setExistingReview(found ?? null);
+        setCheckedReviewKey(reviewCheckKey);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setExistingReview(null);
+        setCheckedReviewKey(reviewCheckKey);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [agencySlug, reviewCheckKey, token]);
 
   function showError(
     field:
       | "date"
       | "city"
       | "rating"
-      | "title"
+      | "narrative"
       | "pros"
       | "cons"
       | "name"
@@ -167,7 +245,7 @@ export function ReviewForm({
       return;
     }
 
-    const trimmedTitle = title.trim();
+    const trimmedNarrative = narrative.trim();
     const trimmedPros = pros.trim();
     const trimmedCons = cons.trim();
     if (!experienceDate) {
@@ -193,16 +271,19 @@ export function ReviewForm({
       showError("rating", WHOLE_NUMBER_RATING_ERROR);
       return;
     }
-    if (!trimmedTitle) {
-      showError("title", "Añade un título a la reseña.");
+    const narrativeError = narrativeLengthError(trimmedNarrative);
+    if (narrativeError) {
+      showError("narrative", narrativeError);
       return;
     }
-    if (trimmedCons.length < 10) {
-      showError("cons", "Las desventajas deben tener al menos 10 caracteres.");
+    const prosError = optionalSideError(trimmedPros, false, "ventajas");
+    if (prosError) {
+      showError("pros", prosError);
       return;
     }
-    if (trimmedPros.length < 10) {
-      showError("pros", "Las ventajas deben tener al menos 10 caracteres.");
+    const consError = optionalSideError(trimmedCons, false, "desventajas");
+    if (consError) {
+      showError("cons", consError);
       return;
     }
     if (!anonymous && !publicName.trim()) {
@@ -236,11 +317,44 @@ export function ReviewForm({
         showError("form", "Indica la ciudad.");
         return;
       }
+      let report: Awaited<ReturnType<typeof lookupAgencyNames>>;
+      try {
+        report = await lookupAgencyNames(newName);
+      } catch {
+        showError(
+          "form",
+          "No se ha podido comprobar si ese nombre ya tiene ficha. Inténtalo de nuevo.",
+        );
+        return;
+      }
+      if (nameIsCityLabel(newName, newCity) || report.cityOnly) {
+        showError(
+          "form",
+          "Indica el nombre comercial. Una ciudad no crea una ficha.",
+        );
+        return;
+      }
+      setNameHints(report.hints);
+      const blocking = report.identified.filter((hit) => {
+        const sameName =
+          normalizeAgencyName(hit.name) === normalizeAgencyName(newName);
+        const sameCity =
+          normalizeAgencyName(hit.city) === normalizeAgencyName(newCity);
+        return !(hit.band === "exact" && sameName && sameCity);
+      });
+      if (blocking.length > 0 && !dismissedNames) {
+        setNameHits(blocking);
+        showError(
+          "form",
+          "Hay fichas que pueden ser esta inmobiliaria. Si no es ninguna, confírmalo antes de crear otra.",
+        );
+        return;
+      }
     }
     const screen = screenReviewText({
-      title: trimmedTitle,
-      pros: trimmedPros,
-      cons: trimmedCons,
+      body: trimmedNarrative,
+      pros: trimmedPros || undefined,
+      cons: trimmedCons || undefined,
       publicName: anonymous ? undefined : publicName.trim(),
       allowedNames: reviewAllowedNames({
         name: unlisted ? newName : agencyName,
@@ -254,7 +368,7 @@ export function ReviewForm({
       return;
     }
     if (screen.outcome === "hold" && !holdReady) {
-      setHoldReady(true);
+      setHoldSnapshot(holdText);
       setHoldNote(
         `${REFORMULATION_HINT} ${screen.hits.map((hit) => hit.message).join(" ")}`,
       );
@@ -272,11 +386,12 @@ export function ReviewForm({
             name: newName.trim(),
             city: newCity.trim(),
             address: newAddress.trim(),
+            confirmNew: dismissedNames,
           }
         : { agencySlug }),
       role,
       rating,
-      title: trimmedTitle,
+      narrative: trimmedNarrative,
       pros: trimmedPros,
       cons: trimmedCons,
       anonymous,
@@ -432,7 +547,12 @@ export function ReviewForm({
             Nombre de la inmobiliaria
             <input
               value={newName}
-              onChange={(event) => setNewName(event.target.value)}
+              onChange={(event) => {
+                setNewName(event.target.value);
+                setDismissedNames(false);
+                setNameHits([]);
+                setNameHints([]);
+              }}
               required
               className="input-field mt-1"
             />
@@ -441,7 +561,11 @@ export function ReviewForm({
             Ciudad
             <input
               value={newCity}
-              onChange={(event) => setNewCity(event.target.value)}
+              onChange={(event) => {
+                setNewCity(event.target.value);
+                setDismissedNames(false);
+                setNameHits([]);
+              }}
               required
               className="input-field mt-1"
             />
@@ -454,6 +578,36 @@ export function ReviewForm({
               className="input-field mt-1"
             />
           </label>
+          {nameHints.length > 0 ? (
+            <p className="text-sm text-zinc-600">
+              Se parece a {nameHints.map((hit) => hit.name).join(", ")}, pero no
+              basta para identificar la ficha. Puedes seguir.
+            </p>
+          ) : null}
+          {nameHits.length > 0 ? (
+            <div className="rounded-lg border border-stone-200 bg-stone-50 p-3 text-sm">
+              <p className="font-medium text-zinc-900">Puede ser una de estas</p>
+              <ul className="mt-2 space-y-1">
+                {nameHits.map((hit) => (
+                  <li key={hit.slug}>
+                    <a href={`/agencias/${hit.slug}#dejar-resena`} className="link-brand">
+                      {hit.name}
+                      {hit.city ? ` · ${hit.city}` : ""}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+              <label className="mt-3 flex items-start gap-2">
+                <input
+                  type="checkbox"
+                  className="mt-0.5"
+                  checked={dismissedNames}
+                  onChange={(event) => setDismissedNames(event.target.checked)}
+                />
+                No es ninguna de estas fichas
+              </label>
+            </div>
+          ) : null}
         </div>
       ) : null}
 
@@ -467,7 +621,38 @@ export function ReviewForm({
         </div>
       )}
 
-      {step === "review" && (
+      {step === "review" && checkingReview && !unlisted ? (
+        <p className="mt-4 text-sm text-zinc-600">
+          Comprobando si ya enviaste una experiencia de esta inmobiliaria.
+        </p>
+      ) : null}
+
+      {step === "review" && existingReview ? (
+        <div className="mt-4 rounded-lg bg-stone-50 px-3 py-3 text-sm text-zinc-800">
+          <p className="font-medium">
+            {existingReview.flagged
+              ? "Esta cuenta ya tiene una experiencia retirada de esta inmobiliaria."
+              : existingReview.moderated
+                ? "Esta cuenta ya tiene una experiencia publicada de esta inmobiliaria."
+                : "Esta cuenta ya tiene una experiencia pendiente de moderación."}
+          </p>
+          <p className="mt-1">
+            No puedes enviar otra. El estado está en tu cuenta.
+          </p>
+          <div className="mt-2 flex flex-wrap gap-4">
+            <a href="/cuenta" className="link-brand inline-flex min-h-11 items-center">
+              Ver el estado en tu cuenta
+            </a>
+            {existingReview.moderated && !existingReview.flagged ? (
+              <a href="#experiencias" className="link-brand inline-flex min-h-11 items-center">
+                Verla en la ficha
+              </a>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
+
+      {step === "review" && !existingReview && !checkingReview && (
         <form
           key="review"
           onSubmit={submitReview}
@@ -586,64 +771,61 @@ export function ReviewForm({
               </span>
             ) : null}
           </label>
-          <label id="review-title" className="block text-xs font-medium text-zinc-600">
-            Título
-            <input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Ej. La fianza tardó semanas en volver"
-              required
-              maxLength={100}
-              aria-invalid={errorField === "title"}
-              aria-describedby={errorField === "title" ? "review-title-error" : undefined}
-              className="input-field mt-1"
-            />
-            {errorField === "title" && error ? (
-              <span id="review-title-error" className="mt-1 block text-sm font-normal text-red-700">
-                {error}
-              </span>
-            ) : null}
-          </label>
-          <label id="review-cons" className="block text-xs font-medium text-zinc-600">
-            Desventajas
+          <label id="review-narrative" className="block text-xs font-medium text-zinc-600">
+            Cuéntanos tu experiencia
             <textarea
-              value={cons}
-              onChange={(e) => setCons(e.target.value)}
-              placeholder="Qué falló o qué mejorarías."
+              value={narrative}
+              onChange={(event) => setNarrative(event.target.value)}
+              placeholder="Qué ocurrió, en tus palabras. Una frase concreta basta."
               required
-              minLength={10}
-              maxLength={450}
-              rows={3}
-              aria-invalid={errorField === "cons"}
-              aria-describedby={errorField === "cons" ? "review-cons-error" : undefined}
+              minLength={NARRATIVE_MIN_LENGTH}
+              maxLength={NARRATIVE_MAX_LENGTH}
+              rows={5}
+              aria-invalid={errorField === "narrative"}
+              aria-describedby={errorField === "narrative" ? "review-narrative-error" : undefined}
               className="input-field mt-1"
             />
-            {errorField === "cons" && error ? (
-              <span id="review-cons-error" className="mt-1 block text-sm font-normal text-red-700">
+            {errorField === "narrative" && error ? (
+              <span id="review-narrative-error" className="mt-1 block text-sm font-normal text-red-700">
                 {error}
               </span>
             ) : null}
           </label>
-          <label id="review-pros" className="block text-xs font-medium text-zinc-600">
-            Ventajas
-            <textarea
-              value={pros}
-              onChange={(e) => setPros(e.target.value)}
-              placeholder="Qué funcionó: plazos, trato, contrato…"
-              required
-              minLength={10}
-              maxLength={450}
-              rows={3}
-              aria-invalid={errorField === "pros"}
-              aria-describedby={errorField === "pros" ? "review-pros-error" : undefined}
-              className="input-field mt-1"
-            />
-            {errorField === "pros" && error ? (
-              <span id="review-pros-error" className="mt-1 block text-sm font-normal text-red-700">
-                {error}
-              </span>
-            ) : null}
-          </label>
+          <details className="rounded-lg border border-stone-200 p-3">
+            <summary className="cursor-pointer text-sm font-medium text-zinc-800">
+              Añadir un matiz
+            </summary>
+            <div className="mt-3 space-y-3">
+              <label id="review-pros" className="block text-xs font-medium text-zinc-600">
+                Ventajas, si quieres precisarlas
+                <textarea
+                  value={pros}
+                  onChange={(event) => setPros(event.target.value)}
+                  maxLength={450}
+                  rows={2}
+                  aria-invalid={errorField === "pros"}
+                  className="input-field mt-1"
+                />
+              </label>
+              <label id="review-cons" className="block text-xs font-medium text-zinc-600">
+                Desventajas, si quieres precisarlas
+                <textarea
+                  value={cons}
+                  onChange={(event) => setCons(event.target.value)}
+                  maxLength={450}
+                  rows={2}
+                  aria-invalid={errorField === "cons"}
+                  className="input-field mt-1"
+                />
+              </label>
+              <div id="review-themes">
+                <IncidentMarkFields marks={marks} onChange={setMarks} />
+                {errorField === "themes" && error ? (
+                  <p className="mt-1 text-sm text-red-700">{error}</p>
+                ) : null}
+              </div>
+            </div>
+          </details>
           </fieldset>
           <fieldset className="space-y-3">
             <legend className="text-sm font-medium text-zinc-900">
@@ -702,12 +884,6 @@ export function ReviewForm({
               ) : null}
             </label>
           )}
-          <div id="review-themes">
-            <IncidentMarkFields marks={marks} onChange={setMarks} />
-            {errorField === "themes" && error ? (
-              <p className="mt-1 text-sm text-red-700">{error}</p>
-            ) : null}
-          </div>
           <fieldset id="review-declarations" className="space-y-2 rounded-lg border border-stone-200 p-3">
             <legend className="px-1 text-xs font-semibold text-zinc-700">
               Declaraciones de autenticidad
@@ -800,7 +976,7 @@ export function ReviewForm({
                 ? "Enviar igualmente a revisión"
                 : "Publicar reseña"}
           </button>
-          {holdNote ? (
+          {holdReady && holdNote ? (
             <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-950">
               {holdNote}
             </p>
@@ -824,16 +1000,23 @@ export function ReviewForm({
           <p className="mt-1">
             {publishedNow
               ? "Ya está en la ficha como experiencia declarada. Una prueba solo pasa a experiencia acreditada si una persona la aprueba."
-              : "No se ha publicado. Queda en revisión humana. Puedes ver el estado en tu cuenta."}
+              : "No se ha publicado. Queda en revisión humana. El estado está en tu cuenta."}
           </p>
-          {createdSlug ? (
+          {publishedNow && createdSlug ? (
             <a
               href={`/agencias/${createdSlug}${utmQuery}`}
               className="mt-2 inline-flex min-h-11 items-center font-medium underline"
             >
               Ver la ficha
             </a>
-          ) : null}
+          ) : (
+            <a
+              href="/cuenta"
+              className="mt-2 inline-flex min-h-11 items-center font-medium underline"
+            >
+              Ver el estado en tu cuenta
+            </a>
+          )}
           {evidenceNote ? <p className="mt-1">{evidenceNote}</p> : null}
         </div>
       )}

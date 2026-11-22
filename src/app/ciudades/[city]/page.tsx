@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { Breadcrumbs } from "@/components/breadcrumbs";
@@ -43,9 +42,11 @@ export default async function CityPage({
   if (listed.length === 0) notFound();
 
   const agencies = query
-    ? listed.filter((agency) =>
-        agency.name.toLocaleLowerCase("es").includes(query.toLocaleLowerCase("es")),
-      )
+    ? await agencyService.listByCity(city, {
+        publicOnly: true,
+        sort,
+        query,
+      })
     : listed;
   const label = listed[0]?.city ?? slugToCityLabel(city);
 
@@ -71,8 +72,8 @@ export default async function CityPage({
           </h1>
           <p className="mt-2 text-white/80">
             {listed.length}{" "}
-            {listed.length === 1 ? "ficha" : "fichas"} en el archivo de esta
-            ciudad. La nota sale en cada tarjeta; el texto, en la ficha.
+            {listed.length === 1 ? "inmobiliaria" : "inmobiliarias"} en este
+            municipio. La nota sale en cada tarjeta; el texto, en la ficha.
           </p>
         </div>
       </header>

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  AGENCY_SORT_OPTIONS,
   HOME_DOCUMENTED_PREVIEW,
   homeDocumentedAgencies,
   parseAgencySort,
@@ -49,6 +50,10 @@ describe("parseAgencySort", () => {
     expect(parseAgencySort(undefined)).toBe("reviews");
     expect(parseAgencySort("nope")).toBe("reviews");
     expect(parseAgencySort("inquilino")).toBe("inquilino");
+    expect(parseAgencySort("overall")).toBe("reviews");
+    expect(AGENCY_SORT_OPTIONS.map((option) => option.label)).not.toContain(
+      "Nota media",
+    );
   });
 });
 

@@ -29,6 +29,7 @@ describe("ContentNoticeService", () => {
       role: "inquilino",
       rating: 2,
       title: "Problemas de gestión",
+      narrative: "Tardaron tres semanas en devolver la fianza del piso.",
       pros: "La visita inicial fue puntual y correcta.",
       cons: "La comunicación posterior fue lenta durante varios días.",
       experienceDate: new Date().toISOString().slice(0, 10),

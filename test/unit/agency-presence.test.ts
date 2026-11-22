@@ -85,6 +85,7 @@ describe("ficha locations and history", () => {
     const store = new MemoryStore();
     const service = new AgencyService(store);
     const match = await service.matchByName("Sol Gestión", "Madrid");
-    expect(match?.slug).toBe("inmobiliaria-sol-madrid");
+    expect(match.identified[0]?.slug).toBe("inmobiliaria-sol-madrid");
+    expect(match.identified[0]?.band).toBe("exact");
   });
 });

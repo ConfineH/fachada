@@ -9,9 +9,9 @@ import { authHeaders, readSessionToken } from "@/lib/auth/session-client";
 import { INCIDENT_TAG_LABELS, type IncidentSentiments, type IncidentTag } from "@/lib/domain/incidents";
 import {
   experiencePublicLabel,
-  reviewProsCons,
   reviewPublicByline,
 } from "@/lib/domain/review-copy";
+import { experienceCityLabel } from "@/lib/domain/review-city";
 import type {
   ReviewExperienceType,
   ReviewVerificationLevel,
@@ -24,8 +24,9 @@ type PublicReview = {
   id: string;
   role: UserRole;
   rating: number;
-  title: string;
-  body: string;
+  title?: string;
+  narrative?: string;
+  prose?: string;
   pros?: string;
   cons?: string;
   anonymous: boolean;
@@ -34,14 +35,14 @@ type PublicReview = {
   helpfulCount: number;
   incidentTags: IncidentTag[];
   incidentSentiments?: IncidentSentiments;
-  experienceDate: string;
+  experienceDate?: string;
   experienceType: ReviewExperienceType;
   experienceCity?: string;
   verificationLevel: ReviewVerificationLevel;
   identityVerification: "email" | "phone";
-  createdAt: string;
+  createdAt?: string;
   editedAt?: string;
-  response?: { body: string; createdAt: string };
+  response?: { body: string; createdAt?: string };
 };
 
 function initialFilterFromPerspective(value?: string): Filter {
@@ -105,12 +106,11 @@ export function AgencyReviewList({
       )}
       <ul key={filter} className="motion-stagger space-y-4">
         {filtered.length === 0 && (
-          <li className="rounded-xl border border-dashed border-stone-300 bg-white p-6 text-stone-600">
+          <li className="card-raised p-6 text-sm text-zinc-600">
             No hay reseñas publicadas para este filtro.
           </li>
         )}
         {filtered.map((review) => {
-          const split = reviewProsCons(review);
           return (
             <li
               key={review.id}
@@ -128,10 +128,15 @@ export function AgencyReviewList({
                   ? "Correo verificado"
                   : "Teléfono verificado"}{" "}
                 · {experiencePublicLabel(review.verificationLevel)} ·{" "}
-                {new Date(review.experienceDate).toLocaleDateString("es-ES")}
-                {review.experienceCity ? ` · ${review.experienceCity}` : ""}
+                {review.experienceDate
+                  ? new Date(review.experienceDate).toLocaleDateString("es-ES")
+                  : "Fecha no indicada"}
+                {" · "}
+                {experienceCityLabel(review.experienceCity)}
               </p>
-              <h3 className="mt-2 text-lg font-semibold">{review.title}</h3>
+              {review.title ? (
+                <h3 className="mt-2 text-lg font-semibold">{review.title}</h3>
+              ) : null}
               {review.wouldRecommend !== undefined && (
                 <p className="mt-2 text-sm text-zinc-700">
                   {review.wouldRecommend
@@ -139,24 +144,32 @@ export function AgencyReviewList({
                     : "No recomendaría esta inmobiliaria"}
                 </p>
               )}
-              {split.pros && split.cons ? (
+              {review.narrative ? (
+                <p className="mt-2 whitespace-pre-wrap text-stone-700">{review.narrative}</p>
+              ) : null}
+              {review.prose ? (
+                <p className="mt-2 whitespace-pre-wrap text-stone-700">{review.prose}</p>
+              ) : null}
+              {review.pros || review.cons ? (
                 <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-lg border border-emerald-100 bg-emerald-50 p-3">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-emerald-800">
-                      Ventajas
-                    </p>
-                    <p className="mt-1 text-sm text-emerald-950">{split.pros}</p>
-                  </div>
-                  <div className="rounded-lg border border-rose-100 bg-rose-50 p-3">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-rose-800">
-                      Desventajas
-                    </p>
-                    <p className="mt-1 text-sm text-rose-950">{split.cons}</p>
-                  </div>
+                  {review.pros ? (
+                    <div className="rounded-lg border border-emerald-100 bg-emerald-50 p-3">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-emerald-800">
+                        Ventajas
+                      </p>
+                      <p className="mt-1 text-sm text-emerald-950">{review.pros}</p>
+                    </div>
+                  ) : null}
+                  {review.cons ? (
+                    <div className="rounded-lg border border-rose-100 bg-rose-50 p-3">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-rose-800">
+                        Desventajas
+                      </p>
+                      <p className="mt-1 text-sm text-rose-950">{review.cons}</p>
+                    </div>
+                  ) : null}
                 </div>
-              ) : (
-                <p className="mt-2 text-stone-700">{split.body}</p>
-              )}
+              ) : null}
               {review.incidentTags.length > 0 && (
                 <ul className="mt-3 flex flex-wrap gap-2">
                   {review.incidentTags.map((tag) => (
@@ -187,7 +200,9 @@ export function AgencyReviewList({
               <div className="mt-3 space-y-3">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <p className="text-xs text-stone-500">
-                    {new Date(review.createdAt).toLocaleDateString("es-ES")}
+                    {review.createdAt
+                      ? new Date(review.createdAt).toLocaleDateString("es-ES")
+                      : ""}
                     {review.editedAt ? " · Editada" : ""}
                   </p>
                   <button

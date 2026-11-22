@@ -382,6 +382,7 @@ export class MemoryStore implements Repository {
       moderated: review.moderated,
       flagged: review.flagged,
       deletedAt: review.deletedAt,
+      experienceCity: review.experienceCity,
     }));
   }
 

@@ -44,6 +44,7 @@ describe("provisional agency from a review", () => {
       role: "inquilino",
       rating: 3,
       title: "Tardaron con la fianza",
+      narrative: "Tardaron tres semanas en devolver la fianza del piso.",
       pros: PROS,
       cons: CONS,
       experienceDate: new Date().toISOString().slice(0, 10),
@@ -62,6 +63,35 @@ describe("provisional agency from a review", () => {
     expect(agencyPlaceKey("  Fincas   García ", "Málaga")).toBe(
       agencyPlaceKey("fincas garcia", "malaga"),
     );
+  });
+
+  it("does not create a ficha named only after a city", async () => {
+    const user = await author();
+    const before = (await store.listAgencies()).length;
+    await expect(
+      service.publishWithReview(user, payload({ name: "Madrid", city: "Madrid" })),
+    ).rejects.toThrow(/nombre comercial/);
+    expect((await store.listAgencies()).length).toBe(before);
+  });
+
+  it("does not open a second ficha when the name already identifies one", async () => {
+    const user = await author();
+    const before = (await store.listAgencies()).length;
+    await expect(
+      service.publishWithReview(
+        user,
+        payload({ name: "Sol Gestión", city: "Madrid" }),
+      ),
+    ).rejects.toThrow(/pueden ser esta inmobiliaria/);
+    expect((await store.listAgencies()).length).toBe(before);
+
+    const created = await service.publishWithReview(
+      user,
+      payload({ name: "Sol Gestión", city: "Madrid", confirmNew: true }),
+    );
+    expect(created.createdAgency).toBe(true);
+    expect(created.agency.slug).not.toBe("inmobiliaria-sol-madrid");
+    expect((await store.listAgencies()).length).toBe(before + 1);
   });
 
   it("publishes the review on a provisional ficha", async () => {

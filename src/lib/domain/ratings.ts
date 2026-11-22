@@ -36,3 +36,11 @@ export function summarizeRoleRatings(
     overall: { averageRating: overallAvg, reviewCount: overallCount },
   };
 }
+
+/** The two public scores. The blended overall stays internal. */
+export function publicRoleRatings(roleRatings: AgencyRoleRatings) {
+  return {
+    inquilino: roleRatings.inquilino,
+    propietario: roleRatings.propietario,
+  };
+}

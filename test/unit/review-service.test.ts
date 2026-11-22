@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
+import { composeReviewBody, reviewPublicCopy } from "@/lib/domain/review-copy";
 import { MemoryStore } from "@/lib/repositories/memory-store";
+import { AccountService } from "@/lib/services/account-service";
 import { AgencyService } from "@/lib/services/agency-service";
 import { AuthService } from "@/lib/services/auth-service";
 import { ReviewError, ReviewService } from "@/lib/services/review-service";
@@ -9,6 +11,7 @@ import { REVIEW_TERMS_VERSION } from "@/lib/domain/review-authenticity";
 
 const PROS = "La gestión fue rápida y clara en todo momento.";
 const CONS = "Algún retraso menor contestando correos por la tarde.";
+const NARRATIVE = "Tardaron tres semanas en devolver la fianza del piso.";
 
 describe("ReviewService", () => {
   let store: MemoryStore;
@@ -38,6 +41,7 @@ describe("ReviewService", () => {
       role: "inquilino",
       rating: 4,
       title: "Buena experiencia",
+      narrative: NARRATIVE,
       pros: PROS,
       cons: CONS,
       experienceDate: new Date().toISOString().slice(0, 10),
@@ -68,7 +72,8 @@ describe("ReviewService", () => {
     expect(review.pros).toBe(PROS);
     expect(review.cons).toBe(CONS);
     expect(review.anonymous).toBe(true);
-    expect(review.body).toContain("Ventajas:");
+    expect(review.body).toContain(NARRATIVE);
+    expect(review.title).toBe(NARRATIVE);
     expect(review.moderated).toBe(true);
     expect(review.verificationLevel).toBe("declarada");
   });
@@ -96,6 +101,7 @@ describe("ReviewService", () => {
     expect(ignored.origen).toBeUndefined();
 
     const updated = await service.update(user, review.id, {
+      narrative: NARRATIVE,
       rating: 3,
       title: "Cambié de opinión",
       pros: "Siguieron contestando con claridad en el contrato.",
@@ -270,16 +276,19 @@ describe("ReviewService", () => {
     review.verificationLevel = "acreditada";
     await store.updateReview(review);
 
+    const edited = "Cambié de opinión: la fianza llegó, pero tarde.";
     const updated = await service.update(user, review.id, {
+      narrative: edited,
       rating: 3,
-      title: "Cambié de opinión",
       pros: "Siguieron contestando con claridad en el contrato.",
       cons: "Los plazos de las llaves se alargaron más de lo dicho.",
       anonymous: true,
       incidentTags: ["fianza"],
     });
 
-    expect(updated.title).toBe("Cambié de opinión");
+    expect(updated.title).toBe(edited);
+    expect(reviewPublicCopy(updated).narrative).toBe(edited);
+    expect(reviewPublicCopy(updated).title).toBeUndefined();
     expect(updated.editedAt).toBeInstanceOf(Date);
     expect(updated.moderated).toBe(false);
     expect(updated.flagged).toBe(false);
@@ -298,6 +307,7 @@ describe("ReviewService", () => {
     await store.updateReview(review);
 
     const updated = await service.update(user, review.id, {
+      narrative: NARRATIVE,
       rating: 4,
       title: "Texto corregido",
       pros: PROS,
@@ -319,6 +329,7 @@ describe("ReviewService", () => {
     await store.updateReview(review);
 
     const updated = await service.update(user, review.id, {
+      narrative: NARRATIVE,
       rating: 4,
       title: "Sigo contando lo mismo",
       pros: PROS,
@@ -356,6 +367,7 @@ describe("ReviewService", () => {
     });
 
     const editedOther = await service.update(user, other.id, {
+      narrative: NARRATIVE,
       rating: 4,
       title: "Sigue en la otra ficha",
       pros: PROS,
@@ -364,6 +376,7 @@ describe("ReviewService", () => {
     expect(editedOther.moderated).toBe(true);
 
     const editedReported = await service.update(user, reported.id, {
+      narrative: NARRATIVE,
       rating: 4,
       title: "Texto nuevo de la denunciada",
       pros: PROS,
@@ -379,6 +392,7 @@ describe("ReviewService", () => {
 
     await expect(
       service.update(other, review.id, {
+      narrative: NARRATIVE,
         rating: 1,
         title: "No es mía",
         pros: "La visita fue correcta y el piso estaba limpio.",
@@ -398,9 +412,10 @@ describe("ReviewService", () => {
     expect(stored?.deletedAt).toBeInstanceOf(Date);
     expect(stored?.flagged).toBe(true);
 
-    const next = await service.create(user, payload({ title: "Segunda" }));
+    const second = "Segunda experiencia, ya con la fianza devuelta.";
+    const next = await service.create(user, payload({ narrative: second }));
     expect(next.id).not.toBe(review.id);
-    expect(next.title).toBe("Segunda");
+    expect(next.title).toBe(second);
   });
 
   it("rejects helpful votes on deleted reviews", async () => {
@@ -431,6 +446,7 @@ describe("ReviewService", () => {
     ).toBe(true);
 
     await service.update(user, review.id, {
+      narrative: NARRATIVE,
       rating: 4,
       title: "Ajuste de matices",
       pros: "La gestión siguió siendo clara en el contrato.",
@@ -448,5 +464,83 @@ describe("ReviewService", () => {
         (item) => item.id === review.id,
       ),
     ).toBe(false);
+  });
+
+  it("publishes a clean email review on the ficha and keeps a phone review in the account", async () => {
+    const emailUser = await store.createUser({ email: "ana@gmail.com" });
+    emailUser.emailVerified = true;
+    await store.updateUser(emailUser);
+    const published = await service.create(emailUser, payload());
+    const agencies = new AgencyService(store);
+    const slug = (await store.listAgencies())[0]!.slug;
+    const ficha = await agencies.getBySlug(slug, { publicOnly: true });
+    expect(ficha?.reviews.some((item) => item.id === published.id)).toBe(true);
+    const copy = reviewPublicCopy(published);
+    expect(copy.narrative).toBe(NARRATIVE);
+    expect(copy.title).toBeUndefined();
+
+    const phoneUser = await verifiedUser("+34600888777");
+    const pending = await service.create(phoneUser, payload());
+    expect(pending.moderated).toBe(false);
+    const after = await agencies.getBySlug(slug, { publicOnly: true });
+    expect(after?.reviews.some((item) => item.id === pending.id)).toBe(false);
+    const account = await new AccountService(store).dashboard(phoneUser!);
+    expect(account.reviews.map((item) => item.id)).toContain(pending.id);
+    expect(account.reviews.find((item) => item.id === pending.id)?.moderated).toBe(
+      false,
+    );
+  });
+
+  it("rejects a narrative that is only a fragment", async () => {
+    const user = await verifiedUser("+34600888666");
+    await expect(
+      service.create(user, payload({ narrative: "Muy corta" })),
+    ).rejects.toThrow(/40 caracteres/);
+  });
+
+  it("keeps the title when a structured review is edited", async () => {
+    const user = await verifiedUser("+34600888555");
+    const review = await service.create(user, payload());
+    review.title = "La fianza volvió tarde";
+    review.pros = PROS;
+    review.cons = CONS;
+    review.body = composeReviewBody(PROS, CONS);
+    await store.updateReview(review);
+
+    const updated = await service.update(user, review.id, {
+      rating: 2,
+      title: "La fianza volvió tarde",
+      pros: PROS,
+      cons: CONS,
+    });
+    expect(updated.body).toBe(composeReviewBody(PROS, CONS));
+    expect(reviewPublicCopy(updated)).toMatchObject({
+      format: "structured",
+      title: "La fianza volvió tarde",
+      pros: PROS,
+      cons: CONS,
+    });
+  });
+
+  it("keeps the title and the prose of a review that is not a relato", async () => {
+    const user = await verifiedUser("+34600888444");
+    const review = await service.create(user, payload());
+    const prose = "El piso no coincidía con el anuncio y tardaron en decirlo.";
+    review.title = "Visita en Chamberí";
+    review.pros = undefined;
+    review.cons = undefined;
+    review.body = prose;
+    await store.updateReview(review);
+
+    const updated = await service.update(user, review.id, {
+      rating: 3,
+      title: "Visita en Chamberí",
+      body: prose,
+    });
+    expect(reviewPublicCopy(updated)).toMatchObject({
+      format: "prose",
+      title: "Visita en Chamberí",
+      prose,
+    });
   });
 });

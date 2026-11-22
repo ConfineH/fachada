@@ -11,6 +11,7 @@ import { AgencyReviewPatterns } from "@/components/agency-review-patterns";
 import { IncidentSentimentSummary } from "@/components/incident-sentiment-summary";
 import { ClaimForm } from "@/components/claim-form";
 import { PublicShell } from "@/components/public-shell";
+import { FirstExperienceCall } from "@/components/first-experience-call";
 import { ReviewForm } from "@/components/review-form";
 import { BrandRollup } from "@/components/brand-rollup";
 import { RoleRatingSummary } from "@/components/role-rating-summary";
@@ -26,6 +27,8 @@ import {
 import { agencyService, usingSupabase } from "@/lib/container";
 import { cityToSlug } from "@/lib/domain/city";
 import { parseReviewOrigin } from "@/lib/domain/review-origin";
+import { publicReview } from "@/lib/domain/public-agency";
+import { reviewsForCityFilter } from "@/lib/domain/review-city";
 import { agencyJsonLd, pageMeta } from "@/lib/seo";
 import { agencyLogoUrl } from "@/lib/ops/agency-logos";
 import { isTwilioConfigured } from "@/lib/services/sms-provider";
@@ -105,34 +108,7 @@ export default async function AgencyPage({
   const trustedDomains = [...agencyTrustedDomains(agency)];
   const emailDomainHint = trustedDomains[0] ?? "tudominio.es";
 
-  const reviewsForClient = agency.reviews.map((review) => ({
-    id: review.id,
-    role: review.role,
-    rating: review.rating,
-    title: review.title,
-    body: review.body,
-    pros: review.pros,
-    cons: review.cons,
-    anonymous: review.anonymous,
-    publicName: review.publicName,
-    wouldRecommend: review.wouldRecommend,
-    helpfulCount: review.helpfulCount,
-    incidentTags: review.incidentTags,
-    incidentSentiments: review.incidentSentiments,
-    experienceDate: review.experienceDate.toISOString(),
-    experienceType: review.experienceType,
-    experienceCity: review.experienceCity,
-    verificationLevel: review.verificationLevel,
-    identityVerification: review.identityVerification,
-    createdAt: review.createdAt.toISOString(),
-    editedAt: review.editedAt?.toISOString(),
-    response: review.response
-      ? {
-          ...review.response,
-          createdAt: review.response.createdAt.toISOString(),
-        }
-      : undefined,
-  }));
+  const reviewsForClient = agency.reviews.map((review) => publicReview(review));
 
   const totalReviews = agency.reviews.length;
   const inquilinoReviews = agency.reviews.filter(
@@ -142,6 +118,7 @@ export default async function AgencyPage({
     (review) => review.role === "propietario",
   ).length;
   const patterns = summarizeReviewPatterns(agency.reviews);
+  const listedReviews = reviewsForCityFilter(reviewsForClient, cityFilter);
 
   return (
     <PublicShell storage={usingSupabase() ? "supabase" : "memory"}>
@@ -152,13 +129,11 @@ export default async function AgencyPage({
           city: agency.city,
           address: agency.address,
           postalCode: agency.postalCode,
-          reviewCount: totalReviews,
-          averageRating: agency.averageRating,
           logoUrl: agencyLogoUrl(agency.logoPath),
         })}
       />
       <header className="border-b border-stone-200 bg-white">
-        <div className="mx-auto max-w-6xl px-6 py-10">
+        <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-12">
             <Breadcrumbs
               items={
                 cities.length > 1
@@ -220,18 +195,18 @@ export default async function AgencyPage({
             </div>
             <div className="flex w-full flex-col gap-2 sm:w-auto sm:items-end">
               <a
-                href={totalReviews > 0 ? "#experiencias" : "#dejar-resena"}
+                href="#dejar-resena"
                 className="btn-primary inline-flex min-h-11 w-full items-center justify-center px-6 sm:w-auto"
               >
-                {totalReviews > 0 ? "Leer experiencias" : "Dejar la primera reseña"}
+                {totalReviews > 0 ? "Contar la mía" : "Contar la primera experiencia"}
               </a>
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1 sm:justify-end">
                 {totalReviews > 0 ? (
                   <a
-                    href="#dejar-resena"
-                    className="link-brand inline-flex min-h-11 items-center text-sm"
+                    href="#experiencias"
+                    className="btn-secondary inline-flex min-h-11 items-center px-4 text-sm"
                   >
-                    Dejar una reseña
+                    Leer experiencias
                   </a>
                 ) : null}
                 <SaveAgencyButton agencyId={agency.id} variant="link" />
@@ -241,7 +216,7 @@ export default async function AgencyPage({
         </div>
       </header>
 
-      <main className="mx-auto grid max-w-6xl gap-10 px-6 py-10 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+      <main className="mx-auto grid max-w-6xl gap-10 px-4 py-8 sm:px-6 sm:py-10 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         <section>
           <h2 className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
             Notas de inquilinos y propietarios
@@ -254,6 +229,9 @@ export default async function AgencyPage({
               writeHref="#dejar-resena"
             />
           </div>
+          {totalReviews === 0 ? (
+            <FirstExperienceCall agencyName={agency.name} />
+          ) : null}
           <p className="mt-6 text-sm text-zinc-600">
             Las dos notas son de toda la empresa, en todas sus ciudades. Elige un
             lado si quieres leer solo esas experiencias. La ciudad solo cambia
@@ -303,19 +281,11 @@ export default async function AgencyPage({
           />
 
           <IncidentSentimentSummary reviews={agency.reviews} />
+          {totalReviews > 0 ? (
+          <>
           <h2 id="experiencias" className="mt-12 text-xl font-semibold tracking-tight">
             Registro de experiencias
           </h2>
-          {totalReviews === 0 ? (
-            <div className="mt-3 rounded-xl border border-stone-200 bg-stone-50 p-4">
-              <p className="font-medium text-zinc-900">
-                Sé la primera persona en contar tu experiencia
-              </p>
-              <Link href="/herramientas" className="link-brand mt-2 inline-flex min-h-11 items-center text-sm">
-                Herramientas para inquilinos
-              </Link>
-            </div>
-          ) : (
           <p className="mt-1 text-sm text-zinc-600">
             {totalReviews}{" "}
             {totalReviews === 1
@@ -325,8 +295,9 @@ export default async function AgencyPage({
               ? ` La nota de arriba es de toda la empresa. Abajo, lo contado en ${cityFilter}.`
               : ""}
           </p>
-          )}
-          {cities.length > 1 ? (
+          </>
+          ) : null}
+          {totalReviews > 0 && cities.length > 1 ? (
             <div className="mt-3 flex flex-wrap gap-2 text-sm">
               <Link
                 href={fichaQuery(agency.slug, perspective, null, desde)}
@@ -345,16 +316,21 @@ export default async function AgencyPage({
               ))}
             </div>
           ) : null}
+          {cityFilter && listedReviews.omittedWithoutCity > 0 ? (
+            <p className="mt-4 rounded-xl border border-stone-200 bg-white px-4 py-3 text-sm text-zinc-700">
+              {listedReviews.omittedWithoutCity === 1
+                ? `1 experiencia de esta ficha no tiene ciudad. No entra en ${cityFilter} y no la hemos asignado a esa ciudad.`
+                : `${listedReviews.omittedWithoutCity} experiencias de esta ficha no tienen ciudad. No entran en ${cityFilter} y no las hemos asignado a esa ciudad.`}
+            </p>
+          ) : null}
+          {totalReviews > 0 ? (
           <div className="mt-6">
             <AgencyReviewList
-              reviews={reviewsForClient.filter((review) =>
-                cityFilter
-                  ? review.experienceCity?.toLowerCase() === cityFilter.toLowerCase()
-                  : true,
-              )}
+              reviews={listedReviews.visible}
               initialFilter={perspective ?? undefined}
             />
           </div>
+          ) : null}
           <div className="mt-10">
             <SuggestFichaTipForm
               agencySlug={agency.slug}

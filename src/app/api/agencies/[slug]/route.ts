@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { agencyService, authService, claimService } from "@/lib/container";
+import { publicAgencyDetail } from "@/lib/domain/public-agency";
 import { agencyProfileUpdateSchema } from "@/lib/domain/validation";
 
 export async function GET(
@@ -12,7 +13,7 @@ export async function GET(
   if (!agency) {
     return NextResponse.json({ error: "Agency not found" }, { status: 404 });
   }
-  return NextResponse.json({ agency });
+  return NextResponse.json({ agency: publicAgencyDetail(agency) });
 }
 
 export async function PATCH(
@@ -38,7 +39,10 @@ export async function PATCH(
 
     const parsed = agencyProfileUpdateSchema.parse(await request.json());
     const updated = await agencyService.updatePublicProfile(slug, parsed);
-    return NextResponse.json({ agency: updated });
+    if (!updated) {
+      return NextResponse.json({ error: "Agency not found" }, { status: 404 });
+    }
+    return NextResponse.json({ agency: publicAgencyDetail(updated) });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Invalid request";
     return NextResponse.json({ error: message }, { status: 400 });

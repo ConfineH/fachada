@@ -47,7 +47,8 @@ describe("AdminService.createAgency", () => {
     expect(agency.slug).toBe("inmobiliaria-norte");
 
     const match = await agencies.matchByName("Norte Madrid", "Madrid");
-    expect(match?.slug).toBe(agency.slug);
+    expect(match.identified[0]?.slug).toBe(agency.slug);
+    expect(match.identified[0]?.band).toBe("exact");
   });
 
   it("rejects a duplicate name in the same city", async () => {
@@ -84,6 +85,6 @@ describe("AdminService.createAgency", () => {
       alias: "Sol Chamberí",
     });
     const match = await agencies.matchByName("Sol Chamberí", "Madrid");
-    expect(match?.slug).toBe("inmobiliaria-sol-madrid");
+    expect(match.identified[0]?.slug).toBe("inmobiliaria-sol-madrid");
   });
 });
