@@ -29,6 +29,7 @@ import {
   WHOLE_NUMBER_RATING_ERROR,
 } from "@/lib/domain/review-authenticity";
 import { activeReviewForAgency } from "@/lib/domain/review-limits";
+import { nameIsCityLabel, normalizeAgencyName } from "@/lib/domain/match";
 import {
   NARRATIVE_MAX_LENGTH,
   NARRATIVE_MIN_LENGTH,
@@ -43,6 +44,28 @@ import {
 import type { ReviewExperienceType } from "@/lib/domain/types";
 
 type Step = "verify" | "review" | "done";
+
+type AgencyNameHit = {
+  name: string;
+  slug: string;
+  city: string;
+  band: string;
+};
+
+async function lookupAgencyNames(name: string) {
+  const params = new URLSearchParams({ name });
+  const res = await fetch(publicApiUrl(`/api/agencies/match?${params}`));
+  const data = (await res.json()) as {
+    cityOnly?: boolean;
+    identified?: AgencyNameHit[];
+    hints?: AgencyNameHit[];
+  };
+  return {
+    cityOnly: Boolean(data.cityOnly),
+    identified: data.identified ?? [],
+    hints: data.hints ?? [],
+  };
+}
 
 export function ReviewForm({
   agencySlug,
@@ -119,6 +142,13 @@ export function ReviewForm({
   const [newName, setNewName] = useState(unlisted?.name ?? "");
   const [newCity, setNewCity] = useState(unlisted?.city ?? "");
   const [newAddress, setNewAddress] = useState(unlisted?.address ?? "");
+  const [nameHits, setNameHits] = useState<
+    Array<{ name: string; slug: string; city: string; band: string }>
+  >([]);
+  const [nameHints, setNameHints] = useState<
+    Array<{ name: string; slug: string; city: string }>
+  >([]);
+  const [dismissedNames, setDismissedNames] = useState(false);
   const feedbackRef = useRef<HTMLDivElement>(null);
 
   const reviewCheckKey =
@@ -287,6 +317,39 @@ export function ReviewForm({
         showError("form", "Indica la ciudad.");
         return;
       }
+      let report: Awaited<ReturnType<typeof lookupAgencyNames>>;
+      try {
+        report = await lookupAgencyNames(newName);
+      } catch {
+        showError(
+          "form",
+          "No se ha podido comprobar si ese nombre ya tiene ficha. Inténtalo de nuevo.",
+        );
+        return;
+      }
+      if (nameIsCityLabel(newName, newCity) || report.cityOnly) {
+        showError(
+          "form",
+          "Indica el nombre comercial. Una ciudad no crea una ficha.",
+        );
+        return;
+      }
+      setNameHints(report.hints);
+      const blocking = report.identified.filter((hit) => {
+        const sameName =
+          normalizeAgencyName(hit.name) === normalizeAgencyName(newName);
+        const sameCity =
+          normalizeAgencyName(hit.city) === normalizeAgencyName(newCity);
+        return !(hit.band === "exact" && sameName && sameCity);
+      });
+      if (blocking.length > 0 && !dismissedNames) {
+        setNameHits(blocking);
+        showError(
+          "form",
+          "Hay fichas que pueden ser esta inmobiliaria. Si no es ninguna, confírmalo antes de crear otra.",
+        );
+        return;
+      }
     }
     const screen = screenReviewText({
       body: trimmedNarrative,
@@ -323,6 +386,7 @@ export function ReviewForm({
             name: newName.trim(),
             city: newCity.trim(),
             address: newAddress.trim(),
+            confirmNew: dismissedNames,
           }
         : { agencySlug }),
       role,
@@ -483,7 +547,12 @@ export function ReviewForm({
             Nombre de la inmobiliaria
             <input
               value={newName}
-              onChange={(event) => setNewName(event.target.value)}
+              onChange={(event) => {
+                setNewName(event.target.value);
+                setDismissedNames(false);
+                setNameHits([]);
+                setNameHints([]);
+              }}
               required
               className="input-field mt-1"
             />
@@ -492,7 +561,11 @@ export function ReviewForm({
             Ciudad
             <input
               value={newCity}
-              onChange={(event) => setNewCity(event.target.value)}
+              onChange={(event) => {
+                setNewCity(event.target.value);
+                setDismissedNames(false);
+                setNameHits([]);
+              }}
               required
               className="input-field mt-1"
             />
@@ -505,6 +578,36 @@ export function ReviewForm({
               className="input-field mt-1"
             />
           </label>
+          {nameHints.length > 0 ? (
+            <p className="text-sm text-zinc-600">
+              Se parece a {nameHints.map((hit) => hit.name).join(", ")}, pero no
+              basta para identificar la ficha. Puedes seguir.
+            </p>
+          ) : null}
+          {nameHits.length > 0 ? (
+            <div className="rounded-lg border border-stone-200 bg-stone-50 p-3 text-sm">
+              <p className="font-medium text-zinc-900">Puede ser una de estas</p>
+              <ul className="mt-2 space-y-1">
+                {nameHits.map((hit) => (
+                  <li key={hit.slug}>
+                    <a href={`/agencias/${hit.slug}#dejar-resena`} className="link-brand">
+                      {hit.name}
+                      {hit.city ? ` · ${hit.city}` : ""}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+              <label className="mt-3 flex items-start gap-2">
+                <input
+                  type="checkbox"
+                  className="mt-0.5"
+                  checked={dismissedNames}
+                  onChange={(event) => setDismissedNames(event.target.checked)}
+                />
+                No es ninguna de estas fichas
+              </label>
+            </div>
+          ) : null}
         </div>
       ) : null}
 

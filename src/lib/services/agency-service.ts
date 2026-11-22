@@ -12,7 +12,11 @@ import {
   sortAgencies,
   type AgencySort,
 } from "@/lib/domain/agency-browse";
-import { matchScore } from "@/lib/domain/match";
+import {
+  agencyTextMatchesQuery,
+  collectAgencyMatches,
+  normalizeAgencyName,
+} from "@/lib/domain/match";
 import { summarizeRoleRatings } from "@/lib/domain/ratings";
 import type {
   Agency,
@@ -41,9 +45,15 @@ export type AgencyMatchResult = {
   agency: Agency;
   slug: string;
   confidence: number;
+  band: "exact" | "probable" | "exploratory";
   matchedOn: string;
   roleRatings: ReturnType<typeof summarizeRoleRatings>;
   url: string;
+};
+
+export type AgencyMatchReport = {
+  identified: AgencyMatchResult[];
+  hints: AgencyMatchResult[];
 };
 
 export type CityExploreSummary = {
@@ -63,18 +73,19 @@ export class AgencyService {
     query?: string,
     options?: { publicOnly?: boolean; sort?: AgencySort },
   ) {
-    const normalized = query?.trim().toLowerCase() ?? "";
     const agencies = await this.repo.listAgencies();
     const locations = await this.locationsByAgency();
+    const aliases = query?.trim() ? await this.repo.listAllAliases() : [];
 
-    const filtered = normalized
-      ? agencies.filter((agency) => {
-          const cities = presenceCities(agency, locations.get(agency.id) ?? []);
-          return (
-            agency.name.toLowerCase().includes(normalized) ||
-            cities.some((city) => city.toLowerCase().includes(normalized))
-          );
-        })
+    const filtered = query?.trim()
+      ? agencies.filter((agency) =>
+          this.matchesQuery(
+            agency,
+            locations.get(agency.id) ?? [],
+            aliases,
+            query,
+          ),
+        )
       : agencies;
 
     const withStats = await Promise.all(
@@ -99,9 +110,16 @@ export class AgencyService {
     const inCity = agencies.filter((agency) =>
       servesCity(agency, locations.get(agency.id) ?? [], citySlug),
     );
-    const normalized = options?.query?.trim().toLowerCase() ?? "";
-    const filtered = normalized
-      ? inCity.filter((a) => a.name.toLowerCase().includes(normalized))
+    const aliases = options?.query?.trim() ? await this.repo.listAllAliases() : [];
+    const filtered = options?.query?.trim()
+      ? inCity.filter((agency) =>
+          this.matchesQuery(
+            agency,
+            locations.get(agency.id) ?? [],
+            aliases,
+            options.query ?? "",
+          ),
+        )
       : inCity;
     const withStats = await Promise.all(
       filtered.map((a) => this.withStats(a, options)),
@@ -152,52 +170,57 @@ export class AgencyService {
     return [...map.values()].sort((a, b) => a.city.localeCompare(b.city, "es"));
   }
 
+  async namesACity(name: string) {
+    const label = normalizeAgencyName(name);
+    if (!label) return false;
+    const cities = await this.exploreCities();
+    return cities.some((city) => normalizeAgencyName(city.city) === label);
+  }
+
   async matchByName(
     name: string,
     city?: string,
     options?: { publicOnly?: boolean },
-  ): Promise<AgencyMatchResult | null> {
+  ): Promise<AgencyMatchReport> {
+    if (await this.namesACity(name)) return { identified: [], hints: [] };
     const agencies = await this.repo.listAgencies();
     const aliases = await this.repo.listAllAliases();
     const locations = await this.locationsByAgency();
     const normalizedCity = city?.trim();
+    const allowedIds = normalizedCity
+      ? new Set(
+          agencies
+            .filter((agency) =>
+              servesCity(agency, locations.get(agency.id) ?? [], normalizedCity),
+            )
+            .map((agency) => agency.id),
+        )
+      : undefined;
+    const collected = collectAgencyMatches(name, agencies, aliases, { allowedIds });
+    const byId = new Map(agencies.map((agency) => [agency.id, agency]));
 
-    let best: { agency: Agency; confidence: number; matchedOn: string } | null =
-      null;
-
-    for (const agency of agencies) {
-      if (
-        normalizedCity &&
-        !servesCity(agency, locations.get(agency.id) ?? [], normalizedCity)
-      ) {
-        continue;
+    const hydrate = async (hits: typeof collected.identified) => {
+      const rows: AgencyMatchResult[] = [];
+      for (const hit of hits) {
+        const agency = byId.get(hit.id);
+        if (!agency) continue;
+        const stats = await this.withStats(agency, options);
+        rows.push({
+          agency,
+          slug: agency.slug,
+          confidence: hit.confidence,
+          band: hit.band,
+          matchedOn: hit.matchedOn,
+          roleRatings: stats.roleRatings,
+          url: `/agencias/${agency.slug}`,
+        });
       }
+      return rows;
+    };
 
-      const candidates = [
-        agency.name,
-        ...aliases
-          .filter((a) => a.agencyId === agency.id)
-          .map((a) => a.alias),
-      ];
-
-      for (const candidate of candidates) {
-        const confidence = matchScore(name, candidate);
-        if (!best || confidence > best.confidence) {
-          best = { agency, confidence, matchedOn: candidate };
-        }
-      }
-    }
-
-    if (!best || best.confidence < 0.45) return null;
-
-    const stats = await this.withStats(best.agency, options);
     return {
-      agency: best.agency,
-      slug: best.agency.slug,
-      confidence: best.confidence,
-      matchedOn: best.matchedOn,
-      roleRatings: stats.roleRatings,
-      url: `/agencias/${best.agency.slug}`,
+      identified: await hydrate(collected.identified),
+      hints: await hydrate(collected.hints),
     };
   }
 
@@ -481,6 +504,21 @@ export class AgencyService {
       companyCount: agencies.length,
       roleRatings: summarizeRoleRatings(visible),
     };
+  }
+
+  private matchesQuery(
+    agency: Agency,
+    locations: AgencyLocation[],
+    aliases: AgencyNameAlias[],
+    query: string,
+  ) {
+    return agencyTextMatchesQuery(query, [
+      agency.name,
+      ...presenceCities(agency, locations),
+      ...aliases
+        .filter((alias) => alias.agencyId === agency.id)
+        .map((alias) => alias.alias),
+    ]);
   }
 
   private async locationsByAgency() {

@@ -65,6 +65,35 @@ describe("provisional agency from a review", () => {
     );
   });
 
+  it("does not create a ficha named only after a city", async () => {
+    const user = await author();
+    const before = (await store.listAgencies()).length;
+    await expect(
+      service.publishWithReview(user, payload({ name: "Madrid", city: "Madrid" })),
+    ).rejects.toThrow(/nombre comercial/);
+    expect((await store.listAgencies()).length).toBe(before);
+  });
+
+  it("does not open a second ficha when the name already identifies one", async () => {
+    const user = await author();
+    const before = (await store.listAgencies()).length;
+    await expect(
+      service.publishWithReview(
+        user,
+        payload({ name: "Sol Gestión", city: "Madrid" }),
+      ),
+    ).rejects.toThrow(/pueden ser esta inmobiliaria/);
+    expect((await store.listAgencies()).length).toBe(before);
+
+    const created = await service.publishWithReview(
+      user,
+      payload({ name: "Sol Gestión", city: "Madrid", confirmNew: true }),
+    );
+    expect(created.createdAgency).toBe(true);
+    expect(created.agency.slug).not.toBe("inmobiliaria-sol-madrid");
+    expect((await store.listAgencies()).length).toBe(before + 1);
+  });
+
   it("publishes the review on a provisional ficha", async () => {
     const user = await author();
     const before = (await store.listAgencies()).length;

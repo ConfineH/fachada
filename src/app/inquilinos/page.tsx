@@ -33,6 +33,7 @@ export default async function InquilinosPage({
   const agencies = query
     ? await agencyService.search(query, { publicOnly: true })
     : [];
+  const cityOnly = query ? await agencyService.namesACity(query) : false;
 
   return (
     <PublicShell storage={usingSupabase() ? "supabase" : "memory"}>
@@ -108,18 +109,25 @@ export default async function InquilinosPage({
                   `/agencias/${agency.slug}${kept}#dejar-resena`
                 }
                 empty={
-                  <div className="space-y-3">
-                    <p>No hay una ficha con «{query}».</p>
-                    <Link
-                      href={`/inquilinos/anadir${promoQuery(utm, { nombre: query })}`}
-                      className="btn-primary inline-flex min-h-12 items-center justify-center px-4"
-                    >
-                      Si no está, añádela y escribe tu reseña
-                    </Link>
-                  </div>
+                  cityOnly ? (
+                    <p>
+                      «{query}» es una ciudad del archivo, no el nombre de una
+                      inmobiliaria. Busca el nombre comercial.
+                    </p>
+                  ) : (
+                    <div className="space-y-3">
+                      <p>No hay una ficha con «{query}».</p>
+                      <Link
+                        href={`/inquilinos/anadir${promoQuery(utm, { nombre: query })}`}
+                        className="btn-primary inline-flex min-h-12 items-center justify-center px-4"
+                      >
+                        Si no está, añádela y escribe tu reseña
+                      </Link>
+                    </div>
+                  )
                 }
               />
-              {agencies.length > 0 ? (
+              {agencies.length > 0 && !cityOnly ? (
                 <p className="text-sm text-zinc-600">
                   ¿No es ninguna de estas?{" "}
                   <Link
@@ -129,6 +137,12 @@ export default async function InquilinosPage({
                     Si no está, añádela y escribe tu reseña
                   </Link>
                   .
+                </p>
+              ) : null}
+              {agencies.length > 0 && cityOnly ? (
+                <p className="text-sm text-zinc-600">
+                  «{query}» es una ciudad. Estas son fichas que trabajan ahí. Para
+                  una ficha nueva hace falta el nombre comercial, no la ciudad.
                 </p>
               ) : null}
             </div>

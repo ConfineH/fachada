@@ -43,9 +43,11 @@ export default async function CityPage({
   if (listed.length === 0) notFound();
 
   const agencies = query
-    ? listed.filter((agency) =>
-        agency.name.toLocaleLowerCase("es").includes(query.toLocaleLowerCase("es")),
-      )
+    ? await agencyService.listByCity(city, {
+        publicOnly: true,
+        sort,
+        query,
+      })
     : listed;
   const label = listed[0]?.city ?? slugToCityLabel(city);
 

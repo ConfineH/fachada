@@ -113,12 +113,23 @@ export function AdminMatchProbe() {
       setResult(payload.error ?? "Error");
       return;
     }
-    if (!payload.match) {
-      setResult(`Sin match (< 0.45): «${query}»`);
+    const identified = Array.isArray(payload.identified) ? payload.identified : [];
+    const hints = Array.isArray(payload.hints) ? payload.hints : [];
+    if (identified.length === 0 && hints.length === 0) {
+      setResult(`Sin pista (< 0.45): «${query}»`);
       return;
     }
+    const line = (hit: { name: string; slug: string; confidence: number; band: string }) =>
+      `${hit.band}: ${hit.name} · ${hit.slug} · conf ${Number(hit.confidence).toFixed(2)}`;
     setResult(
-      `${payload.match.name} · ${payload.match.slug} · conf ${Number(payload.match.confidence).toFixed(2)}`,
+      [
+        identified.length
+          ? `Hay que elegir:\n${identified.map(line).join("\n")}`
+          : "Ninguna ficha identificada.",
+        hints.length ? `Pista, no identifica:\n${hints.map(line).join("\n")}` : "",
+      ]
+        .filter(Boolean)
+        .join("\n"),
     );
   }
 
