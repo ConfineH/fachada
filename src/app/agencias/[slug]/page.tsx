@@ -11,6 +11,7 @@ import { AgencyReviewPatterns } from "@/components/agency-review-patterns";
 import { IncidentSentimentSummary } from "@/components/incident-sentiment-summary";
 import { ClaimForm } from "@/components/claim-form";
 import { PublicShell } from "@/components/public-shell";
+import { FirstExperienceCall } from "@/components/first-experience-call";
 import { ReviewForm } from "@/components/review-form";
 import { BrandRollup } from "@/components/brand-rollup";
 import { RoleRatingSummary } from "@/components/role-rating-summary";
@@ -26,6 +27,7 @@ import {
 import { agencyService, usingSupabase } from "@/lib/container";
 import { cityToSlug } from "@/lib/domain/city";
 import { parseReviewOrigin } from "@/lib/domain/review-origin";
+import { publicReview } from "@/lib/domain/public-agency";
 import { reviewsForCityFilter } from "@/lib/domain/review-city";
 import { agencyJsonLd, pageMeta } from "@/lib/seo";
 import { agencyLogoUrl } from "@/lib/ops/agency-logos";
@@ -106,34 +108,7 @@ export default async function AgencyPage({
   const trustedDomains = [...agencyTrustedDomains(agency)];
   const emailDomainHint = trustedDomains[0] ?? "tudominio.es";
 
-  const reviewsForClient = agency.reviews.map((review) => ({
-    id: review.id,
-    role: review.role,
-    rating: review.rating,
-    title: review.title,
-    body: review.body,
-    pros: review.pros,
-    cons: review.cons,
-    anonymous: review.anonymous,
-    publicName: review.publicName,
-    wouldRecommend: review.wouldRecommend,
-    helpfulCount: review.helpfulCount,
-    incidentTags: review.incidentTags,
-    incidentSentiments: review.incidentSentiments,
-    experienceDate: review.experienceDate.toISOString(),
-    experienceType: review.experienceType,
-    experienceCity: review.experienceCity,
-    verificationLevel: review.verificationLevel,
-    identityVerification: review.identityVerification,
-    createdAt: review.createdAt.toISOString(),
-    editedAt: review.editedAt?.toISOString(),
-    response: review.response
-      ? {
-          ...review.response,
-          createdAt: review.response.createdAt.toISOString(),
-        }
-      : undefined,
-  }));
+  const reviewsForClient = agency.reviews.map((review) => publicReview(review));
 
   const totalReviews = agency.reviews.length;
   const inquilinoReviews = agency.reviews.filter(
@@ -255,21 +230,7 @@ export default async function AgencyPage({
             />
           </div>
           {totalReviews === 0 ? (
-            <div id="experiencias" className="card-raised mt-8 p-6">
-              <h2 className="text-xl font-semibold tracking-tight text-zinc-900">
-                Nadie ha contado todavía esta gestión
-              </h2>
-              <p className="mt-2 max-w-xl text-sm leading-relaxed text-zinc-600">
-                Si alquilaste o encargaste la gestión con {agency.name}, la tuya
-                sería la primera experiencia.
-              </p>
-              <a
-                href="#dejar-resena"
-                className="btn-primary mt-5 inline-flex min-h-12 w-full items-center justify-center sm:w-auto"
-              >
-                Contar la primera experiencia
-              </a>
-            </div>
+            <FirstExperienceCall agencyName={agency.name} />
           ) : null}
           <p className="mt-6 text-sm text-zinc-600">
             Las dos notas son de toda la empresa, en todas sus ciudades. Elige un

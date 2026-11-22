@@ -18,7 +18,7 @@ import type {
 
 export type ReviewVisibilityRow = Pick<
   Review,
-  "agencyId" | "moderated" | "flagged" | "deletedAt"
+  "agencyId" | "moderated" | "flagged" | "deletedAt" | "experienceCity"
 >;
 
 export interface Repository {

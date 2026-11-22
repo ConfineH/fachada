@@ -94,7 +94,7 @@ describe("AgencyService.exploreCities", () => {
     expect(madrid?.agencyCount).toBe(2);
   });
 
-  it("counts visible reviews in one read and repeats them on each city", async () => {
+  it("counts visible reviews in one read and only in the city they name", async () => {
     const store = new MemoryStore();
     let perAgency = 0;
     let visibilityReads = 0;
@@ -164,7 +164,63 @@ describe("AgencyService.exploreCities", () => {
     expect(visibilityReads).toBe(1);
     expect(madrid.reviewCount).toBe(madridBefore.reviewCount);
     expect(sevilla.agencyCount).toBe(1);
-    expect(sevilla.reviewCount).toBe(publicSolReviews.length);
+    expect(sevilla.reviewCount).toBe(0);
+    expect(publicSolReviews.every((review) => !review.experienceCity?.trim())).toBe(
+      true,
+    );
+  });
+
+  it("counts one agency in several municipalities without copying its experiences", async () => {
+    const store = new MemoryStore();
+    const service = new AgencyService(store);
+    const sol = (await store.listAgencies()).find(
+      (agency) => agency.slug === "inmobiliaria-sol-madrid",
+    )!;
+    const [sample] = await store.listAllReviews();
+    await store.createLocation({
+      id: crypto.randomUUID(),
+      agencyId: sol.id,
+      kind: "branch",
+      status: "publicado",
+      address: "Oficina en Sevilla",
+      city: "Sevilla",
+      postalCode: "41001",
+      createdAt: new Date(),
+    });
+    await store.createReview({
+      ...sample!,
+      id: crypto.randomUUID(),
+      agencyId: sol.id,
+      moderated: true,
+      flagged: false,
+      deletedAt: undefined,
+      experienceCity: "Madrid",
+    });
+    await store.createReview({
+      ...sample!,
+      id: crypto.randomUUID(),
+      agencyId: sol.id,
+      moderated: true,
+      flagged: false,
+      deletedAt: undefined,
+      experienceCity: undefined,
+    });
+
+    const totals = await service.archiveTotals({ publicOnly: true });
+    const cities = await service.exploreCities({ publicOnly: true });
+    const madrid = cities.find((city) => city.slug === "madrid")!;
+    const sevilla = cities.find((city) => city.slug === "sevilla")!;
+    const presenceSum = cities.reduce((sum, city) => sum + city.agencyCount, 0);
+    const namedSum = cities.reduce((sum, city) => sum + city.reviewCount, 0);
+
+    expect(totals.agencies).toBe((await store.listAgencies()).length);
+    expect(totals.municipalities).toBe(cities.length);
+    expect(presenceSum).toBeGreaterThan(totals.agencies);
+    expect(sevilla.agencyCount).toBe(1);
+    expect(sevilla.reviewCount).toBe(0);
+    expect(madrid.reviewCount).toBe(1);
+    expect(namedSum).toBe(1);
+    expect(totals.experiences).toBeGreaterThan(namedSum);
   });
 });
 

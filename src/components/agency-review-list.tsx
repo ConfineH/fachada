@@ -9,7 +9,6 @@ import { authHeaders, readSessionToken } from "@/lib/auth/session-client";
 import { INCIDENT_TAG_LABELS, type IncidentSentiments, type IncidentTag } from "@/lib/domain/incidents";
 import {
   experiencePublicLabel,
-  reviewPublicCopy,
   reviewPublicByline,
 } from "@/lib/domain/review-copy";
 import { experienceCityLabel } from "@/lib/domain/review-city";
@@ -25,8 +24,9 @@ type PublicReview = {
   id: string;
   role: UserRole;
   rating: number;
-  title: string;
-  body: string;
+  title?: string;
+  narrative?: string;
+  prose?: string;
   pros?: string;
   cons?: string;
   anonymous: boolean;
@@ -35,14 +35,14 @@ type PublicReview = {
   helpfulCount: number;
   incidentTags: IncidentTag[];
   incidentSentiments?: IncidentSentiments;
-  experienceDate: string;
+  experienceDate?: string;
   experienceType: ReviewExperienceType;
   experienceCity?: string;
   verificationLevel: ReviewVerificationLevel;
   identityVerification: "email" | "phone";
-  createdAt: string;
+  createdAt?: string;
   editedAt?: string;
-  response?: { body: string; createdAt: string };
+  response?: { body: string; createdAt?: string };
 };
 
 function initialFilterFromPerspective(value?: string): Filter {
@@ -111,7 +111,6 @@ export function AgencyReviewList({
           </li>
         )}
         {filtered.map((review) => {
-          const copy = reviewPublicCopy(review);
           return (
             <li
               key={review.id}
@@ -129,12 +128,14 @@ export function AgencyReviewList({
                   ? "Correo verificado"
                   : "Teléfono verificado"}{" "}
                 · {experiencePublicLabel(review.verificationLevel)} ·{" "}
-                {new Date(review.experienceDate).toLocaleDateString("es-ES")}
+                {review.experienceDate
+                  ? new Date(review.experienceDate).toLocaleDateString("es-ES")
+                  : "Fecha no indicada"}
                 {" · "}
                 {experienceCityLabel(review.experienceCity)}
               </p>
-              {copy.title ? (
-                <h3 className="mt-2 text-lg font-semibold">{copy.title}</h3>
+              {review.title ? (
+                <h3 className="mt-2 text-lg font-semibold">{review.title}</h3>
               ) : null}
               {review.wouldRecommend !== undefined && (
                 <p className="mt-2 text-sm text-zinc-700">
@@ -143,28 +144,28 @@ export function AgencyReviewList({
                     : "No recomendaría esta inmobiliaria"}
                 </p>
               )}
-              {copy.narrative ? (
-                <p className="mt-2 whitespace-pre-wrap text-stone-700">{copy.narrative}</p>
+              {review.narrative ? (
+                <p className="mt-2 whitespace-pre-wrap text-stone-700">{review.narrative}</p>
               ) : null}
-              {copy.prose ? (
-                <p className="mt-2 whitespace-pre-wrap text-stone-700">{copy.prose}</p>
+              {review.prose ? (
+                <p className="mt-2 whitespace-pre-wrap text-stone-700">{review.prose}</p>
               ) : null}
-              {copy.pros || copy.cons ? (
+              {review.pros || review.cons ? (
                 <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                  {copy.pros ? (
+                  {review.pros ? (
                     <div className="rounded-lg border border-emerald-100 bg-emerald-50 p-3">
                       <p className="text-xs font-semibold uppercase tracking-wide text-emerald-800">
                         Ventajas
                       </p>
-                      <p className="mt-1 text-sm text-emerald-950">{copy.pros}</p>
+                      <p className="mt-1 text-sm text-emerald-950">{review.pros}</p>
                     </div>
                   ) : null}
-                  {copy.cons ? (
+                  {review.cons ? (
                     <div className="rounded-lg border border-rose-100 bg-rose-50 p-3">
                       <p className="text-xs font-semibold uppercase tracking-wide text-rose-800">
                         Desventajas
                       </p>
-                      <p className="mt-1 text-sm text-rose-950">{copy.cons}</p>
+                      <p className="mt-1 text-sm text-rose-950">{review.cons}</p>
                     </div>
                   ) : null}
                 </div>
@@ -199,7 +200,9 @@ export function AgencyReviewList({
               <div className="mt-3 space-y-3">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <p className="text-xs text-stone-500">
-                    {new Date(review.createdAt).toLocaleDateString("es-ES")}
+                    {review.createdAt
+                      ? new Date(review.createdAt).toLocaleDateString("es-ES")
+                      : ""}
                     {review.editedAt ? " · Editada" : ""}
                   </p>
                   <button

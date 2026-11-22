@@ -7,6 +7,7 @@ import { PublicShell } from "@/components/public-shell";
 import { Reveal } from "@/components/reveal";
 import { SearchForm } from "@/components/search-form";
 import { JsonLd } from "@/components/json-ld";
+import { archivePublicLine } from "@/lib/domain/archive-counts";
 import { homeDocumentedAgencies } from "@/lib/domain/agency-browse";
 import { reviewPublicExcerpt } from "@/lib/domain/review-copy";
 import { agencyService, usingSupabase } from "@/lib/container";
@@ -38,12 +39,10 @@ export default async function Home({
     redirect(`/inquilinos?${params.toString()}`);
   }
 
-  const [agencies, cities] = await Promise.all([
+  const [agencies, totals] = await Promise.all([
     agencyService.search(undefined, { publicOnly: true }),
-    agencyService.exploreCities({ publicOnly: true }),
+    agencyService.archiveTotals({ publicOnly: true }),
   ]);
-  const totalAgencies = cities.reduce((sum, c) => sum + c.agencyCount, 0);
-  const totalReviews = cities.reduce((sum, c) => sum + c.reviewCount, 0);
   const documented = homeDocumentedAgencies(agencies);
   const sampleAgencies = documented.preview.slice(0, 3);
   const sampleReviews = (
@@ -83,12 +82,7 @@ export default async function Home({
                 alquiler: fianza, reparaciones, honorarios y comunicación.
               </p>
               <p className="mt-6 text-xs font-medium uppercase tracking-wide text-zinc-500">
-                {totalAgencies.toLocaleString("es-ES")}{" "}
-                {totalAgencies === 1 ? "ficha" : "fichas"} en el archivo ·{" "}
-                {totalReviews.toLocaleString("es-ES")}{" "}
-                {totalReviews === 1
-                  ? "experiencia publicada"
-                  : "experiencias publicadas"}
+                {archivePublicLine(totals)}
               </p>
             </div>
             <div className="motion-fade-rise flex flex-col gap-3" style={{ animationDelay: "80ms" }}>

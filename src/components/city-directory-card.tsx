@@ -46,9 +46,9 @@ export function CityDirectoryCard({
           {city}
         </h3>
         <p className="mt-1 text-sm text-white/80">
-          {agencyCount} {agencyCount === 1 ? "agencia" : "agencias"}
+          {agencyCount} {agencyCount === 1 ? "inmobiliaria" : "inmobiliarias"}
           {reviewCount > 0
-            ? ` · ${reviewCount} ${reviewCount === 1 ? "reseña" : "reseñas"}`
+            ? ` · ${reviewCount} ${reviewCount === 1 ? "experiencia aquí" : "experiencias aquí"}`
             : ""}
         </p>
       </div>

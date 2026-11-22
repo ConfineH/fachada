@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { Breadcrumbs } from "@/components/breadcrumbs";
@@ -73,8 +72,8 @@ export default async function CityPage({
           </h1>
           <p className="mt-2 text-white/80">
             {listed.length}{" "}
-            {listed.length === 1 ? "ficha" : "fichas"} en el archivo de esta
-            ciudad. La nota sale en cada tarjeta; el texto, en la ficha.
+            {listed.length === 1 ? "inmobiliaria" : "inmobiliarias"} en este
+            municipio. La nota sale en cada tarjeta; el texto, en la ficha.
           </p>
         </div>
       </header>

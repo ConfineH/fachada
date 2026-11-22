@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 
 import { isAccountVerified } from "@/lib/domain/identity";
 import { isPublicReview } from "@/lib/domain/review-visibility";
+import type { ArchiveTotals } from "@/lib/domain/archive-counts";
 import { cityToSlug } from "@/lib/domain/city";
 import {
   brandScoreApplies,
@@ -139,20 +140,19 @@ export class AgencyService {
       this.locationsByAgency(),
       this.repo.listReviewVisibility(),
     ]);
-    const reviewCountByAgency = new Map<string, number>();
+    const experiencesByCity = new Map<string, number>();
     for (const review of reviews) {
       if (review.deletedAt) continue;
       if (options?.publicOnly !== false && !isPublicReview(review)) continue;
-      reviewCountByAgency.set(
-        review.agencyId,
-        (reviewCountByAgency.get(review.agencyId) ?? 0) + 1,
-      );
+      const city = review.experienceCity?.trim();
+      if (!city) continue;
+      const slug = cityToSlug(city);
+      experiencesByCity.set(slug, (experiencesByCity.get(slug) ?? 0) + 1);
     }
 
     const map = new Map<string, CityExploreSummary>();
 
     for (const agency of agencies) {
-      const reviewCount = reviewCountByAgency.get(agency.id) ?? 0;
       for (const city of presenceCities(agency, locations.get(agency.id) ?? [])) {
         const slug = cityToSlug(city);
         const current = map.get(slug) ?? {
@@ -162,12 +162,34 @@ export class AgencyService {
           reviewCount: 0,
         };
         current.agencyCount += 1;
-        current.reviewCount += reviewCount;
         map.set(slug, current);
       }
     }
 
+    for (const summary of map.values()) {
+      summary.reviewCount = experiencesByCity.get(summary.slug) ?? 0;
+    }
+
     return [...map.values()].sort((a, b) => a.city.localeCompare(b.city, "es"));
+  }
+
+  /** Inmobiliarias únicas, municipios con presencia y experiencias públicas, cada una una vez. */
+  async archiveTotals(options?: { publicOnly?: boolean }): Promise<ArchiveTotals> {
+    const [agencies, cities, reviews] = await Promise.all([
+      this.repo.listAgencies(),
+      this.exploreCities(options),
+      this.repo.listReviewVisibility(),
+    ]);
+    const experiences = reviews.filter((review) => {
+      if (review.deletedAt) return false;
+      if (options?.publicOnly !== false && !isPublicReview(review)) return false;
+      return true;
+    }).length;
+    return {
+      agencies: agencies.length,
+      municipalities: cities.length,
+      experiences,
+    };
   }
 
   async namesACity(name: string) {

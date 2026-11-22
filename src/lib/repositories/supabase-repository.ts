@@ -323,12 +323,13 @@ export class SupabaseRepository implements Repository {
       moderated: boolean;
       flagged: boolean;
       deletedAt?: Date;
+      experienceCity?: string;
     }[] = [];
 
     for (let from = 0; ; from += pageSize) {
       const { data, error } = await this.client
         .from("reviews")
-        .select("agency_id, moderated, flagged, deleted_at")
+        .select("agency_id, moderated, flagged, deleted_at, experience_city")
         .order("id", { ascending: true })
         .range(from, from + pageSize - 1);
       throwIfError(error);
@@ -337,6 +338,7 @@ export class SupabaseRepository implements Repository {
         moderated: boolean;
         flagged: boolean;
         deleted_at: string | null;
+        experience_city: string | null;
       }[];
       for (const row of batch) {
         rows.push({
@@ -344,6 +346,7 @@ export class SupabaseRepository implements Repository {
           moderated: row.moderated,
           flagged: row.flagged,
           deletedAt: row.deleted_at ? new Date(row.deleted_at) : undefined,
+          experienceCity: row.experience_city?.trim() || undefined,
         });
       }
       if (batch.length < pageSize) break;
