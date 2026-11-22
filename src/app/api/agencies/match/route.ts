@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { agencyService } from "@/lib/container";
+import { publicRoleRatings } from "@/lib/domain/ratings";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -36,7 +37,7 @@ export async function GET(request: Request) {
     band: hit.band,
     matchedOn: hit.matchedOn,
     urlPath: hit.url,
-    ratings: hit.roleRatings,
+    ratings: publicRoleRatings(hit.roleRatings),
   });
   const identified = report.identified.map(toPublic);
   const hints = report.hints.map(toPublic);

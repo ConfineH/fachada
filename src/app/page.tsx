@@ -3,12 +3,10 @@ import { redirect } from "next/navigation";
 
 import { AgencyResultList } from "@/components/agency-result-list";
 import { StarScore } from "@/components/star-score";
-import { CityDirectoryCard } from "@/components/city-directory-card";
 import { PublicShell } from "@/components/public-shell";
 import { Reveal } from "@/components/reveal";
 import { SearchForm } from "@/components/search-form";
 import { JsonLd } from "@/components/json-ld";
-import { TENANT_TOOLS } from "@/lib/domain/tools/catalog";
 import { homeDocumentedAgencies } from "@/lib/domain/agency-browse";
 import { reviewPublicExcerpt } from "@/lib/domain/review-copy";
 import { agencyService, usingSupabase } from "@/lib/container";
@@ -32,13 +30,12 @@ export const metadata = {
 export default async function Home({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; orden?: string }>;
+  searchParams: Promise<{ q?: string }>;
 }) {
-  const { q, orden } = await searchParams;
+  const { q } = await searchParams;
   if (q?.trim()) {
     const params = new URLSearchParams({ q: q.trim() });
-    if (orden) params.set("orden", orden);
-    redirect(`/agencias?${params.toString()}`);
+    redirect(`/inquilinos?${params.toString()}`);
   }
 
   const [agencies, cities] = await Promise.all([
@@ -47,9 +44,6 @@ export default async function Home({
   ]);
   const totalAgencies = cities.reduce((sum, c) => sum + c.agencyCount, 0);
   const totalReviews = cities.reduce((sum, c) => sum + c.reviewCount, 0);
-  const featuredCities = [...cities]
-    .sort((a, b) => b.agencyCount - a.agencyCount)
-    .slice(0, 5);
   const documented = homeDocumentedAgencies(agencies);
   const sampleAgencies = documented.preview.slice(0, 3);
   const sampleReviews = (
@@ -97,8 +91,11 @@ export default async function Home({
                   : "experiencias publicadas"}
               </p>
             </div>
-            <div className="motion-fade-rise" style={{ animationDelay: "80ms" }}>
-              <SearchForm variant="hero" />
+            <div className="motion-fade-rise flex flex-col gap-3" style={{ animationDelay: "80ms" }}>
+              <SearchForm variant="hero" destination="/inquilinos" />
+              <Link href="/inquilinos" className="btn-secondary inline-flex min-h-11 items-center justify-center">
+                Contar una experiencia
+              </Link>
             </div>
           </div>
         </div>
@@ -130,37 +127,6 @@ export default async function Home({
               layout="board"
             />
           </section>
-        )}
-
-        {featuredCities.length > 0 && (
-          <Reveal>
-            <section>
-              <div className="flex items-end justify-between gap-4">
-                <h2 className="text-2xl font-semibold tracking-tight">
-                  Ciudades destacadas
-                </h2>
-                <Link href="/explorar" className="link-brand text-sm">
-                  Ver directorio completo
-                </Link>
-              </div>
-              <ul className="motion-stagger mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {featuredCities.map((city, index) => (
-                  <li
-                    key={city.slug}
-                    className={index === 0 ? "sm:col-span-2 lg:col-span-1 lg:row-span-2" : ""}
-                  >
-                    <CityDirectoryCard
-                      city={city.city}
-                      slug={city.slug}
-                      agencyCount={city.agencyCount}
-                      reviewCount={city.reviewCount}
-                      size={index === 0 ? "hero" : "tile"}
-                    />
-                  </li>
-                ))}
-              </ul>
-            </section>
-          </Reveal>
         )}
 
         <Reveal>
@@ -227,35 +193,6 @@ export default async function Home({
 
         <Reveal>
           <section>
-            <div className="flex flex-wrap items-end justify-between gap-3">
-              <div>
-                <h2 className="text-2xl font-semibold tracking-tight">
-                  Herramientas para un problema concreto
-                </h2>
-                <p className="mt-1 max-w-xl text-sm text-zinc-600">
-                  Honorarios, fianza, reparaciones, salir antes, el acta de llaves o
-                  la subida del alquiler. Se calculan en el navegador.
-                </p>
-              </div>
-              <Link href="/herramientas" className="link-brand text-sm">
-                Calculadoras de alquiler
-              </Link>
-            </div>
-            <ul className="mt-6 grid gap-4 sm:grid-cols-2">
-              {TENANT_TOOLS.map((tool) => (
-                <li key={tool.id}>
-                  <Link href={tool.path} className="card-interactive block h-full p-5">
-                    <h3 className="font-semibold">{tool.title}</h3>
-                    <p className="mt-1 text-sm text-zinc-600">{tool.card}</p>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </section>
-        </Reveal>
-
-        <Reveal>
-          <section>
             <h2 className="text-2xl font-semibold tracking-tight">
               Preguntas frecuentes
             </h2>
@@ -286,17 +223,17 @@ export default async function Home({
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Link
-              href="/agencias"
+              href="/inquilinos"
               className="btn-primary inline-flex min-h-11 items-center bg-white px-6 text-zinc-900 hover:bg-zinc-100"
             >
-              Buscar una inmobiliaria
+              Contar una experiencia
             </Link>
             <Link
               href="/agregar-inmobiliaria"
               className="inline-flex min-h-11 items-center rounded-lg border border-zinc-500 px-6 text-sm font-medium text-white transition-[border-color] hover:border-zinc-300"
               style={{ transitionDuration: "var(--duration-fast)" }}
             >
-              Sugerir una agencia
+              Sugerir una ficha
             </Link>
           </div>
         </div>

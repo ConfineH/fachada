@@ -162,8 +162,6 @@ export function agencyJsonLd(agency: {
   city: string;
   address: string;
   postalCode: string;
-  reviewCount: number;
-  averageRating: number;
   logoUrl?: string;
 }) {
   const url = absoluteUrl(`/agencias/${agency.slug}`);
@@ -185,17 +183,6 @@ export function agencyJsonLd(agency: {
       addressLocality: agency.city,
       addressCountry: "ES",
     },
-    ...(agency.reviewCount > 0
-      ? {
-          aggregateRating: {
-            "@type": "AggregateRating",
-            ratingValue: agency.averageRating.toFixed(1),
-            bestRating: "5",
-            worstRating: "1",
-            reviewCount: String(agency.reviewCount),
-          },
-        }
-      : {}),
   };
 }
 

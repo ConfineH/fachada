@@ -18,18 +18,17 @@ describe("seo helpers", () => {
     expect(absoluteUrl("/")).toMatch(/^https?:\/\//);
   });
 
-  it("omits aggregate rating when there are no published reviews", () => {
+  it("does not publish one blended rating", () => {
     const data = agencyJsonLd({
       name: "Sol",
       slug: "sol-madrid",
       city: "Madrid",
       address: "Calle Mayor 1",
       postalCode: "28013",
-      reviewCount: 0,
-      averageRating: 0,
     });
     expect(data["@type"]).toBe("RealEstateAgent");
-    expect(data.aggregateRating).toBeUndefined();
+    expect(data).not.toHaveProperty("aggregateRating");
+    expect(JSON.stringify(data)).not.toMatch(/ratingValue/);
   });
 
   it("keeps homepage FAQs extractable and paired with schema", () => {

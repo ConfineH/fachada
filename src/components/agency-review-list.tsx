@@ -12,6 +12,7 @@ import {
   reviewPublicCopy,
   reviewPublicByline,
 } from "@/lib/domain/review-copy";
+import { experienceCityLabel } from "@/lib/domain/review-city";
 import type {
   ReviewExperienceType,
   ReviewVerificationLevel,
@@ -129,7 +130,8 @@ export function AgencyReviewList({
                   : "Teléfono verificado"}{" "}
                 · {experiencePublicLabel(review.verificationLevel)} ·{" "}
                 {new Date(review.experienceDate).toLocaleDateString("es-ES")}
-                {review.experienceCity ? ` · ${review.experienceCity}` : ""}
+                {" · "}
+                {experienceCityLabel(review.experienceCity)}
               </p>
               {copy.title ? (
                 <h3 className="mt-2 text-lg font-semibold">{copy.title}</h3>

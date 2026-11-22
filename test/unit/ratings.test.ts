@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { summarizeRoleRatings } from "@/lib/domain/ratings";
+import { publicRoleRatings, summarizeRoleRatings } from "@/lib/domain/ratings";
 
 describe("summarizeRoleRatings", () => {
   it("computes separate averages per role", () => {
@@ -15,5 +15,9 @@ describe("summarizeRoleRatings", () => {
     expect(stats.propietario.reviewCount).toBe(1);
     expect(stats.propietario.averageRating).toBe(5);
     expect(stats.overall.reviewCount).toBe(3);
+    expect(publicRoleRatings(stats)).toEqual({
+      inquilino: stats.inquilino,
+      propietario: stats.propietario,
+    });
   });
 });

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { agencyService, authService, claimService } from "@/lib/container";
+import { publicRoleRatings } from "@/lib/domain/ratings";
 import { agencyProfileUpdateSchema } from "@/lib/domain/validation";
 
 export async function GET(
@@ -12,7 +13,13 @@ export async function GET(
   if (!agency) {
     return NextResponse.json({ error: "Agency not found" }, { status: 404 });
   }
-  return NextResponse.json({ agency });
+  return NextResponse.json({
+    agency: {
+      ...agency,
+      averageRating: undefined,
+      roleRatings: publicRoleRatings(agency.roleRatings),
+    },
+  });
 }
 
 export async function PATCH(

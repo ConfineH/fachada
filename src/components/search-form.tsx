@@ -6,9 +6,11 @@ import { FormEvent, useState } from "react";
 export function SearchForm({
   initialQuery = "",
   variant = "default",
+  destination,
 }: {
   initialQuery?: string;
   variant?: "default" | "hero" | "explore";
+  destination?: string;
 }) {
   const router = useRouter();
   const [query, setQuery] = useState(initialQuery);
@@ -17,7 +19,8 @@ export function SearchForm({
     event.preventDefault();
     const params = new URLSearchParams();
     if (query.trim()) params.set("q", query.trim());
-    const base = variant === "explore" ? "/explorar" : "/agencias";
+    const base =
+      destination ?? (variant === "explore" ? "/explorar" : "/agencias");
     router.push(`${base}?${params.toString()}`);
   }
 
@@ -35,7 +38,7 @@ export function SearchForm({
           type="search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Nombre de la agencia o ciudad…"
+          placeholder="Nombre, alias o ciudad"
           className="min-h-11 flex-1 rounded-xl border-0 bg-transparent px-4 text-base outline-none placeholder:text-zinc-400"
         />
         <button type="submit" className="btn-primary min-h-11 shrink-0 rounded-xl px-6">

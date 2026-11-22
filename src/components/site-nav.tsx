@@ -5,7 +5,7 @@ import { FachadaMark } from "@/components/fachada-mark";
 export function SiteNav() {
   return (
     <nav className="border-b border-stone-200 bg-white">
-      <div className="mx-auto grid max-w-6xl grid-cols-[1fr_auto] items-center gap-4 px-6 py-4 lg:grid-cols-[1fr_auto_1fr]">
+      <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-3 px-4 py-4 sm:px-6">
         <Link
           href="/"
           className="inline-flex items-center gap-2.5 text-lg font-bold tracking-tight text-zinc-900"
@@ -13,28 +13,17 @@ export function SiteNav() {
           <FachadaMark className="h-7 w-auto shrink-0" />
           FACHADA
         </Link>
-        <div className="col-span-2 flex flex-wrap items-center gap-6 lg:col-span-1 lg:justify-center">
-          <Link href="/explorar" prefetch className="nav-link">
-            Explorar ciudades
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+          <Link href="/inquilinos" className="nav-link min-h-11">
+            Buscar
           </Link>
-          <Link href="/agencias" className="nav-link">
-            Inmobiliarias
-          </Link>
-          <Link href="/herramientas" className="nav-link">
-            Herramientas
-          </Link>
-          <Link href="/agregar-inmobiliaria" className="nav-link">
-            Sugerir inmobiliaria
+          <Link href="/inquilinos#buscar" className="nav-link min-h-11">
+            Contar experiencia
           </Link>
         </div>
-        <div className="flex items-center justify-end gap-3 lg:col-start-3">
-          <Link href="/agencia/acceso" className="btn-secondary hidden min-h-10 sm:inline-flex">
-            Acceso para agencias
-          </Link>
-          <Link href="/cuenta" className="btn-secondary min-h-10 px-3">
-            Cuenta
-          </Link>
-        </div>
+        <Link href="/cuenta" className="btn-secondary ml-auto min-h-11 px-3">
+          Cuenta
+        </Link>
       </div>
     </nav>
   );

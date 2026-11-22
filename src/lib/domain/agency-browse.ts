@@ -15,7 +15,6 @@ export const AGENCY_SORT_OPTIONS: { id: AgencySort; label: string }[] = [
   { id: "reviews", label: "Más reseñas" },
   { id: "inquilino", label: "Nota inquilinos" },
   { id: "propietario", label: "Nota propietarios" },
-  { id: "overall", label: "Nota media" },
   { id: "name", label: "Nombre" },
 ];
 
@@ -24,6 +23,8 @@ export const HOME_DOCUMENTED_PREVIEW = 8;
 const SORT_SET = new Set<string>(AGENCY_SORTS);
 
 export function parseAgencySort(value: string | undefined | null): AgencySort {
+  // The blend remains for internal sorting. A public URL does not select it.
+  if (value === "overall") return "reviews";
   if (value && SORT_SET.has(value)) return value as AgencySort;
   return "reviews";
 }

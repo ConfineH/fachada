@@ -38,6 +38,26 @@ export function SiteFooter() {
                   Calculadoras de alquiler
                 </Link>
               </li>
+              <li>
+                <Link href="/explorar" className="hover:text-brand">
+                  Explorar ciudades
+                </Link>
+              </li>
+              <li>
+                <Link href="/agencias" className="hover:text-brand">
+                  Registro de inmobiliarias
+                </Link>
+              </li>
+              <li>
+                <Link href="/agencia/acceso" className="hover:text-brand">
+                  Acceso para agencias
+                </Link>
+              </li>
+              <li>
+                <Link href="/agregar-inmobiliaria" className="hover:text-brand">
+                  Sugerir una ficha
+                </Link>
+              </li>
             </ul>
           </div>
           <div>

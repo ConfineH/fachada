@@ -26,6 +26,7 @@ import {
 import { agencyService, usingSupabase } from "@/lib/container";
 import { cityToSlug } from "@/lib/domain/city";
 import { parseReviewOrigin } from "@/lib/domain/review-origin";
+import { reviewsForCityFilter } from "@/lib/domain/review-city";
 import { agencyJsonLd, pageMeta } from "@/lib/seo";
 import { agencyLogoUrl } from "@/lib/ops/agency-logos";
 import { isTwilioConfigured } from "@/lib/services/sms-provider";
@@ -142,6 +143,7 @@ export default async function AgencyPage({
     (review) => review.role === "propietario",
   ).length;
   const patterns = summarizeReviewPatterns(agency.reviews);
+  const listedReviews = reviewsForCityFilter(reviewsForClient, cityFilter);
 
   return (
     <PublicShell storage={usingSupabase() ? "supabase" : "memory"}>
@@ -152,8 +154,6 @@ export default async function AgencyPage({
           city: agency.city,
           address: agency.address,
           postalCode: agency.postalCode,
-          reviewCount: totalReviews,
-          averageRating: agency.averageRating,
           logoUrl: agencyLogoUrl(agency.logoPath),
         })}
       />
@@ -220,18 +220,18 @@ export default async function AgencyPage({
             </div>
             <div className="flex w-full flex-col gap-2 sm:w-auto sm:items-end">
               <a
-                href={totalReviews > 0 ? "#experiencias" : "#dejar-resena"}
+                href="#dejar-resena"
                 className="btn-primary inline-flex min-h-11 w-full items-center justify-center px-6 sm:w-auto"
               >
-                {totalReviews > 0 ? "Leer experiencias" : "Dejar la primera reseña"}
+                {totalReviews > 0 ? "Contar la mía" : "Contar la primera experiencia"}
               </a>
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1 sm:justify-end">
                 {totalReviews > 0 ? (
                   <a
-                    href="#dejar-resena"
-                    className="link-brand inline-flex min-h-11 items-center text-sm"
+                    href="#experiencias"
+                    className="btn-secondary inline-flex min-h-11 items-center px-4 text-sm"
                   >
-                    Dejar una reseña
+                    Leer experiencias
                   </a>
                 ) : null}
                 <SaveAgencyButton agencyId={agency.id} variant="link" />
@@ -307,13 +307,20 @@ export default async function AgencyPage({
             Registro de experiencias
           </h2>
           {totalReviews === 0 ? (
-            <div className="mt-3 rounded-xl border border-stone-200 bg-stone-50 p-4">
-              <p className="font-medium text-zinc-900">
-                Sé la primera persona en contar tu experiencia
+            <div className="mt-3 rounded-xl border border-stone-200 bg-white p-6">
+              <p className="text-xl font-semibold tracking-tight text-zinc-900">
+                Nadie ha contado todavía esta gestión
               </p>
-              <Link href="/herramientas" className="link-brand mt-2 inline-flex min-h-11 items-center text-sm">
-                Herramientas para inquilinos
-              </Link>
+              <p className="mt-2 text-sm leading-relaxed text-zinc-600">
+                Si alquilaste o encargaste la gestión con {agency.name}, la tuya
+                sería la primera experiencia.
+              </p>
+              <a
+                href="#dejar-resena"
+                className="btn-primary mt-5 inline-flex min-h-12 w-full items-center justify-center sm:w-auto"
+              >
+                Contar la primera experiencia
+              </a>
             </div>
           ) : (
           <p className="mt-1 text-sm text-zinc-600">
@@ -345,13 +352,16 @@ export default async function AgencyPage({
               ))}
             </div>
           ) : null}
+          {cityFilter && listedReviews.omittedWithoutCity > 0 ? (
+            <p className="mt-4 rounded-xl border border-stone-200 bg-white px-4 py-3 text-sm text-zinc-700">
+              {listedReviews.omittedWithoutCity === 1
+                ? `1 experiencia de esta ficha no tiene ciudad. No entra en ${cityFilter} y no la hemos asignado a esa ciudad.`
+                : `${listedReviews.omittedWithoutCity} experiencias de esta ficha no tienen ciudad. No entran en ${cityFilter} y no las hemos asignado a esa ciudad.`}
+            </p>
+          ) : null}
           <div className="mt-6">
             <AgencyReviewList
-              reviews={reviewsForClient.filter((review) =>
-                cityFilter
-                  ? review.experienceCity?.toLowerCase() === cityFilter.toLowerCase()
-                  : true,
-              )}
+              reviews={listedReviews.visible}
               initialFilter={perspective ?? undefined}
             />
           </div>
