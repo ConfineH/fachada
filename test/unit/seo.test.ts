@@ -7,6 +7,7 @@ import {
   SHARE_DESCRIPTION,
   absoluteUrl,
   agencyJsonLd,
+  agencyRecordCopy,
   breadcrumbJsonLd,
   faqJsonLd,
   pageMeta,
@@ -29,6 +30,19 @@ describe("seo helpers", () => {
     expect(data["@type"]).toBe("RealEstateAgent");
     expect(data).not.toHaveProperty("aggregateRating");
     expect(JSON.stringify(data)).not.toMatch(/ratingValue/);
+  });
+
+  it("keeps the opinion query and uses the singular for one experience", () => {
+    const empty = agencyRecordCopy("Sol", "Madrid", 0);
+    const one = agencyRecordCopy("Sol", "Madrid", 1);
+    const many = agencyRecordCopy("Sol", "Madrid y Barcelona", 2);
+
+    expect(empty.title).toBe("Opiniones de Sol · sin experiencias");
+    expect(empty.description).toContain("Todavía no hay experiencias");
+    expect(one.title).toBe("Opiniones de Sol");
+    expect(one.description).toContain("1 experiencia publicada");
+    expect(one.description).not.toContain("1 experiencias");
+    expect(many.description).toContain("2 experiencias publicadas");
   });
 
   it("keeps homepage FAQs extractable and paired with schema", () => {
