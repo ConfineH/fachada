@@ -11,3 +11,7 @@ export function slugToCityLabel(slug: string) {
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(" ");
 }
+
+export function labelForCitySlug(slug: string, names: string[]) {
+  return names.find((name) => cityToSlug(name) === slug) ?? slugToCityLabel(slug);
+}

@@ -186,6 +186,25 @@ export function agencyJsonLd(agency: {
   };
 }
 
+export function agencyRecordCopy(
+  name: string,
+  places: string,
+  reviewCount: number,
+) {
+  const where = places ? ` en ${places}` : "";
+  const title =
+    reviewCount > 0
+      ? `Opiniones de ${name}`
+      : `Opiniones de ${name} · sin experiencias`;
+  const description =
+    reviewCount <= 0
+      ? `Todavía no hay experiencias publicadas sobre ${name}${where}. La ficha recoge opiniones de inquilinos y propietarios sobre la gestión, no sobre el piso.`
+      : reviewCount === 1
+        ? `Opiniones sobre la gestión de ${name}${where}. Hay 1 experiencia publicada: es una opinión individual, no una reputación consolidada.`
+        : `Opiniones sobre la gestión de ${name}${where}. Hay ${reviewCount.toLocaleString("es-ES")} experiencias publicadas. Inquilinos y propietarios se cuentan por separado.`;
+  return { title, description };
+}
+
 export const HOME_FAQS = [
   {
     question: "¿Fachada verifica que la experiencia ocurrió?",
