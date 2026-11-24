@@ -8,14 +8,12 @@ import { FachadaMark } from "@/components/fachada-mark";
 import { JsonLd } from "@/components/json-ld";
 import { homeDocumentedAgencies } from "@/lib/domain/agency-browse";
 import { publicPresenceLine } from "@/lib/domain/company-presence";
-import { reviewPublicExcerpt } from "@/lib/domain/review-copy";
+import { HOME_PAGE_FAQS, selectHomeExcerpts } from "@/lib/domain/home-page";
 import type { RoleRatingSummary } from "@/lib/domain/ratings";
-import type { UserRole } from "@/lib/domain/types";
 import { agencyService, usingSupabase } from "@/lib/container";
 import {
   DEFAULT_DESCRIPTION,
   DEFAULT_TITLE,
-  HOME_FAQS,
   SHARE_DESCRIPTION,
   SITE_NAME,
   faqJsonLd,
@@ -37,21 +35,11 @@ export const metadata = {
   title: { absolute: `${DEFAULT_TITLE} · ${SITE_NAME}` },
 };
 
-function roleName(role: UserRole) {
-  return role === "propietario" ? "propietario" : "inquilino";
-}
-
 function scoreText(summary: RoleRatingSummary) {
   return summary.averageRating.toLocaleString("es-ES", {
     minimumFractionDigits: Number.isInteger(summary.averageRating) ? 0 : 1,
     maximumFractionDigits: 1,
   });
-}
-
-function firstSentence(text: string) {
-  const trimmed = text.replace(/\s+/g, " ").trim();
-  const end = trimmed.search(/[.!?](?:\s|$)/);
-  return end === -1 ? trimmed : trimmed.slice(0, end + 1);
 }
 
 function Score({
@@ -106,30 +94,9 @@ export default async function Home({
       agencyService.getBySlug(agency.slug, { publicOnly: true }),
     ),
   );
-  const excerpts = opened
-    .flatMap((agency) => {
-      if (!agency) return [];
-      const review = agency.reviews
-        .slice()
-        .sort((a, b) => a.rating - b.rating)
-        .find((item) => firstSentence(reviewPublicExcerpt(item)));
-      const text = review ? firstSentence(reviewPublicExcerpt(review)) : "";
-      if (!review || !text) return [];
-      return [
-        {
-          slug: agency.slug,
-          name: agency.name,
-          role: roleName(review.role),
-          rating: review.rating,
-          text,
-        },
-      ];
-    })
-    .sort((a, b) => a.rating - b.rating || a.name.localeCompare(b.name, "es"));
-  const shownExcerpts =
-    excerpts.length <= 2
-      ? excerpts
-      : [excerpts[0], excerpts[excerpts.length - 1]];
+  const shownExcerpts = selectHomeExcerpts(
+    opened.flatMap((agency) => (agency ? [agency] : [])),
+  );
   const cityLinks = cities
     .filter((city) => city.agencyCount > 0)
     .slice()
@@ -140,7 +107,7 @@ export default async function Home({
     <div className={`${styles.page} ${sourceSerif.variable}`}>
       <JsonLd data={organizationJsonLd()} />
       <JsonLd data={websiteJsonLd()} />
-      <JsonLd data={faqJsonLd([...HOME_FAQS])} />
+      <JsonLd data={faqJsonLd([...HOME_PAGE_FAQS])} />
       <DevBanner storage={usingSupabase() ? "supabase" : "memory"} />
       <a className={styles.skip} href="#contenido">
         Saltar al contenido
@@ -311,7 +278,7 @@ export default async function Home({
               Preguntas sobre el archivo
             </h2>
             <dl className={styles.faq}>
-              {HOME_FAQS.map((item) => (
+              {HOME_PAGE_FAQS.map((item) => (
                 <div className={styles.faqItem} key={item.question}>
                   <dt>{item.question}</dt>
                   <dd>{item.answer}</dd>
