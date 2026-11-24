@@ -1,20 +1,19 @@
 import Link from "next/link";
+import { Source_Serif_4 } from "next/font/google";
 import { redirect } from "next/navigation";
 
-import { AgencyResultList } from "@/components/agency-result-list";
-import { StarScore } from "@/components/star-score";
-import { PublicShell } from "@/components/public-shell";
-import { Reveal } from "@/components/reveal";
-import { SearchForm } from "@/components/search-form";
+import { HomeSearch } from "@/components/home-search";
+import { DevBanner } from "@/components/dev-banner";
+import { FachadaMark } from "@/components/fachada-mark";
 import { JsonLd } from "@/components/json-ld";
-import { archivePublicLine } from "@/lib/domain/archive-counts";
 import { homeDocumentedAgencies } from "@/lib/domain/agency-browse";
-import { reviewPublicExcerpt } from "@/lib/domain/review-copy";
+import { publicPresenceLine } from "@/lib/domain/company-presence";
+import { HOME_PAGE_FAQS, selectHomeExcerpts } from "@/lib/domain/home-page";
+import type { RoleRatingSummary } from "@/lib/domain/ratings";
 import { agencyService, usingSupabase } from "@/lib/container";
 import {
   DEFAULT_DESCRIPTION,
   DEFAULT_TITLE,
-  HOME_FAQS,
   SHARE_DESCRIPTION,
   SITE_NAME,
   faqJsonLd,
@@ -23,10 +22,56 @@ import {
   websiteJsonLd,
 } from "@/lib/seo";
 
+import styles from "./home.module.css";
+
+const sourceSerif = Source_Serif_4({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-archive-serif",
+});
+
 export const metadata = {
   ...pageMeta(DEFAULT_TITLE, DEFAULT_DESCRIPTION, "/", SHARE_DESCRIPTION),
   title: { absolute: `${DEFAULT_TITLE} · ${SITE_NAME}` },
 };
+
+function scoreText(summary: RoleRatingSummary) {
+  return summary.averageRating.toLocaleString("es-ES", {
+    minimumFractionDigits: Number.isInteger(summary.averageRating) ? 0 : 1,
+    maximumFractionDigits: 1,
+  });
+}
+
+function Score({
+  label,
+  summary,
+}: {
+  label: string;
+  summary: RoleRatingSummary;
+}) {
+  const single = summary.reviewCount === 1;
+
+  return (
+    <div className={styles.score}>
+      <span className={styles.cellLabel}>{label}</span>
+      {summary.reviewCount > 0 ? (
+        <>
+          <span className={styles.figure}>
+            {scoreText(summary)}
+            <span className={styles.outOf}> sobre 5</span>
+          </span>
+          <span className={styles.sample}>
+            {single
+              ? "Una opinión"
+              : `${summary.reviewCount.toLocaleString("es-ES")} opiniones`}
+          </span>
+        </>
+      ) : (
+        <span className={styles.empty}>Sin opiniones</span>
+      )}
+    </div>
+  );
+}
 
 export default async function Home({
   searchParams,
@@ -39,199 +84,228 @@ export default async function Home({
     redirect(`/inquilinos?${params.toString()}`);
   }
 
-  const [agencies, totals] = await Promise.all([
+  const [agencies, cities] = await Promise.all([
     agencyService.search(undefined, { publicOnly: true }),
-    agencyService.archiveTotals({ publicOnly: true }),
+    agencyService.exploreCities({ publicOnly: true }),
   ]);
   const documented = homeDocumentedAgencies(agencies);
-  const sampleAgencies = documented.preview.slice(0, 3);
-  const sampleReviews = (
-    await Promise.all(
-      sampleAgencies.map((agency) =>
-        agencyService.getBySlug(agency.slug, { publicOnly: true }),
-      ),
-    )
-  )
-    .flatMap((agency) =>
-      (agency?.reviews ?? []).slice(0, 1).map((review) => ({
-        name: agency!.name,
-        role: review.role,
-        rating: review.rating,
-        body: reviewPublicExcerpt(review),
-      })),
-    )
-    .slice(0, 3);
+  const opened = await Promise.all(
+    documented.preview.map((agency) =>
+      agencyService.getBySlug(agency.slug, { publicOnly: true }),
+    ),
+  );
+  const shownExcerpts = selectHomeExcerpts(
+    opened.flatMap((agency) => (agency ? [agency] : [])),
+  );
+  const cityLinks = cities
+    .filter((city) => city.agencyCount > 0)
+    .slice()
+    .sort((a, b) => a.city.localeCompare(b.city, "es"));
+  const year = new Date().getFullYear();
 
   return (
-    <PublicShell storage={usingSupabase() ? "supabase" : "memory"}>
+    <div className={`${styles.page} ${sourceSerif.variable}`}>
       <JsonLd data={organizationJsonLd()} />
       <JsonLd data={websiteJsonLd()} />
-      <JsonLd data={faqJsonLd([...HOME_FAQS])} />
-      <section className="border-b border-stone-200 bg-white">
-        <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
-          <div className="grid gap-10 lg:grid-cols-2 lg:items-end">
-            <div className="motion-fade-rise">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">
-                Archivo público independiente
-              </p>
-              <h1 className="mt-4 text-4xl font-semibold tracking-tight text-zinc-900 sm:text-5xl">
+      <JsonLd data={faqJsonLd([...HOME_PAGE_FAQS])} />
+      <DevBanner storage={usingSupabase() ? "supabase" : "memory"} />
+      <a className={styles.skip} href="#contenido">
+        Saltar al contenido
+      </a>
+      <header className={styles.mast}>
+        <div className={`${styles.wrap} ${styles.mastInner}`}>
+          <Link href="/" className={styles.brand}>
+            <FachadaMark className="h-7 w-auto shrink-0" />
+            FACHADA
+          </Link>
+          <nav className={styles.nav} aria-label="Secciones">
+            <a href="#fichas">Archivo</a>
+            <Link href="/metodologia">Metodología</Link>
+            <Link href="/herramientas">Herramientas</Link>
+            <Link href="/cuenta">Cuenta</Link>
+          </nav>
+        </div>
+      </header>
+
+      <main id="contenido">
+        <section className={styles.hero}>
+          <div className={`${styles.wrap} ${styles.heroGrid}`}>
+            <div>
+              <h1 className={styles.h1}>
                 Antes de firmar, mira la reputación de esa inmobiliaria
               </h1>
-              <p className="mt-4 max-w-xl text-lg leading-relaxed text-zinc-600">
-                Inquilinos y propietarios cuentan cómo ha sido la gestión del
-                alquiler: fianza, reparaciones, honorarios y comunicación.
+              <p className={styles.lead}>
+                Experiencias de inquilinos y propietarios sobre la gestión:
+                fianza, reparaciones, honorarios. No sobre el piso.
               </p>
-              <p className="mt-6 text-xs font-medium uppercase tracking-wide text-zinc-500">
-                {archivePublicLine(totals)}
-              </p>
+              <HomeSearch />
+              <Link className={`${styles.quiet} ${styles.heroLink}`} href="/inquilinos">
+                Buscar la inmobiliaria
+              </Link>
+              {cityLinks.length > 0 ? (
+                <nav className={styles.cities} aria-label="Ciudades">
+                  <span className={styles.kicker}>Ciudades</span>
+                  <span className={styles.cityList}>
+                    {cityLinks.map((city) => (
+                      <Link key={city.slug} href={`/ciudades/${city.slug}`}>
+                        {city.city}
+                      </Link>
+                    ))}
+                  </span>
+                </nav>
+              ) : null}
             </div>
-            <div className="motion-fade-rise flex flex-col gap-3" style={{ animationDelay: "80ms" }}>
-              <SearchForm variant="hero" destination="/inquilinos" />
-              <Link href="/inquilinos" className="btn-secondary inline-flex min-h-11 items-center justify-center">
-                Contar una experiencia
+            {shownExcerpts.length > 0 ? (
+              <aside className={styles.aside} aria-label="Opiniones publicadas">
+                <p className={styles.kicker}>Opiniones publicadas</p>
+                <ul className={styles.excerpts}>
+                  {shownExcerpts.map((item) => (
+                    <li key={item.slug}>
+                      <Link href={`/agencias/${item.slug}`}>
+                        <p className={styles.quote}>{item.text}</p>
+                        <span className={styles.meta}>
+                          {`${item.name} · una opinión de ${item.role}, ${item.rating.toLocaleString("es-ES")} sobre 5`}
+                        </span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </aside>
+            ) : null}
+          </div>
+        </section>
+
+        <section className={styles.section} id="fichas" aria-labelledby="fichas-title">
+          <div className={styles.wrap}>
+            <h2 className={styles.h2} id="fichas-title">
+              Fichas con experiencias
+            </h2>
+            <p className={styles.prose}>
+              {documented.total > 0
+                ? "Cada número es la nota de esas opiniones. Con una sola, no es la reputación de la inmobiliaria."
+                : "Cuando haya experiencias publicadas, cada ficha mostrará por separado la opinión de inquilinos y la de propietarios."}
+            </p>
+            {documented.preview.length > 0 ? (
+              <div className={styles.ledger}>
+                <div className={styles.ledgerHead} aria-hidden="true">
+                  <span>Inmobiliaria</span>
+                  <span>Inquilinos</span>
+                  <span>Propietarios</span>
+                </div>
+                {documented.preview.map((agency) => {
+                  const places = agency.presenceCities ?? [agency.city];
+                  return (
+                    <Link
+                      key={agency.id}
+                      href={`/agencias/${agency.slug}`}
+                      className={styles.row}
+                    >
+                      <span className={styles.identity}>
+                        <span className={styles.name}>{agency.name}</span>
+                        <span className={styles.place}>
+                          {publicPresenceLine(agency, places)}
+                        </span>
+                      </span>
+                      <span className={styles.scores}>
+                        <Score
+                          label="Inquilinos"
+                          summary={agency.roleRatings.inquilino}
+                        />
+                        <Score
+                          label="Propietarios"
+                          summary={agency.roleRatings.propietario}
+                        />
+                      </span>
+                    </Link>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className={styles.prose}>Todavía no hay experiencias publicadas.</p>
+            )}
+            <p className={styles.more}>
+              <Link className={styles.quiet} href="/agencias">
+                {documented.hidden > 0
+                  ? `Ver las ${documented.total.toLocaleString("es-ES")} fichas`
+                  : "Ver el registro"}
+              </Link>
+            </p>
+          </div>
+        </section>
+
+        <section className={styles.section} id="participar" aria-labelledby="participar-title">
+          <div className={styles.wrap}>
+            <h2 className={styles.h2} id="participar-title">
+              Cuéntalo en la ficha
+            </h2>
+            <p className={styles.prose}>
+              Para publicar, busca primero la inmobiliaria y escribe después
+              en su ficha. Si todavía no existe, puedes proponer el alta. El
+              correo identifica la cuenta y no se muestra.
+            </p>
+            <div className={styles.actions}>
+              <Link className={styles.btn} href="/inquilinos">
+                Buscar la inmobiliaria
+              </Link>
+              <Link className={styles.textAction} href="/agregar-inmobiliaria">
+                Sugerir una inmobiliaria
               </Link>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <main className="mx-auto max-w-6xl space-y-12 px-4 py-12 sm:px-6">
-        {documented.preview.length > 0 && (
-          <section>
-            <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
-              <div>
-                <h2 className="text-2xl font-semibold tracking-tight">
-                  Fichas con reseñas
-                </h2>
-                <p className="mt-1 text-sm text-zinc-600">
-                  {documented.hidden > 0
-                    ? `Las más documentadas. Hay ${documented.total} fichas con reseñas.`
-                    : "Todas las fichas que ya tienen reseñas."}
-                </p>
-              </div>
-              <Link href="/agencias" className="link-brand text-sm">
-                {documented.hidden > 0
-                  ? `Ver las ${documented.total} en el registro`
-                  : "Ver el registro"}
-              </Link>
-            </div>
-            <AgencyResultList
-              agencies={documented.preview}
-              empty="Aún no hay reseñas publicadas."
-              layout="board"
-            />
-          </section>
-        )}
-
-        <Reveal>
-          <section className="grid gap-10 lg:grid-cols-2 lg:items-center">
-            <div>
-              <h2 className="text-2xl font-semibold tracking-tight">
-                Puedes publicar en la ficha de forma anónima
-              </h2>
-              <p className="mt-4 text-zinc-600">
-                Para escribir, entras con un correo o con Google. Ese correo no
-                aparece en la ficha. Si el texto pasa un filtro automático, la
-                reseña se publica al momento. La inmobiliaria puede responder;
-                cualquiera puede denunciar un texto concreto.
-              </p>
-              <ul className="mt-6 space-y-3 text-sm text-zinc-700">
-                <li className="flex gap-2">
-                  <span className="font-semibold text-brand">—</span>
-                  En público sale de forma anónima o con seudónimo; nosotros sí
-                  sabemos qué cuenta escribió, para poder moderar.
-                </li>
-                <li className="flex gap-2">
-                  <span className="font-semibold text-brand">—</span>
-                  Hay una nota de inquilino y otra de propietario.
-                </li>
-                <li className="flex gap-2">
-                  <span className="font-semibold text-brand">—</span>
-                  Puedes marcar incidencias: fianza, reparaciones, honorarios.
-                </li>
-              </ul>
-              <Link
-                href="/metodologia"
-                className="link-brand mt-6 inline-block text-sm"
-              >
+        <section className={styles.section} aria-labelledby="como-title">
+          <div className={styles.wrap}>
+            <h2 className={styles.h2} id="como-title">
+              Cómo funciona
+            </h2>
+            <p className={styles.prose}>
+              Se consulta la ficha de la inmobiliaria, no la del piso. Con el
+              correo verificado, el texto se publica como experiencia
+              declarada. Solo pasa a acreditada si una persona revisa pruebas.
+            </p>
+            <p className={styles.more}>
+              <Link className={styles.quiet} href="/metodologia">
                 Cómo publicamos una reseña
               </Link>
-            </div>
-            <div className="card-raised relative overflow-hidden p-8">
-              <div className="motion-stagger space-y-4">
-                {sampleReviews.length === 0 && (
-                  <p className="text-sm text-zinc-600">
-                    Aún no hay reseñas publicadas. Las primeras experiencias
-                    aparecerán aquí al publicarse.
-                  </p>
-                )}
-                {sampleReviews.map((review) => (
-                  <div
-                    key={`${review.name}-${review.body.slice(0, 24)}`}
-                    className="rounded-lg border border-stone-200 bg-stone-50 p-4 text-sm"
-                  >
-                    <p className="flex flex-wrap items-center gap-2 font-semibold text-zinc-900">
-                      <span>
-                        {review.name} · {review.role}
-                      </span>
-                      <span className="sr-only">{review.rating} de 5</span>
-                      <StarScore score={review.rating} size="sm" />
-                    </p>
-                    <p className="mt-1 text-zinc-700">“{review.body}”</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </section>
-        </Reveal>
+            </p>
+          </div>
+        </section>
 
-        <Reveal>
-          <section>
-            <h2 className="text-2xl font-semibold tracking-tight">
-              Preguntas frecuentes
+        <section className={styles.section} aria-labelledby="faq-title">
+          <div className={styles.wrap}>
+            <h2 className={styles.h2} id="faq-title">
+              Preguntas sobre el archivo
             </h2>
-            <dl className="mt-8 space-y-6">
-              {HOME_FAQS.map((item) => (
-                <div key={item.question}>
-                  <dt className="font-semibold text-zinc-900">{item.question}</dt>
-                  <dd className="mt-2 text-sm leading-relaxed text-zinc-600">
-                    {item.answer}
-                  </dd>
+            <dl className={styles.faq}>
+              {HOME_PAGE_FAQS.map((item) => (
+                <div className={styles.faqItem} key={item.question}>
+                  <dt>{item.question}</dt>
+                  <dd>{item.answer}</dd>
                 </div>
               ))}
             </dl>
-          </section>
-        </Reveal>
-
-      </main>
-
-      <section className="bg-brand text-white">
-        <div className="mx-auto max-w-6xl px-6 py-16 text-center">
-          <h2 className="text-2xl font-semibold tracking-tight">
-            ¿Has alquilado o encargado la gestión?
-          </h2>
-          <p className="mx-auto mt-3 max-w-xl text-sm text-zinc-300">
-            Publica tu experiencia. En la ficha puede salir de forma anónima.
-            Pedimos un correo para identificar la cuenta, no para mostrarlo.
-            Si la ficha no existe, puedes sugerir el alta.
-          </p>
-          <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <Link
-              href="/inquilinos"
-              className="btn-primary inline-flex min-h-11 items-center bg-white px-6 text-zinc-900 hover:bg-zinc-100"
-            >
-              Contar una experiencia
-            </Link>
-            <Link
-              href="/agregar-inmobiliaria"
-              className="inline-flex min-h-11 items-center rounded-lg border border-zinc-500 px-6 text-sm font-medium text-white transition-[border-color] hover:border-zinc-300"
-              style={{ transitionDuration: "var(--duration-fast)" }}
-            >
-              Sugerir una ficha
-            </Link>
+            <nav className={styles.docs} aria-label="Documentos">
+              <Link href="/explorar">Directorio por ciudad</Link>
+              <Link href="/agencias">Registro completo</Link>
+              <Link href="/inquilinos">Buscar y publicar</Link>
+              <Link href="/metodologia">Metodología</Link>
+              <Link href="/sobre">Sobre Fachada</Link>
+              <Link href="/herramientas">Calculadoras de alquiler</Link>
+              <Link href="/agencia/acceso">Acceso para agencias</Link>
+              <Link href="/legal/aviso-legal">Aviso legal</Link>
+              <Link href="/legal/privacidad">Privacidad</Link>
+              <Link href="/legal/cookies">Cookies</Link>
+              <Link href="/legal/normas">Normas de uso</Link>
+            </nav>
           </div>
+        </section>
+      </main>
+      <footer>
+        <div className={`${styles.wrap} ${styles.colophon}`}>
+          <p>© {year} Fachada. Archivo independiente.</p>
         </div>
-      </section>
-    </PublicShell>
+      </footer>
+    </div>
   );
 }
