@@ -166,6 +166,8 @@ export function agencyJsonLd(agency: {
   logoUrl?: string;
 }) {
   const url = absoluteUrl(`/agencias/${agency.slug}`);
+  // La media recibida mezcla perspectivas. No se publica como AggregateRating.
+  void agency.averageRating;
   return {
     "@context": "https://schema.org",
     "@type": "RealEstateAgent",
@@ -184,18 +186,26 @@ export function agencyJsonLd(agency: {
       addressLocality: agency.city,
       addressCountry: "ES",
     },
-    ...(agency.reviewCount > 0
-      ? {
-          aggregateRating: {
-            "@type": "AggregateRating",
-            ratingValue: agency.averageRating.toFixed(1),
-            bestRating: "5",
-            worstRating: "1",
-            reviewCount: String(agency.reviewCount),
-          },
-        }
-      : {}),
   };
+}
+
+export function agencyRecordCopy(
+  name: string,
+  places: string,
+  reviewCount: number,
+) {
+  const where = places ? ` en ${places}` : "";
+  const title =
+    reviewCount > 0
+      ? `Opiniones de ${name}`
+      : `Opiniones de ${name} · sin experiencias`;
+  const description =
+    reviewCount <= 0
+      ? `Todavía no hay experiencias publicadas sobre ${name}${where}. La ficha recoge opiniones de inquilinos y propietarios sobre la gestión, no sobre el piso.`
+      : reviewCount === 1
+        ? `Opiniones sobre la gestión de ${name}${where}. Hay 1 experiencia publicada: es una opinión individual, no una reputación consolidada.`
+        : `Opiniones sobre la gestión de ${name}${where}. Hay ${reviewCount.toLocaleString("es-ES")} experiencias publicadas. Inquilinos y propietarios se cuentan por separado.`;
+  return { title, description };
 }
 
 export const HOME_FAQS = [

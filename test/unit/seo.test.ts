@@ -7,6 +7,7 @@ import {
   SHARE_DESCRIPTION,
   absoluteUrl,
   agencyJsonLd,
+  agencyRecordCopy,
   breadcrumbJsonLd,
   faqJsonLd,
   pageMeta,
@@ -18,18 +19,35 @@ describe("seo helpers", () => {
     expect(absoluteUrl("/")).toMatch(/^https?:\/\//);
   });
 
-  it("omits aggregate rating when there are no published reviews", () => {
-    const data = agencyJsonLd({
+  it("omits aggregate rating for empty, single and blended samples", () => {
+    const base = {
       name: "Sol",
       slug: "sol-madrid",
       city: "Madrid",
       address: "Calle Mayor 1",
       postalCode: "28013",
-      reviewCount: 0,
-      averageRating: 0,
-    });
-    expect(data["@type"]).toBe("RealEstateAgent");
-    expect(data.aggregateRating).toBeUndefined();
+    };
+    for (const sample of [
+      { reviewCount: 0, averageRating: 0 },
+      { reviewCount: 1, averageRating: 4 },
+      { reviewCount: 3, averageRating: 4.5 },
+    ]) {
+      const data = agencyJsonLd({ ...base, ...sample });
+      expect(data["@type"]).toBe("RealEstateAgent");
+      expect(data).not.toHaveProperty("aggregateRating");
+    }
+  });
+
+  it("keeps the opinion query on empty fichas and states that none exist", () => {
+    const empty = agencyRecordCopy("Sol", "Madrid", 0);
+    expect(empty.title).toBe("Opiniones de Sol · sin experiencias");
+    expect(empty.description).toMatch(/Todavía no hay experiencias/);
+    const one = agencyRecordCopy("Sol", "Madrid", 1);
+    expect(one.title).toBe("Opiniones de Sol");
+    expect(one.description).toMatch(/1 experiencia publicada/);
+    expect(one.description).not.toMatch(/1 experiencias/);
+    const many = agencyRecordCopy("Sol", "Madrid", 2);
+    expect(many.description).toMatch(/2 experiencias publicadas/);
   });
 
   it("keeps homepage FAQs extractable and paired with schema", () => {

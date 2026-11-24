@@ -7,7 +7,7 @@ import { AgencyResultList } from "@/components/agency-result-list";
 import { CityPhoto } from "@/components/city-photo";
 import { PublicShell } from "@/components/public-shell";
 import { parseAgencySort } from "@/lib/domain/agency-browse";
-import { slugToCityLabel } from "@/lib/domain/city";
+import { labelForCitySlug } from "@/lib/domain/city";
 import { agencyService, usingSupabase } from "@/lib/container";
 import { pageMeta } from "@/lib/seo";
 
@@ -17,7 +17,11 @@ export async function generateMetadata({
   params: Promise<{ city: string }>;
 }) {
   const { city } = await params;
-  const label = slugToCityLabel(city);
+  const listed = await agencyService.listByCity(city, { publicOnly: true });
+  const label = labelForCitySlug(
+    city,
+    listed.flatMap((agency) => agency.presenceCities ?? [agency.city]),
+  );
   return pageMeta(
     `Inmobiliarias en ${label}: gestión de alquiler`,
     `Fichas de inmobiliarias en ${label} y experiencias de inquilinos y propietarios sobre fianzas, reparaciones y honorarios.`,
@@ -47,7 +51,10 @@ export default async function CityPage({
         agency.name.toLocaleLowerCase("es").includes(query.toLocaleLowerCase("es")),
       )
     : listed;
-  const label = listed[0]?.city ?? slugToCityLabel(city);
+  const label = labelForCitySlug(
+    city,
+    listed.flatMap((agency) => agency.presenceCities ?? [agency.city]),
+  );
 
   return (
     <PublicShell storage={usingSupabase() ? "supabase" : "memory"}>

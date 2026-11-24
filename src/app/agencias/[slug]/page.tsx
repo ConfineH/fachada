@@ -26,7 +26,7 @@ import {
 import { agencyService, usingSupabase } from "@/lib/container";
 import { cityToSlug } from "@/lib/domain/city";
 import { parseReviewOrigin } from "@/lib/domain/review-origin";
-import { agencyJsonLd, pageMeta } from "@/lib/seo";
+import { agencyJsonLd, agencyRecordCopy, pageMeta } from "@/lib/seo";
 import { agencyLogoUrl } from "@/lib/ops/agency-logos";
 import { isTwilioConfigured } from "@/lib/services/sms-provider";
 
@@ -59,14 +59,13 @@ export async function generateMetadata({
       ? await agencyService.getBySlug(canonical, { publicOnly: true })
       : undefined);
   if (!agency) return { title: "Inmobiliaria no encontrada" };
-  const reviewHint =
-    agency.reviewCount > 0
-      ? `${agency.reviewCount} experiencias publicadas`
-      : "aún sin experiencias publicadas";
   const cities = agency.presenceCities ?? [agency.city];
-  const title = cities.length > 1 ? agency.name : `${agency.name} en ${agency.city}`;
-  const description = `Cómo gestionan el alquiler en ${agency.name} (${formatCityList(cities)}): fianzas, reparaciones y comunicación. ${reviewHint}.`;
-  return pageMeta(title, description, `/agencias/${agency.slug}`);
+  const copy = agencyRecordCopy(
+    agency.name,
+    formatCityList(cities),
+    agency.reviewCount,
+  );
+  return pageMeta(copy.title, copy.description, `/agencias/${agency.slug}`);
 }
 
 export default async function AgencyPage({
